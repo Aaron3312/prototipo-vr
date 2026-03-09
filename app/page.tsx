@@ -1,8 +1,5 @@
-"use client";
-import dynamic from "next/dynamic";
-
-const ARScene = dynamic(() => import("@/components/ARScene"), { ssr: false });
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <ARScene />;
+  redirect("/ar.html");
 }

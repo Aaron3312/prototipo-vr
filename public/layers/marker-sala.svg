@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <!-- White background -->
+  <rect width="800" height="800" fill="#FFFFFF"/>
+
+  <!-- Grid lines every 100px -->
+  <g stroke="#EEEEEE" stroke-width="1">
+    <line x1="100" y1="0" x2="100" y2="800"/>
+    <line x1="200" y1="0" x2="200" y2="800"/>
+    <line x1="300" y1="0" x2="300" y2="800"/>
+    <line x1="400" y1="0" x2="400" y2="800"/>
+    <line x1="500" y1="0" x2="500" y2="800"/>
+    <line x1="600" y1="0" x2="600" y2="800"/>
+    <line x1="700" y1="0" x2="700" y2="800"/>
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="0" y1="500" x2="800" y2="500"/>
+    <line x1="0" y1="600" x2="800" y2="600"/>
+    <line x1="0" y1="700" x2="800" y2="700"/>
+  </g>
+
+  <!-- Sub-grid lines for AR feature richness -->
+  <g stroke="#F5F5F5" stroke-width="0.5">
+    <line x1="150" y1="0" x2="150" y2="800"/>
+    <line x1="250" y1="0" x2="250" y2="800"/>
+    <line x1="350" y1="0" x2="350" y2="800"/>
+    <line x1="450" y1="0" x2="450" y2="800"/>
+    <line x1="550" y1="0" x2="550" y2="800"/>
+    <line x1="650" y1="0" x2="650" y2="800"/>
+    <line x1="750" y1="0" x2="750" y2="800"/>
+    <line x1="0" y1="150" x2="800" y2="150"/>
+    <line x1="0" y1="250" x2="800" y2="250"/>
+    <line x1="0" y1="350" x2="800" y2="350"/>
+    <line x1="0" y1="450" x2="800" y2="450"/>
+    <line x1="0" y1="550" x2="800" y2="550"/>
+    <line x1="0" y1="650" x2="800" y2="650"/>
+    <line x1="0" y1="750" x2="800" y2="750"/>
+  </g>
+
+  <!-- Corner fiducial markers (high contrast for AR tracking) -->
+  <rect x="10" y="10" width="60" height="60" fill="#000000"/>
+  <rect x="20" y="20" width="40" height="40" fill="#FFFFFF"/>
+  <rect x="30" y="30" width="20" height="20" fill="#000000"/>
+
+  <rect x="730" y="10" width="60" height="60" fill="#000000"/>
+  <rect x="740" y="20" width="40" height="40" fill="#FFFFFF"/>
+  <rect x="750" y="30" width="20" height="20" fill="#000000"/>
+
+  <rect x="10" y="730" width="60" height="60" fill="#000000"/>
+  <rect x="20" y="740" width="40" height="40" fill="#FFFFFF"/>
+  <rect x="30" y="750" width="20" height="20" fill="#000000"/>
+
+  <rect x="730" y="730" width="60" height="60" fill="#000000"/>
+  <rect x="740" y="740" width="40" height="40" fill="#FFFFFF"/>
+  <rect x="750" y="750" width="20" height="20" fill="#000000"/>
+
+  <!-- Border frame -->
+  <rect x="5" y="5" width="790" height="790" fill="none" stroke="#000000" stroke-width="4"/>
+
+  <!-- Room walls (80,80) to (720,720) — but with DOOR opening at bottom wall -->
+  <!-- Top wall -->
+  <line x1="80" y1="80" x2="720" y2="80" stroke="#000000" stroke-width="10"/>
+  <!-- Left wall -->
+  <line x1="80" y1="80" x2="80" y2="720" stroke="#000000" stroke-width="10"/>
+  <!-- Right wall -->
+  <line x1="720" y1="80" x2="720" y2="720" stroke="#000000" stroke-width="10"/>
+  <!-- Bottom wall — with door opening centered (340 to 460) -->
+  <line x1="80" y1="720" x2="320" y2="720" stroke="#000000" stroke-width="10"/>
+  <line x1="480" y1="720" x2="720" y2="720" stroke="#000000" stroke-width="10"/>
+
+  <!-- ===== DOOR (bottom wall, center opening 320-480) ===== -->
+  <!-- Door leaf -->
+  <line x1="320" y1="720" x2="320" y2="580" stroke="#000000" stroke-width="6"/>
+  <!-- Door swing arc -->
+  <path d="M 320 720 A 140 140 0 0 1 460 580" fill="none" stroke="#000000" stroke-width="4" stroke-dasharray="10,5"/>
+  <!-- Door symbol (thin door panel) -->
+  <rect x="318" y="580" width="6" height="140" fill="#000000"/>
+  <!-- Door label -->
+  <text x="390" y="700" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#000000">PUERTA</text>
+  <text x="390" y="714" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#555555">0.90m</text>
+
+  <!-- ===== WINDOW LEFT WALL ===== -->
+  <!-- Window opening: left wall around y=300-450 -->
+  <rect x="75" y="300" width="20" height="150" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+  <!-- Window lines (glass panes) -->
+  <line x1="75" y1="375" x2="95" y2="375" stroke="#000000" stroke-width="4"/>
+  <line x1="82" y1="300" x2="82" y2="450" stroke="#000000" stroke-width="2"/>
+  <line x1="88" y1="300" x2="88" y2="450" stroke="#000000" stroke-width="2"/>
+  <!-- Window frame marks -->
+  <line x1="60" y1="300" x2="80" y2="300" stroke="#000000" stroke-width="6"/>
+  <line x1="60" y1="450" x2="80" y2="450" stroke="#000000" stroke-width="6"/>
+  <text x="50" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#000000" transform="rotate(-90,50,380)">VEN. 1.50m</text>
+
+  <!-- ===== WINDOW RIGHT WALL ===== -->
+  <!-- Window opening: right wall around y=300-450 -->
+  <rect x="705" y="300" width="20" height="150" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+  <line x1="705" y1="375" x2="725" y2="375" stroke="#000000" stroke-width="4"/>
+  <line x1="712" y1="300" x2="712" y2="450" stroke="#000000" stroke-width="2"/>
+  <line x1="718" y1="300" x2="718" y2="450" stroke="#000000" stroke-width="2"/>
+  <line x1="720" y1="300" x2="740" y2="300" stroke="#000000" stroke-width="6"/>
+  <line x1="720" y1="450" x2="740" y2="450" stroke="#000000" stroke-width="6"/>
+  <text x="750" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#000000" transform="rotate(90,750,380)">VEN. 1.50m</text>
+
+  <!-- ===== SOFA (bottom center of room) ===== -->
+  <!-- Sofa base -->
+  <rect x="220" y="590" width="360" height="100" rx="15" fill="none" stroke="#000000" stroke-width="8"/>
+  <!-- Sofa back (top portion) -->
+  <rect x="220" y="590" width="360" height="35" rx="10" fill="none" stroke="#000000" stroke-width="6"/>
+  <!-- Sofa cushions (3 seats) -->
+  <rect x="235" y="628" width="105" height="55" rx="8" fill="none" stroke="#000000" stroke-width="5"/>
+  <rect x="348" y="628" width="105" height="55" rx="8" fill="none" stroke="#000000" stroke-width="5"/>
+  <rect x="461" y="628" width="105" height="55" rx="8" fill="none" stroke="#000000" stroke-width="5"/>
+  <!-- Sofa armrests -->
+  <rect x="215" y="625" width="25" height="65" rx="5" fill="none" stroke="#000000" stroke-width="5"/>
+  <rect x="560" y="625" width="25" height="65" rx="5" fill="none" stroke="#000000" stroke-width="5"/>
+  <!-- Sofa label -->
+  <text x="400" y="715" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#000000">SOFÁ</text>
+
+  <!-- ===== COFFEE TABLE ===== -->
+  <rect x="290" y="490" width="220" height="90" rx="8" fill="none" stroke="#000000" stroke-width="6"/>
+  <!-- Table legs -->
+  <circle cx="305" cy="505" r="5" fill="#000000"/>
+  <circle cx="495" cy="505" r="5" fill="#000000"/>
+  <circle cx="305" cy="565" r="5" fill="#000000"/>
+  <circle cx="495" cy="565" r="5" fill="#000000"/>
+  <text x="400" y="540" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#000000">MESA</text>
+
+  <!-- ===== TV WALL / MEDIA UNIT (top wall) ===== -->
+  <rect x="260" y="90" width="280" height="50" rx="5" fill="none" stroke="#000000" stroke-width="6"/>
+  <rect x="270" y="95" width="260" height="40" rx="3" fill="none" stroke="#000000" stroke-width="3"/>
+  <text x="400" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#000000">TV / MUEBLE</text>
+
+  <!-- Dimension lines -->
+  <g stroke="#000000" stroke-width="2" fill="#000000">
+    <line x1="80" y1="760" x2="720" y2="760"/>
+    <line x1="80" y1="750" x2="80" y2="770"/>
+    <line x1="720" y1="750" x2="720" y2="770"/>
+    <text x="400" y="757" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#000000">6.40 m</text>
+    <line x1="760" y1="80" x2="760" y2="720"/>
+    <line x1="750" y1="80" x2="770" y2="80"/>
+    <line x1="750" y1="720" x2="770" y2="720"/>
+    <text x="757" y="404" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#000000" transform="rotate(90,757,404)">6.40 m</text>
+  </g>
+
+  <!-- Scale indicator -->
+  <rect x="320" y="748" width="80" height="6" fill="#000000"/>
+  <text x="360" y="774" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#000000">1:50</text>
+
+  <!-- North arrow -->
+  <g transform="translate(740,150)">
+    <circle cx="0" cy="0" r="22" fill="none" stroke="#000000" stroke-width="2"/>
+    <polygon points="0,-18 -8,10 0,5 8,10" fill="#000000"/>
+    <text x="0" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">N</text>
+  </g>
+
+  <!-- Title block -->
+  <rect x="80" y="30" width="640" height="40" fill="#000000"/>
+  <text x="400" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF" letter-spacing="8">SALA</text>
+
+  <!-- Subtitle -->
+  <text x="400" y="77" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#555555">PLANTA ARQUITECTÓNICA — ESCALA 1:50</text>
+
+  <!-- Diagonal texture pattern (AR feature richness in open floor area) -->
+  <g stroke="#F0F0F0" stroke-width="0.8">
+    <line x1="100" y1="90" x2="90" y2="100"/>
+    <line x1="200" y1="90" x2="90" y2="200"/>
+    <line x1="300" y1="90" x2="90" y2="300"/>
+    <line x1="400" y1="90" x2="90" y2="400"/>
+    <line x1="500" y1="90" x2="90" y2="500"/>
+    <line x1="600" y1="90" x2="90" y2="600"/>
+    <line x1="700" y1="90" x2="90" y2="700"/>
+    <line x1="710" y1="90" x2="200" y2="600"/>
+    <line x1="710" y1="190" x2="300" y2="600"/>
+    <line x1="710" y1="290" x2="400" y2="600"/>
+    <line x1="710" y1="390" x2="500" y2="600"/>
+    <line x1="710" y1="490" x2="600" y2="600"/>
+  </g>
+
+  <!-- Room label center -->
+  <text x="400" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#CCCCCC" opacity="0.7">SALA DE ESTAR</text>
+  <text x="400" y="425" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#CCCCCC" opacity="0.7">40.96 m²</text>
+
+</svg>

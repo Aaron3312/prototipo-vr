@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+  <!-- TRANSPARENT background - no background rect -->
+
+  <!-- Layer label -->
+  <text x="500" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#34D399" text-anchor="middle">ACABADOS</text>
+  <text x="500" y="62" font-family="Arial, sans-serif" font-size="12" fill="#34D399" text-anchor="middle">Materiales y Revestimientos de Suelos</text>
+
+  <!-- ============================================================ -->
+  <!-- ROOM FILLS (semi-transparent, same coordinates as plano-base)-->
+  <!--                                                              -->
+  <!-- Living Room:  120,120 → 620,500  (clipped inside walls ~4px)-->
+  <!-- Kitchen:      620,120 → 880,500                             -->
+  <!-- Bedroom 1:    120,500 → 430,880                             -->
+  <!-- Bedroom 2:    430,500 → 680,880                             -->
+  <!-- Bathroom:     680,500 → 880,880                             -->
+  <!-- ============================================================ -->
+
+  <!-- ============================================================ -->
+  <!-- LIVING ROOM — warm beige parquet (#D4A974 at 40% opacity)   -->
+  <!-- ============================================================ -->
+  <rect x="124" y="124" width="492" height="372" fill="#D4A974" fill-opacity="0.4"/>
+
+  <!-- Parquet wood grain pattern (horizontal planks) -->
+  <g opacity="0.25" clip-path="url(#living-clip)">
+    <!-- Plank lines horizontal -->
+    <line x1="124" y1="164" x2="616" y2="164" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="204" x2="616" y2="204" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="244" x2="616" y2="244" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="284" x2="616" y2="284" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="324" x2="616" y2="324" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="364" x2="616" y2="364" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="404" x2="616" y2="404" stroke="#8B6914" stroke-width="1"/>
+    <line x1="124" y1="444" x2="616" y2="444" stroke="#8B6914" stroke-width="1"/>
+    <!-- Plank joints staggered vertical - row 1 -->
+    <line x1="204" y1="124" x2="204" y2="164" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="324" y1="124" x2="324" y2="164" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="444" y1="124" x2="444" y2="164" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="564" y1="124" x2="564" y2="164" stroke="#8B6914" stroke-width="0.8"/>
+    <!-- row 2 (offset) -->
+    <line x1="144" y1="164" x2="144" y2="204" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="264" y1="164" x2="264" y2="204" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="384" y1="164" x2="384" y2="204" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="504" y1="164" x2="504" y2="204" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="204" y1="204" x2="204" y2="244" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="324" y1="204" x2="324" y2="244" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="444" y1="204" x2="444" y2="244" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="564" y1="204" x2="564" y2="244" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="144" y1="244" x2="144" y2="284" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="264" y1="244" x2="264" y2="284" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="384" y1="244" x2="384" y2="284" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="504" y1="244" x2="504" y2="284" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="204" y1="284" x2="204" y2="324" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="324" y1="284" x2="324" y2="324" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="444" y1="284" x2="444" y2="324" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="144" y1="324" x2="144" y2="364" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="264" y1="324" x2="264" y2="364" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="384" y1="324" x2="384" y2="364" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="504" y1="324" x2="504" y2="364" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="204" y1="364" x2="204" y2="404" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="324" y1="364" x2="324" y2="404" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="444" y1="364" x2="444" y2="404" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="144" y1="404" x2="144" y2="444" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="264" y1="404" x2="264" y2="444" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="384" y1="404" x2="384" y2="444" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="504" y1="404" x2="504" y2="444" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="204" y1="444" x2="204" y2="496" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="324" y1="444" x2="324" y2="496" stroke="#8B6914" stroke-width="0.8"/>
+    <line x1="444" y1="444" x2="444" y2="496" stroke="#8B6914" stroke-width="0.8"/>
+  </g>
+
+  <!-- Living room label -->
+  <text x="365" y="295" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#92400E" text-anchor="middle" opacity="0.9">SALA DE ESTAR</text>
+  <text x="365" y="315" font-family="Arial, sans-serif" font-size="11" fill="#92400E" text-anchor="middle" opacity="0.8">Parquet de roble</text>
+  <text x="365" y="332" font-family="Arial, sans-serif" font-size="10" fill="#92400E" text-anchor="middle" opacity="0.7">Color: Warm Beige</text>
+
+  <!-- ============================================================ -->
+  <!-- KITCHEN — cream ceramic tiles (#FEF3C7 at 40% opacity)     -->
+  <!-- ============================================================ -->
+  <rect x="624" y="124" width="252" height="372" fill="#FEF3C7" fill-opacity="0.4"/>
+
+  <!-- Tile grid pattern -->
+  <g opacity="0.3">
+    <!-- Vertical tile lines -->
+    <line x1="670" y1="124" x2="670" y2="496" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="716" y1="124" x2="716" y2="496" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="762" y1="124" x2="762" y2="496" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="808" y1="124" x2="808" y2="496" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="854" y1="124" x2="854" y2="496" stroke="#D97706" stroke-width="0.8"/>
+    <!-- Horizontal tile lines -->
+    <line x1="624" y1="170" x2="876" y2="170" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="624" y1="216" x2="876" y2="216" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="624" y1="262" x2="876" y2="262" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="624" y1="308" x2="876" y2="308" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="624" y1="354" x2="876" y2="354" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="624" y1="400" x2="876" y2="400" stroke="#D97706" stroke-width="0.8"/>
+    <line x1="624" y1="446" x2="876" y2="446" stroke="#D97706" stroke-width="0.8"/>
+  </g>
+
+  <!-- Kitchen label -->
+  <text x="750" y="295" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#92400E" text-anchor="middle" opacity="0.9">COCINA</text>
+  <text x="750" y="315" font-family="Arial, sans-serif" font-size="11" fill="#92400E" text-anchor="middle" opacity="0.8">Gres porcelánico</text>
+  <text x="750" y="332" font-family="Arial, sans-serif" font-size="10" fill="#92400E" text-anchor="middle" opacity="0.7">Color: Crema 60×60</text>
+
+  <!-- ============================================================ -->
+  <!-- BEDROOM 1 — light wood (#C8A46E at 40% opacity)            -->
+  <!-- 120,500 → 430,880                                           -->
+  <!-- ============================================================ -->
+  <rect x="124" y="504" width="302" height="372" fill="#C8A46E" fill-opacity="0.4"/>
+
+  <!-- Wood grain pattern (diagonal subtle) -->
+  <g opacity="0.2">
+    <line x1="124" y1="544" x2="426" y2="544" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="584" x2="426" y2="584" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="624" x2="426" y2="624" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="664" x2="426" y2="664" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="704" x2="426" y2="704" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="744" x2="426" y2="744" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="784" x2="426" y2="784" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="824" x2="426" y2="824" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="124" y1="864" x2="426" y2="864" stroke="#6B4A1E" stroke-width="1"/>
+    <!-- plank joints -->
+    <line x1="194" y1="504" x2="194" y2="544" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="314" y1="504" x2="314" y2="544" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="154" y1="544" x2="154" y2="584" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="274" y1="544" x2="274" y2="584" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="394" y1="544" x2="394" y2="584" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="194" y1="584" x2="194" y2="624" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="314" y1="584" x2="314" y2="624" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="154" y1="624" x2="154" y2="664" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="274" y1="624" x2="274" y2="664" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="394" y1="624" x2="394" y2="664" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="194" y1="664" x2="194" y2="704" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="314" y1="664" x2="314" y2="704" stroke="#6B4A1E" stroke-width="0.8"/>
+  </g>
+
+  <!-- Bedroom 1 label -->
+  <text x="275" y="670" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#6B4A1E" text-anchor="middle" opacity="0.9">DORMITORIO 1</text>
+  <text x="275" y="690" font-family="Arial, sans-serif" font-size="11" fill="#6B4A1E" text-anchor="middle" opacity="0.8">Parquet de madera</text>
+  <text x="275" y="707" font-family="Arial, sans-serif" font-size="10" fill="#6B4A1E" text-anchor="middle" opacity="0.7">Color: Natural Wood</text>
+
+  <!-- ============================================================ -->
+  <!-- BEDROOM 2 — light wood (#C8A46E at 40% opacity)            -->
+  <!-- 430,500 → 680,880                                           -->
+  <!-- ============================================================ -->
+  <rect x="434" y="504" width="242" height="372" fill="#C8A46E" fill-opacity="0.4"/>
+
+  <!-- Wood grain -->
+  <g opacity="0.2">
+    <line x1="434" y1="544" x2="676" y2="544" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="584" x2="676" y2="584" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="624" x2="676" y2="624" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="664" x2="676" y2="664" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="704" x2="676" y2="704" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="744" x2="676" y2="744" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="784" x2="676" y2="784" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="824" x2="676" y2="824" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="434" y1="864" x2="676" y2="864" stroke="#6B4A1E" stroke-width="1"/>
+    <line x1="504" y1="504" x2="504" y2="544" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="604" y1="504" x2="604" y2="544" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="454" y1="544" x2="454" y2="584" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="554" y1="544" x2="554" y2="584" stroke="#6B4A1E" stroke-width="0.8"/>
+    <line x1="654" y1="544" x2="654" y2="584" stroke="#6B4A1E" stroke-width="0.8"/>
+  </g>
+
+  <!-- Bedroom 2 label -->
+  <text x="555" y="670" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#6B4A1E" text-anchor="middle" opacity="0.9">DORMITORIO 2</text>
+  <text x="555" y="690" font-family="Arial, sans-serif" font-size="11" fill="#6B4A1E" text-anchor="middle" opacity="0.8">Parquet de madera</text>
+  <text x="555" y="707" font-family="Arial, sans-serif" font-size="10" fill="#6B4A1E" text-anchor="middle" opacity="0.7">Color: Natural Wood</text>
+
+  <!-- ============================================================ -->
+  <!-- BATHROOM — light blue tiles (#93C5FD at 40% opacity)        -->
+  <!-- 680,500 → 880,880                                           -->
+  <!-- ============================================================ -->
+  <rect x="684" y="504" width="192" height="372" fill="#93C5FD" fill-opacity="0.4"/>
+
+  <!-- Tile pattern (30×30 cm small tiles for bathroom) -->
+  <g opacity="0.35">
+    <!-- Vertical lines -->
+    <line x1="714" y1="504" x2="714" y2="876" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="744" y1="504" x2="744" y2="876" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="774" y1="504" x2="774" y2="876" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="804" y1="504" x2="804" y2="876" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="834" y1="504" x2="834" y2="876" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="864" y1="504" x2="864" y2="876" stroke="#1D4ED8" stroke-width="0.8"/>
+    <!-- Horizontal lines -->
+    <line x1="684" y1="534" x2="876" y2="534" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="564" x2="876" y2="564" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="594" x2="876" y2="594" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="624" x2="876" y2="624" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="654" x2="876" y2="654" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="684" x2="876" y2="684" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="714" x2="876" y2="714" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="744" x2="876" y2="744" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="774" x2="876" y2="774" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="804" x2="876" y2="804" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="834" x2="876" y2="834" stroke="#1D4ED8" stroke-width="0.8"/>
+    <line x1="684" y1="864" x2="876" y2="864" stroke="#1D4ED8" stroke-width="0.8"/>
+  </g>
+
+  <!-- Bathroom label -->
+  <text x="780" y="600" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1E40AF" text-anchor="middle" opacity="0.9">BAÑO</text>
+  <text x="780" y="618" font-family="Arial, sans-serif" font-size="11" fill="#1E40AF" text-anchor="middle" opacity="0.8">Azulejo cerámico</text>
+  <text x="780" y="635" font-family="Arial, sans-serif" font-size="10" fill="#1E40AF" text-anchor="middle" opacity="0.7">30×30 Azul claro</text>
+
+  <!-- ============================================================ -->
+  <!-- MATERIAL SWATCHES LEGEND                                    -->
+  <!-- ============================================================ -->
+  <rect x="130" y="900" width="740" height="82" fill="none" stroke="#34D399" stroke-width="1" opacity="0.5"/>
+  <text x="145" y="916" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#34D399">MATERIALES:</text>
+
+  <!-- Swatch 1: Sala -->
+  <rect x="145" y="924" width="30" height="20" fill="#D4A974" fill-opacity="0.7" stroke="#92400E" stroke-width="1"/>
+  <text x="182" y="937" font-family="Arial, sans-serif" font-size="10" fill="#34D399">Sala: Parquet roble (Warm Beige)</text>
+
+  <!-- Swatch 2: Dormitorios -->
+  <rect x="145" y="950" width="30" height="20" fill="#C8A46E" fill-opacity="0.7" stroke="#6B4A1E" stroke-width="1"/>
+  <text x="182" y="963" font-family="Arial, sans-serif" font-size="10" fill="#34D399">Dormitorios: Parquet madera (Natural Wood)</text>
+
+  <!-- Swatch 3: Baño -->
+  <rect x="450" y="924" width="30" height="20" fill="#93C5FD" fill-opacity="0.7" stroke="#1D4ED8" stroke-width="1"/>
+  <text x="487" y="937" font-family="Arial, sans-serif" font-size="10" fill="#34D399">Baño: Azulejo 30×30 (Azul claro)</text>
+
+  <!-- Swatch 4: Cocina -->
+  <rect x="450" y="950" width="30" height="20" fill="#FEF3C7" fill-opacity="0.9" stroke="#D97706" stroke-width="1"/>
+  <text x="487" y="963" font-family="Arial, sans-serif" font-size="10" fill="#34D399">Cocina: Gres porcelánico 60×60 (Crema)</text>
+
+</svg>

@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+  <!-- TRANSPARENT background - no background rect -->
+
+  <!-- Layer label -->
+  <text x="500" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FBBF24" text-anchor="middle">INSTALACIÓN ELÉCTRICA</text>
+  <text x="500" y="62" font-family="Arial, sans-serif" font-size="12" fill="#FBBF24" text-anchor="middle">Circuitos y Puntos de Luz</text>
+
+  <!-- ============================================================ -->
+  <!-- MAIN ELECTRICAL PANEL                                       -->
+  <!-- Located on kitchen east wall, center                        -->
+  <!-- ============================================================ -->
+  <g id="panel" transform="translate(858, 310)">
+    <rect x="-18" y="-28" width="36" height="56" fill="none" stroke="#FBBF24" stroke-width="3"/>
+    <rect x="-12" y="-22" width="24" height="44" fill="none" stroke="#FBBF24" stroke-width="1.5"/>
+    <!-- Breaker lines -->
+    <line x1="-8" y1="-14" x2="8" y2="-14" stroke="#FBBF24" stroke-width="1.5"/>
+    <line x1="-8" y1="-6" x2="8" y2="-6" stroke="#FBBF24" stroke-width="1.5"/>
+    <line x1="-8" y1="2" x2="8" y2="2" stroke="#FBBF24" stroke-width="1.5"/>
+    <line x1="-8" y1="10" x2="8" y2="10" stroke="#FBBF24" stroke-width="1.5"/>
+    <line x1="-8" y1="18" x2="8" y2="18" stroke="#FBBF24" stroke-width="1.5"/>
+    <text x="0" y="42" font-family="Arial, sans-serif" font-size="9" fill="#FBBF24" text-anchor="middle">CUADRO</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- WIRING PATHS (dashed yellow lines from panel to outlets)    -->
+  <!-- ============================================================ -->
+
+  <!-- Circuit 1: Panel → Kitchen outlets -->
+  <polyline points="858,310 858,200 750,200 660,200" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10,6" opacity="0.85"/>
+
+  <!-- Circuit 2: Panel → Living room via top -->
+  <polyline points="858,310 858,150 500,150 300,150 200,150 200,300" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10,6" opacity="0.85"/>
+  <polyline points="200,300 200,430 350,430 500,430" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10,6" opacity="0.85"/>
+
+  <!-- Circuit 3: Panel → Bedroom zone -->
+  <polyline points="858,310 858,460 750,460 620,460 620,550 560,550 280,550" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10,6" opacity="0.85"/>
+  <polyline points="280,550 200,550 200,750" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10,6" opacity="0.85"/>
+
+  <!-- Circuit 4: Panel → Bathroom -->
+  <polyline points="858,310 858,620 780,620 780,740" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10,6" opacity="0.85"/>
+
+  <!-- Sub-branch: Bedroom 2 outlets from bedroom circuit -->
+  <polyline points="560,550 560,750" fill="none" stroke="#FBBF24" stroke-width="2.5" stroke-dasharray="8,5" opacity="0.85"/>
+
+  <!-- ============================================================ -->
+  <!-- OUTLETS (yellow circles r=12)                               -->
+  <!-- At least 8 outlets spread across rooms                      -->
+  <!-- ============================================================ -->
+
+  <!-- Outlet symbol helper: circle with horizontal slot line -->
+  <!-- Living Room outlets -->
+  <!-- Outlet 1: Living room NW corner -->
+  <circle cx="200" cy="150" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="193" y1="150" x2="207" y2="150" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="197" y1="145" x2="197" y2="155" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="203" y1="145" x2="203" y2="155" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Outlet 2: Living room east side -->
+  <circle cx="500" cy="430" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="493" y1="430" x2="507" y2="430" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="497" y1="425" x2="497" y2="435" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="503" y1="425" x2="503" y2="435" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Outlet 3: Living room south wall -->
+  <circle cx="350" cy="430" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="343" y1="430" x2="357" y2="430" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="347" y1="425" x2="347" y2="435" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="353" y1="425" x2="353" y2="435" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Kitchen outlets -->
+  <!-- Outlet 4: Kitchen counter north -->
+  <circle cx="750" cy="200" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="743" y1="200" x2="757" y2="200" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="747" y1="195" x2="747" y2="205" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="753" y1="195" x2="753" y2="205" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Outlet 5: Kitchen east counter -->
+  <circle cx="660" cy="200" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="653" y1="200" x2="667" y2="200" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="657" y1="195" x2="657" y2="205" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="663" y1="195" x2="663" y2="205" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Bedroom 1 outlets -->
+  <!-- Outlet 6: Bedroom 1 west wall -->
+  <circle cx="200" cy="750" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="193" y1="750" x2="207" y2="750" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="197" y1="745" x2="197" y2="755" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="203" y1="745" x2="203" y2="755" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Outlet 7: Bedroom 1 east side -->
+  <circle cx="280" cy="550" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="273" y1="550" x2="287" y2="550" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="277" y1="545" x2="277" y2="555" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="283" y1="545" x2="283" y2="555" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Bedroom 2 outlets -->
+  <!-- Outlet 8: Bedroom 2 south -->
+  <circle cx="560" cy="750" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="553" y1="750" x2="567" y2="750" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="557" y1="745" x2="557" y2="755" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="563" y1="745" x2="563" y2="755" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Outlet 9: Bedroom 2 north -->
+  <circle cx="560" cy="550" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="553" y1="550" x2="567" y2="550" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="557" y1="545" x2="557" y2="555" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="563" y1="545" x2="563" y2="555" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- Outlet 10: Bathroom -->
+  <circle cx="780" cy="620" r="12" fill="#1A1A1A" stroke="#FBBF24" stroke-width="3"/>
+  <line x1="773" y1="620" x2="787" y2="620" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="777" y1="615" x2="777" y2="625" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="783" y1="615" x2="783" y2="625" stroke="#FBBF24" stroke-width="1.5"/>
+
+  <!-- ============================================================ -->
+  <!-- CEILING LIGHT POINTS (X symbol in circles)                  -->
+  <!-- ============================================================ -->
+
+  <!-- Living room ceiling light -->
+  <circle cx="365" cy="300" r="16" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
+  <line x1="354" y1="289" x2="376" y2="311" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="376" y1="289" x2="354" y2="311" stroke="#FBBF24" stroke-width="2"/>
+
+  <!-- Kitchen ceiling light -->
+  <circle cx="750" cy="300" r="16" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
+  <line x1="739" y1="289" x2="761" y2="311" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="761" y1="289" x2="739" y2="311" stroke="#FBBF24" stroke-width="2"/>
+
+  <!-- Bedroom 1 ceiling light -->
+  <circle cx="275" cy="680" r="16" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
+  <line x1="264" y1="669" x2="286" y2="691" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="286" y1="669" x2="264" y2="691" stroke="#FBBF24" stroke-width="2"/>
+
+  <!-- Bedroom 2 ceiling light -->
+  <circle cx="555" cy="680" r="16" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
+  <line x1="544" y1="669" x2="566" y2="691" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="566" y1="669" x2="544" y2="691" stroke="#FBBF24" stroke-width="2"/>
+
+  <!-- Bathroom ceiling light -->
+  <circle cx="780" cy="690" r="16" fill="none" stroke="#FBBF24" stroke-width="2.5"/>
+  <line x1="769" y1="679" x2="791" y2="701" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="791" y1="679" x2="769" y2="701" stroke="#FBBF24" stroke-width="2"/>
+
+  <!-- ============================================================ -->
+  <!-- SWITCHES (small yellow squares near doors)                  -->
+  <!-- ============================================================ -->
+
+  <!-- Switch: Living room main door -->
+  <rect x="294" y="862" width="18" height="18" fill="#FBBF24" stroke="#FBBF24" stroke-width="1"/>
+  <text x="303" y="896" font-family="Arial, sans-serif" font-size="8" fill="#FBBF24" text-anchor="middle">S</text>
+
+  <!-- Switch: Bedroom 1 door -->
+  <rect x="214" y="482" width="18" height="18" fill="#FBBF24" stroke="#FBBF24" stroke-width="1"/>
+  <text x="223" y="474" font-family="Arial, sans-serif" font-size="8" fill="#FBBF24" text-anchor="middle">S</text>
+
+  <!-- Switch: Bedroom 2 door -->
+  <rect x="514" y="482" width="18" height="18" fill="#FBBF24" stroke="#FBBF24" stroke-width="1"/>
+  <text x="523" y="474" font-family="Arial, sans-serif" font-size="8" fill="#FBBF24" text-anchor="middle">S</text>
+
+  <!-- Switch: Kitchen door (living room side) -->
+  <rect x="602" y="254" width="18" height="18" fill="#FBBF24" stroke="#FBBF24" stroke-width="1"/>
+  <text x="596" y="252" font-family="Arial, sans-serif" font-size="8" fill="#FBBF24" text-anchor="end">S</text>
+
+  <!-- Switch: Bathroom door -->
+  <rect x="662" y="584" width="18" height="18" fill="#FBBF24" stroke="#FBBF24" stroke-width="1"/>
+  <text x="656" y="582" font-family="Arial, sans-serif" font-size="8" fill="#FBBF24" text-anchor="end">S</text>
+
+  <!-- ============================================================ -->
+  <!-- LEGEND                                                      -->
+  <!-- ============================================================ -->
+  <rect x="130" y="920" width="400" height="58" fill="none" stroke="#FBBF24" stroke-width="1" opacity="0.5"/>
+  <text x="145" y="936" font-family="Arial, sans-serif" font-size="10" fill="#FBBF24">SIMBOLOGÍA:</text>
+
+  <circle cx="160" cy="952" r="8" fill="#1A1A1A" stroke="#FBBF24" stroke-width="2"/>
+  <text x="174" y="956" font-family="Arial, sans-serif" font-size="10" fill="#FBBF24">Toma de corriente</text>
+
+  <circle cx="280" cy="952" r="8" fill="none" stroke="#FBBF24" stroke-width="2"/>
+  <line x1="273" y1="945" x2="287" y2="959" stroke="#FBBF24" stroke-width="1.5"/>
+  <line x1="287" y1="945" x2="273" y2="959" stroke="#FBBF24" stroke-width="1.5"/>
+  <text x="294" y="956" font-family="Arial, sans-serif" font-size="10" fill="#FBBF24">Punto de luz</text>
+
+  <rect x="390" y="944" width="12" height="12" fill="#FBBF24"/>
+  <text x="408" y="956" font-family="Arial, sans-serif" font-size="10" fill="#FBBF24">Interruptor</text>
+
+  <line x1="145" y1="970" x2="195" y2="970" stroke="#FBBF24" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="200" y="974" font-family="Arial, sans-serif" font-size="10" fill="#FBBF24">Canalización eléctrica</text>
+
+</svg>
