@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <!-- Transparent background -->
+
+  <!-- ===== ROUGH CONCRETE FLOOR — LIVING ROOM ===== -->
+  <rect x="90" y="90" width="620" height="620" fill="#374151" opacity="0.50"/>
+
+  <!-- Concrete texture patches — larger room feel -->
+  <rect x="90"  y="90"  width="100" height="80"  fill="#2D3748" opacity="0.4"/>
+  <rect x="200" y="95"  width="150" height="65"  fill="#4B5563" opacity="0.3"/>
+  <rect x="370" y="90"  width="110" height="75"  fill="#2D3748" opacity="0.35"/>
+  <rect x="500" y="92"  width="130" height="60"  fill="#4B5563" opacity="0.3"/>
+  <rect x="640" y="90"  width="70"  height="80"  fill="#2D3748" opacity="0.4"/>
+
+  <rect x="90"  y="200" width="70"  height="120" fill="#4B5563" opacity="0.3"/>
+  <rect x="180" y="190" width="140" height="100" fill="#2D3748" opacity="0.25"/>
+  <rect x="380" y="200" width="120" height="90"  fill="#4B5563" opacity="0.3"/>
+  <rect x="600" y="195" width="110" height="115" fill="#2D3748" opacity="0.3"/>
+
+  <rect x="90"  y="370" width="80"  height="140" fill="#4B5563" opacity="0.28"/>
+  <rect x="220" y="380" width="180" height="110" fill="#2D3748" opacity="0.22"/>
+  <rect x="450" y="360" width="150" height="130" fill="#4B5563" opacity="0.28"/>
+  <rect x="630" y="375" width="80"  height="120" fill="#2D3748" opacity="0.3"/>
+
+  <rect x="90"  y="560" width="130" height="90"  fill="#4B5563" opacity="0.28"/>
+  <rect x="280" y="570" width="160" height="70"  fill="#2D3748" opacity="0.25"/>
+  <rect x="490" y="555" width="140" height="85"  fill="#4B5563" opacity="0.28"/>
+  <rect x="650" y="560" width="60"  height="90"  fill="#2D3748" opacity="0.3"/>
+
+  <!-- Floor concrete crack lines (more extensive for a bigger room) -->
+  <g stroke="#1F2937" stroke-width="1.5" opacity="0.45" fill="none">
+    <polyline points="140,120 190,190 160,260 210,320"/>
+    <polyline points="350,110 390,180 370,250 420,310 400,380"/>
+    <polyline points="560,130 540,210 580,280 560,350 600,410"/>
+    <polyline points="120,420 170,480 150,540 200,600 180,650"/>
+    <polyline points="420,490 460,540 440,600 490,660"/>
+    <polyline points="600,480 640,530 620,590 660,640"/>
+    <polyline points="280,310 320,380 300,440 340,490"/>
+  </g>
+
+  <!-- Additional long crack across the center -->
+  <polyline points="200,400 280,420 360,400 440,415 520,400 600,420" fill="none" stroke="#1F2937" stroke-width="2" opacity="0.35"/>
+
+  <!-- ===== BLOCK WALLS — raw construction ===== -->
+  <!-- Top wall courses -->
+  <g fill="#6B7280" opacity="0.60" stroke="#4B5563" stroke-width="1">
+    <rect x="90"  y="90"  width="62" height="30"/>
+    <rect x="154" y="90"  width="62" height="30"/>
+    <rect x="218" y="90"  width="62" height="30"/>
+    <rect x="282" y="90"  width="62" height="30"/>
+    <rect x="346" y="90"  width="62" height="30"/>
+    <rect x="410" y="90"  width="62" height="30"/>
+    <rect x="474" y="90"  width="62" height="30"/>
+    <rect x="538" y="90"  width="62" height="30"/>
+    <rect x="602" y="90"  width="62" height="30"/>
+    <rect x="666" y="90"  width="44" height="30"/>
+    <!-- Course 2 (offset) -->
+    <rect x="90"  y="122" width="31" height="28"/>
+    <rect x="123" y="122" width="62" height="28"/>
+    <rect x="187" y="122" width="62" height="28"/>
+    <rect x="251" y="122" width="62" height="28"/>
+    <rect x="315" y="122" width="62" height="28"/>
+    <rect x="379" y="122" width="62" height="28"/>
+    <rect x="443" y="122" width="62" height="28"/>
+    <rect x="507" y="122" width="62" height="28"/>
+    <rect x="571" y="122" width="62" height="28"/>
+    <rect x="635" y="122" width="62" height="28"/>
+    <rect x="697" y="122" width="13" height="28"/>
+  </g>
+
+  <!-- Bottom wall courses (with gap for door 320-480) -->
+  <g fill="#6B7280" opacity="0.60" stroke="#4B5563" stroke-width="1">
+    <!-- Left of door -->
+    <rect x="90"  y="690" width="62" height="30"/>
+    <rect x="154" y="690" width="62" height="30"/>
+    <rect x="218" y="690" width="62" height="30"/>
+    <rect x="282" y="690" width="38" height="30"/>
+    <!-- Right of door -->
+    <rect x="480" y="690" width="62" height="30"/>
+    <rect x="544" y="690" width="62" height="30"/>
+    <rect x="608" y="690" width="62" height="30"/>
+    <rect x="672" y="690" width="38" height="30"/>
+    <!-- Course 2 -->
+    <rect x="90"  y="660" width="31" height="28"/>
+    <rect x="123" y="660" width="62" height="28"/>
+    <rect x="187" y="660" width="62" height="28"/>
+    <rect x="251" y="660" width="62" height="28"/>
+    <rect x="315" y="660" width="5"  height="28"/>
+    <!-- Right side bottom -->
+    <rect x="480" y="660" width="62" height="28"/>
+    <rect x="544" y="660" width="62" height="28"/>
+    <rect x="608" y="660" width="62" height="28"/>
+    <rect x="672" y="660" width="38" height="28"/>
+  </g>
+
+  <!-- Left wall vertical blocks -->
+  <g fill="#6B7280" opacity="0.60" stroke="#4B5563" stroke-width="1">
+    <rect x="90" y="152" width="30" height="52"/>
+    <rect x="90" y="206" width="30" height="52"/>
+    <rect x="90" y="260" width="30" height="52"/>
+    <rect x="90" y="314" width="30" height="52"/>
+    <rect x="90" y="368" width="30" height="52"/>
+    <rect x="90" y="422" width="30" height="52"/>
+    <rect x="90" y="476" width="30" height="52"/>
+    <rect x="90" y="530" width="30" height="52"/>
+    <rect x="90" y="584" width="30" height="52"/>
+    <rect x="90" y="638" width="30" height="52"/>
+    <!-- offset course -->
+    <rect x="122" y="178" width="30" height="52"/>
+    <rect x="122" y="232" width="30" height="52"/>
+    <rect x="122" y="286" width="30" height="52"/>
+    <rect x="122" y="340" width="30" height="52"/>
+    <rect x="122" y="394" width="30" height="52"/>
+    <rect x="122" y="448" width="30" height="52"/>
+    <rect x="122" y="502" width="30" height="52"/>
+    <rect x="122" y="556" width="30" height="52"/>
+    <rect x="122" y="610" width="30" height="52"/>
+    <rect x="122" y="664" width="30" height="26"/>
+  </g>
+
+  <!-- Right wall vertical blocks -->
+  <g fill="#6B7280" opacity="0.60" stroke="#4B5563" stroke-width="1">
+    <rect x="680" y="152" width="30" height="52"/>
+    <rect x="680" y="206" width="30" height="52"/>
+    <rect x="680" y="260" width="30" height="52"/>
+    <rect x="680" y="314" width="30" height="52"/>
+    <rect x="680" y="368" width="30" height="52"/>
+    <rect x="680" y="422" width="30" height="52"/>
+    <rect x="680" y="476" width="30" height="52"/>
+    <rect x="680" y="530" width="30" height="52"/>
+    <rect x="680" y="584" width="30" height="52"/>
+    <rect x="680" y="638" width="30" height="52"/>
+    <rect x="648" y="178" width="30" height="52"/>
+    <rect x="648" y="232" width="30" height="52"/>
+    <rect x="648" y="286" width="30" height="52"/>
+    <rect x="648" y="340" width="30" height="52"/>
+    <rect x="648" y="394" width="30" height="52"/>
+    <rect x="648" y="448" width="30" height="52"/>
+    <rect x="648" y="502" width="30" height="52"/>
+    <rect x="648" y="556" width="30" height="52"/>
+    <rect x="648" y="610" width="30" height="52"/>
+    <rect x="648" y="664" width="30" height="26"/>
+  </g>
+
+  <!-- ===== WINDOW OPENINGS — rough (no glass yet) ===== -->
+  <!-- Left window opening (rough, just block void) -->
+  <rect x="90" y="300" width="35" height="150" fill="#374151" opacity="0.3"/>
+  <rect x="90" y="300" width="35" height="4" fill="#1F2937" opacity="0.7"/>
+  <rect x="90" y="446" width="35" height="4" fill="#1F2937" opacity="0.7"/>
+  <!-- Lintel rough cast -->
+  <rect x="88" y="294" width="40" height="12" fill="#4B5563" opacity="0.6"/>
+  <!-- Right window opening -->
+  <rect x="675" y="300" width="35" height="150" fill="#374151" opacity="0.3"/>
+  <rect x="675" y="294" width="40" height="12" fill="#4B5563" opacity="0.6"/>
+  <rect x="675" y="446" width="35" height="4" fill="#1F2937" opacity="0.7"/>
+
+  <!-- ===== EXPOSED REBAR STUBS ===== -->
+  <g stroke="#9CA3AF" stroke-width="3" opacity="0.65">
+    <line x1="160" y1="90" x2="158" y2="58"/>
+    <line x1="300" y1="90" x2="298" y2="55"/>
+    <line x1="450" y1="90" x2="452" y2="60"/>
+    <line x1="590" y1="90" x2="588" y2="57"/>
+    <line x1="680" y1="90" x2="682" y2="55"/>
+    <line x1="90" y1="220" x2="58" y2="218"/>
+    <line x1="90" y1="400" x2="56" y2="402"/>
+    <line x1="90" y1="580" x2="60" y2="578"/>
+    <line x1="710" y1="280" x2="742" y2="278"/>
+    <line x1="710" y1="450" x2="740" y2="452"/>
+    <line x1="710" y1="600" x2="742" y2="598"/>
+  </g>
+  <g fill="none" stroke="#9CA3AF" stroke-width="2" opacity="0.5">
+    <circle cx="160" cy="56" r="5"/>
+    <circle cx="300" cy="53" r="5"/>
+    <circle cx="450" cy="58" r="5"/>
+    <circle cx="590" cy="55" r="5"/>
+  </g>
+
+  <!-- ===== DEBRIS / DUST ===== -->
+  <ellipse cx="300" cy="350" rx="80" ry="35" fill="#9CA3AF" opacity="0.15"/>
+  <ellipse cx="550" cy="450" rx="70" ry="30" fill="#9CA3AF" opacity="0.12"/>
+  <ellipse cx="400" cy="580" rx="100" ry="40" fill="#6B7280" opacity="0.15"/>
+  <ellipse cx="200" cy="500" rx="60" ry="28" fill="#9CA3AF" opacity="0.13"/>
+
+  <!-- ===== DIAGONAL CONSTRUCTION PATTERN ===== -->
+  <g stroke="#6B7280" stroke-width="1" opacity="0.14">
+    <line x1="200" y1="90"  x2="90"  y2="200"/>
+    <line x1="300" y1="90"  x2="90"  y2="300"/>
+    <line x1="400" y1="90"  x2="90"  y2="400"/>
+    <line x1="500" y1="90"  x2="90"  y2="500"/>
+    <line x1="600" y1="90"  x2="90"  y2="600"/>
+    <line x1="700" y1="90"  x2="90"  y2="700"/>
+    <line x1="710" y1="150" x2="250" y2="610"/>
+    <line x1="710" y1="280" x2="380" y2="610"/>
+    <line x1="710" y1="420" x2="510" y2="620"/>
+    <line x1="710" y1="540" x2="610" y2="640"/>
+  </g>
+
+  <!-- ===== LABEL "ESTADO ACTUAL" ===== -->
+  <rect x="90" y="90" width="260" height="38" rx="4" fill="#DC2626" opacity="0.9"/>
+  <text x="102" y="115" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">ESTADO ACTUAL</text>
+
+  <rect x="90" y="135" width="255" height="24" rx="3" fill="#1F2937" opacity="0.75"/>
+  <text x="102" y="152" font-family="Arial, sans-serif" font-size="13" fill="#FCA5A5">Sin instalaciones — obra negra</text>
+
+  <!-- Area label in center (ghost) -->
+  <text x="400" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#4B5563" opacity="0.4" font-weight="bold">SALA DE ESTAR</text>
+  <text x="400" y="425" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#4B5563" opacity="0.4">Sin electricidad instalada</text>
+
+</svg>

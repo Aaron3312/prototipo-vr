@@ -1,0 +1,274 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <!-- Transparent background -->
+
+  <!-- ===== ELECTRICAL CONDUIT SYSTEM — YELLOW (#FBBF24) near ceiling ===== -->
+
+  <!-- Main horizontal conduit along TOP wall (near ceiling H=2.50m) -->
+  <line x1="90" y1="135" x2="710" y2="135" stroke="#FBBF24" stroke-width="5" stroke-dasharray="20,7" opacity="0.9"/>
+
+  <!-- Main horizontal conduit along BOTTOM wall -->
+  <line x1="90" y1="680" x2="315" y2="680" stroke="#FBBF24" stroke-width="5" stroke-dasharray="20,7" opacity="0.9"/>
+  <line x1="485" y1="680" x2="710" y2="680" stroke="#FBBF24" stroke-width="5" stroke-dasharray="20,7" opacity="0.9"/>
+
+  <!-- Left wall vertical conduit -->
+  <line x1="135" y1="90" x2="135" y2="710" stroke="#FBBF24" stroke-width="5" stroke-dasharray="20,7" opacity="0.9"/>
+
+  <!-- Right wall vertical conduit -->
+  <line x1="665" y1="90" x2="665" y2="710" stroke="#FBBF24" stroke-width="5" stroke-dasharray="20,7" opacity="0.9"/>
+
+  <!-- Cross conduit to center ceiling light (from top) -->
+  <line x1="400" y1="135" x2="400" y2="400" stroke="#FBBF24" stroke-width="4" stroke-dasharray="15,6" opacity="0.8"/>
+
+  <!-- Cross conduit to center light (from right) -->
+  <line x1="665" y1="400" x2="400" y2="400" stroke="#FBBF24" stroke-width="4" stroke-dasharray="15,6" opacity="0.75"/>
+
+  <!-- Branch conduit to TV wall area (top) -->
+  <line x1="260" y1="135" x2="260" y2="165" stroke="#FBBF24" stroke-width="4" opacity="0.85"/>
+  <line x1="540" y1="135" x2="540" y2="165" stroke="#FBBF24" stroke-width="4" opacity="0.85"/>
+
+  <!-- Branch conduit to right wall mid-height outlets -->
+  <line x1="665" y1="280" x2="710" y2="280" stroke="#FBBF24" stroke-width="4" opacity="0.8"/>
+  <line x1="665" y1="520" x2="710" y2="520" stroke="#FBBF24" stroke-width="4" opacity="0.8"/>
+
+  <!-- Branch conduit to left wall mid-height outlets -->
+  <line x1="135" y1="280" x2="90" y2="280" stroke="#FBBF24" stroke-width="4" opacity="0.8"/>
+  <line x1="135" y1="520" x2="90" y2="520" stroke="#FBBF24" stroke-width="4" opacity="0.8"/>
+
+  <!-- ===== OUTLET BOXES — yellow circles r=12 with + symbol ===== -->
+  <!-- Top wall outlets -->
+  <g opacity="0.92">
+    <circle cx="200" cy="135" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="200" cy="123" x1="200" x2="200" y2="147" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="188" y1="135" x2="212" y2="135" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="350" cy="135" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="350" y1="123" x2="350" y2="147" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="338" y1="135" x2="362" y2="135" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="450" cy="135" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="450" y1="123" x2="450" y2="147" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="438" y1="135" x2="462" y2="135" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="600" cy="135" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="600" y1="123" x2="600" y2="147" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="588" y1="135" x2="612" y2="135" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+
+  <!-- Left wall outlets -->
+  <g opacity="0.92">
+    <circle cx="135" cy="280" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="135" y1="268" x2="135" y2="292" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="123" y1="280" x2="147" y2="280" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="135" cy="520" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="135" y1="508" x2="135" y2="532" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="123" y1="520" x2="147" y2="520" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+
+  <!-- Right wall outlets -->
+  <g opacity="0.92">
+    <circle cx="665" cy="280" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="665" y1="268" x2="665" y2="292" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="653" y1="280" x2="677" y2="280" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="665" cy="520" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="665" y1="508" x2="665" y2="532" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="653" y1="520" x2="677" y2="520" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+
+  <!-- Bottom wall outlets -->
+  <g opacity="0.92">
+    <circle cx="200" cy="680" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="200" y1="668" x2="200" y2="692" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="188" y1="680" x2="212" y2="680" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="560" cy="680" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="560" y1="668" x2="560" y2="692" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="548" y1="680" x2="572" y2="680" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+
+  <!-- TV wall outlet (top wall near TV) -->
+  <g opacity="0.92">
+    <circle cx="260" cy="155" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="260" y1="143" x2="260" y2="167" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="248" y1="155" x2="272" y2="155" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+  <g opacity="0.92">
+    <circle cx="540" cy="155" r="12" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+    <line x1="540" y1="143" x2="540" y2="167" stroke="#1F2937" stroke-width="2.5"/>
+    <line x1="528" y1="155" x2="552" y2="155" stroke="#1F2937" stroke-width="2.5"/>
+  </g>
+
+  <!-- ===== CEILING LIGHT POINTS — larger circles r=20 ===== -->
+  <!-- Main center ceiling light -->
+  <circle cx="400" cy="400" r="20" fill="#FBBF24" opacity="0.85" stroke="#D97706" stroke-width="3"/>
+  <circle cx="400" cy="400" r="10" fill="#FEF3C7" opacity="0.9"/>
+  <!-- Light rays -->
+  <g stroke="#FBBF24" stroke-width="2.5" opacity="0.7">
+    <line x1="400" y1="374" x2="400" y2="360"/>
+    <line x1="419" y1="381" x2="430" y2="370"/>
+    <line x1="426" y1="400" x2="440" y2="400"/>
+    <line x1="419" y1="419" x2="430" y2="430"/>
+    <line x1="400" y1="426" x2="400" y2="440"/>
+    <line x1="381" y1="419" x2="370" y2="430"/>
+    <line x1="374" y1="400" x2="360" y2="400"/>
+    <line x1="381" y1="381" x2="370" y2="370"/>
+  </g>
+
+  <!-- Secondary ceiling light (living area, front) -->
+  <circle cx="300" cy="560" r="20" fill="#FBBF24" opacity="0.80" stroke="#D97706" stroke-width="3"/>
+  <circle cx="300" cy="560" r="10" fill="#FEF3C7" opacity="0.85"/>
+  <!-- Conduit to secondary light -->
+  <line x1="400" y1="400" x2="300" y2="560" stroke="#FBBF24" stroke-width="3" stroke-dasharray="12,5" opacity="0.65"/>
+  <g stroke="#FBBF24" stroke-width="2" opacity="0.6">
+    <line x1="300" y1="536" x2="300" y2="523"/>
+    <line x1="315" y1="543" x2="324" y2="534"/>
+    <line x1="320" y1="560" x2="333" y2="560"/>
+    <line x1="315" y1="577" x2="324" y2="586"/>
+    <line x1="300" y1="584" x2="300" y2="597"/>
+    <line x1="285" y1="577" x2="276" y2="586"/>
+    <line x1="280" y1="560" x2="267" y2="560"/>
+    <line x1="285" y1="543" x2="276" y2="534"/>
+  </g>
+
+  <!-- Third ceiling light (dining/corner area) -->
+  <circle cx="580" cy="250" r="20" fill="#FBBF24" opacity="0.80" stroke="#D97706" stroke-width="3"/>
+  <circle cx="580" cy="250" r="10" fill="#FEF3C7" opacity="0.85"/>
+  <!-- Conduit to third light -->
+  <line x1="665" y1="135" x2="580" y2="250" stroke="#FBBF24" stroke-width="3" stroke-dasharray="12,5" opacity="0.65"/>
+  <g stroke="#FBBF24" stroke-width="2" opacity="0.6">
+    <line x1="580" y1="226" x2="580" y2="213"/>
+    <line x1="595" y1="233" x2="604" y2="224"/>
+    <line x1="600" y1="250" x2="613" y2="250"/>
+    <line x1="595" y1="267" x2="604" y2="276"/>
+    <line x1="580" y1="274" x2="580" y2="287"/>
+    <line x1="565" y1="267" x2="556" y2="276"/>
+    <line x1="560" y1="250" x2="547" y2="250"/>
+    <line x1="565" y1="233" x2="556" y2="224"/>
+  </g>
+
+  <!-- ===== SWITCH BOXES — near door (bottom wall area) ===== -->
+  <!-- Switch box 1 -->
+  <rect x="300" cy="635" x="300" y="635" width="35" height="25" rx="3" fill="#FBBF24" opacity="0.85" stroke="#D97706" stroke-width="2"/>
+  <!-- Switch symbol inside -->
+  <line x1="308" y1="643" x2="308" y2="654" stroke="#1F2937" stroke-width="2"/>
+  <line x1="308" y1="643" x2="322" y2="648" stroke="#1F2937" stroke-width="2"/>
+  <circle cx="325" cy="643" r="3" fill="#1F2937"/>
+  <text x="317" y="672" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#D97706">SW1</text>
+  <!-- Conduit from switch box to bottom wall conduit -->
+  <line x1="317" y1="660" x2="317" y2="680" stroke="#FBBF24" stroke-width="4" opacity="0.85"/>
+
+  <!-- Switch box 2 (3-way) -->
+  <rect x="455" y="635" width="35" height="25" rx="3" fill="#FBBF24" opacity="0.85" stroke="#D97706" stroke-width="2"/>
+  <line x1="463" y1="643" x2="463" y2="654" stroke="#1F2937" stroke-width="2"/>
+  <line x1="463" y1="643" x2="477" y2="648" stroke="#1F2937" stroke-width="2"/>
+  <circle cx="480" cy="643" r="3" fill="#1F2937"/>
+  <text x="472" y="672" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#D97706">SW2</text>
+  <line x1="472" y1="660" x2="472" y2="680" stroke="#FBBF24" stroke-width="4" opacity="0.85"/>
+
+  <!-- ===== CIRCUIT PATHS — light yellow lines between outlets ===== -->
+  <g stroke="#FDE68A" stroke-width="2" stroke-dasharray="8,4" opacity="0.6">
+    <!-- Circuit A: top outlets interconnect -->
+    <line x1="200" y1="135" x2="350" y2="135"/>
+    <line x1="350" y1="135" x2="450" y2="135"/>
+    <line x1="450" y1="135" x2="600" y2="135"/>
+    <!-- Circuit B: left-right outlets -->
+    <line x1="135" y1="280" x2="665" y2="280"/>
+    <line x1="135" y1="520" x2="665" y2="520"/>
+    <!-- Circuit C: bottom outlets -->
+    <line x1="200" y1="680" x2="560" y2="680"/>
+  </g>
+
+  <!-- ===== ORANGE — MAIN PANEL CONNECTION (#F97316) from right wall ===== -->
+  <!-- Main panel box (right wall, middle) -->
+  <rect x="698" y="360" width="22" height="80" rx="3" fill="#F97316" opacity="0.9" stroke="#EA580C" stroke-width="2"/>
+  <!-- Panel internal lines -->
+  <line x1="702" y1="370" x2="716" y2="370" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="378" x2="716" y2="378" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="386" x2="716" y2="386" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="394" x2="716" y2="394" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="402" x2="716" y2="402" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="410" x2="716" y2="410" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="418" x2="716" y2="418" stroke="#FED7AA" stroke-width="2"/>
+  <line x1="702" y1="426" x2="716" y2="426" stroke="#FED7AA" stroke-width="2"/>
+  <!-- Panel label -->
+  <rect x="688" y="345" width="32" height="16" rx="2" fill="#EA580C" opacity="0.85"/>
+  <text x="704" y="357" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#FFFFFF">PANEL</text>
+  <!-- Feed line from panel to main conduit -->
+  <line x1="698" y1="400" x2="665" y2="400" stroke="#F97316" stroke-width="6" opacity="0.9"/>
+  <line x1="665" y1="400" x2="665" y2="135" stroke="#F97316" stroke-width="6" opacity="0.9"/>
+  <!-- Arrow indicating feed direction -->
+  <polygon points="665,155 658,175 672,175" fill="#F97316" opacity="0.9"/>
+
+  <!-- Ground connection symbol -->
+  <g transform="translate(704,450)" opacity="0.8">
+    <line x1="0" y1="0" x2="0" y2="12" stroke="#F97316" stroke-width="3"/>
+    <line x1="-8" y1="12" x2="8" y2="12" stroke="#F97316" stroke-width="3"/>
+    <line x1="-5" y1="16" x2="5" y2="16" stroke="#F97316" stroke-width="2"/>
+    <line x1="-2" y1="20" x2="2" y2="20" stroke="#F97316" stroke-width="1.5"/>
+  </g>
+
+  <!-- ===== MEASUREMENT ANNOTATIONS — white text on dark pills ===== -->
+  <!-- Conduit height (top) -->
+  <rect x="408" y="125" width="150" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="483" y="139" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">COND. ELECT. H=2.50m</text>
+
+  <!-- Left wall conduit height -->
+  <rect x="142" y="268" width="115" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="200" y="282" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">TOMA 1.20m</text>
+
+  <!-- Right wall conduit height -->
+  <rect x="543" y="268" width="115" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="600" y="282" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">TOMA 1.20m</text>
+
+  <!-- Ceiling light annotation -->
+  <rect x="408" y="406" width="130" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="473" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">LUMINARIA TECHO</text>
+
+  <!-- Switch annotation -->
+  <rect x="220" y="625" width="90" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="265" y="639" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">SW H=1.10m</text>
+
+  <!-- Panel annotation -->
+  <rect x="612" y="350" width="80" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="652" y="364" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">PANEL 200A</text>
+
+  <!-- Outlet bottom annotation -->
+  <rect x="140" y="692" width="100" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="190" y="706" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">TOMA H=0.30m</text>
+
+  <!-- Secondary light annotation -->
+  <rect x="220" y="566" width="75" height="20" rx="10" fill="#111827" opacity="0.82"/>
+  <text x="257" y="580" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">LUM. AUX.</text>
+
+  <!-- ===== LEGEND ===== -->
+  <rect x="90" y="430" width="195" height="120" rx="5" fill="#111827" opacity="0.78"/>
+  <text x="188" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">LEYENDA ELÉCTRICA</text>
+  <line x1="100" y1="465" x2="130" y2="465" stroke="#FBBF24" stroke-width="5" stroke-dasharray="10,4"/>
+  <text x="145" y="469" font-family="Arial, sans-serif" font-size="11" fill="#FDE68A">Conduit 3/4"</text>
+  <circle cx="115" cy="482" r="6" fill="#FBBF24" stroke="#D97706" stroke-width="1.5"/>
+  <line x1="109" y1="482" x2="121" y2="482" stroke="#1F2937" stroke-width="1.5"/>
+  <line x1="115" y1="476" x2="115" y2="488" stroke="#1F2937" stroke-width="1.5"/>
+  <text x="145" y="486" font-family="Arial, sans-serif" font-size="11" fill="#FDE68A">Toma de corriente</text>
+  <circle cx="115" cy="499" r="8" fill="#FBBF24" stroke="#D97706" stroke-width="1.5"/>
+  <circle cx="115" cy="499" r="4" fill="#FEF3C7"/>
+  <text x="145" y="503" font-family="Arial, sans-serif" font-size="11" fill="#FDE68A">Punto de luz</text>
+  <rect x="108" y="511" width="16" height="12" rx="2" fill="#FBBF24"/>
+  <text x="145" y="520" font-family="Arial, sans-serif" font-size="11" fill="#FDE68A">Interruptor</text>
+  <line x1="100" y1="535" x2="130" y2="535" stroke="#F97316" stroke-width="5"/>
+  <text x="145" y="539" font-family="Arial, sans-serif" font-size="11" fill="#FDBA74">Acometida principal</text>
+
+  <!-- ===== MAIN LABEL "INSTALACIÓN OBJETIVO" ===== -->
+  <rect x="90" y="90" width="310" height="38" rx="4" fill="#15803D" opacity="0.92"/>
+  <text x="102" y="115" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">INSTALACIÓN OBJETIVO</text>
+
+  <rect x="90" y="135" width="260" height="24" rx="3" fill="#111827" opacity="0.75"/>
+  <text x="102" y="152" font-family="Arial, sans-serif" font-size="13" fill="#86EFAC">Electricidad — SALA DE ESTAR</text>
+
+</svg>

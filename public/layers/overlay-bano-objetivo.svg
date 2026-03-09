@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <!-- Transparent background -->
+
+  <!-- ===== PIPE SYSTEM — BLUE (#3B82F6) ===== -->
+  <!-- Horizontal supply pipe along top wall (30cm height = ~y:150 in plan) -->
+  <line x1="90" y1="150" x2="710" y2="150" stroke="#3B82F6" stroke-width="6" stroke-dasharray="18,6" opacity="0.9"/>
+  <!-- Left wall vertical supply pipe -->
+  <line x1="150" y1="90" x2="150" y2="710" stroke="#3B82F6" stroke-width="6" stroke-dasharray="18,6" opacity="0.9"/>
+  <!-- Right wall vertical supply pipe -->
+  <line x1="640" y1="90" x2="640" y2="710" stroke="#3B82F6" stroke-width="6" stroke-dasharray="18,6" opacity="0.9"/>
+  <!-- Bottom horizontal drain pipe -->
+  <line x1="90" y1="680" x2="710" y2="680" stroke="#3B82F6" stroke-width="6" stroke-dasharray="18,6" opacity="0.9"/>
+
+  <!-- ===== VERTICAL DRAIN PIPE (center bottom) ===== -->
+  <line x1="400" y1="650" x2="400" y2="720" stroke="#3B82F6" stroke-width="10" opacity="0.85"/>
+  <!-- Drain marker -->
+  <circle cx="400" cy="700" r="12" fill="#3B82F6" opacity="0.7"/>
+  <circle cx="400" cy="700" r="6" fill="#DBEAFE"/>
+
+  <!-- ===== WATER CONNECTION POINTS (blue circles r=15) ===== -->
+  <!-- Toilet cold water connection (bottom-right) -->
+  <circle cx="620" cy="150" r="15" fill="none" stroke="#3B82F6" stroke-width="4" opacity="0.9"/>
+  <circle cx="620" cy="150" r="7" fill="#3B82F6" opacity="0.8"/>
+  <line x1="620" y1="150" x2="620" y2="620" stroke="#3B82F6" stroke-width="4" stroke-dasharray="12,5" opacity="0.7"/>
+
+  <!-- Sink hot+cold connections (top-right) -->
+  <circle cx="640" cy="180" r="15" fill="none" stroke="#3B82F6" stroke-width="4" opacity="0.9"/>
+  <circle cx="640" cy="180" r="7" fill="#3B82F6" opacity="0.8"/>
+  <circle cx="660" cy="180" r="15" fill="none" stroke="#EF4444" stroke-width="4" opacity="0.9"/>
+  <circle cx="660" cy="180" r="7" fill="#EF4444" opacity="0.8"/>
+  <!-- Hot water line (red dashed) -->
+  <line x1="660" y1="180" x2="660" y2="230" stroke="#EF4444" stroke-width="5" stroke-dasharray="14,5" opacity="0.8"/>
+  <!-- Cold to sink -->
+  <line x1="640" y1="180" x2="640" y2="230" stroke="#3B82F6" stroke-width="5" stroke-dasharray="14,5" opacity="0.8"/>
+
+  <!-- Shower connections (left) -->
+  <circle cx="150" cy="180" r="15" fill="none" stroke="#3B82F6" stroke-width="4" opacity="0.9"/>
+  <circle cx="150" cy="180" r="7" fill="#3B82F6" opacity="0.8"/>
+  <circle cx="175" cy="180" r="15" fill="none" stroke="#EF4444" stroke-width="4" opacity="0.9"/>
+  <circle cx="175" cy="180" r="7" fill="#EF4444" opacity="0.8"/>
+  <!-- Pipes to shower head -->
+  <line x1="150" y1="195" x2="150" y2="310" stroke="#3B82F6" stroke-width="4" stroke-dasharray="12,5" opacity="0.7"/>
+  <line x1="175" y1="195" x2="175" y2="310" stroke="#EF4444" stroke-width="4" stroke-dasharray="12,5" opacity="0.7"/>
+
+  <!-- Floor drain connections -->
+  <circle cx="250" cy="680" r="15" fill="none" stroke="#3B82F6" stroke-width="4" opacity="0.9"/>
+  <circle cx="250" cy="680" r="7" fill="#3B82F6" opacity="0.8"/>
+  <circle cx="560" cy="680" r="15" fill="none" stroke="#3B82F6" stroke-width="4" opacity="0.9"/>
+  <circle cx="560" cy="680" r="7" fill="#3B82F6" opacity="0.8"/>
+
+  <!-- Main supply entry point -->
+  <circle cx="90" cy="400" r="15" fill="none" stroke="#3B82F6" stroke-width="5" opacity="0.9"/>
+  <circle cx="90" cy="400" r="7" fill="#3B82F6" opacity="0.9"/>
+  <rect x="78" y="388" width="24" height="24" rx="2" fill="none" stroke="#3B82F6" stroke-width="3" opacity="0.7"/>
+
+  <!-- ===== TOILET SILHOUETTE — CYAN (#06B6D4), semi-transparent ===== -->
+  <g opacity="0.65">
+    <!-- Tank -->
+    <rect x="560" y="570" width="120" height="60" rx="6" fill="#06B6D4" stroke="#0891B2" stroke-width="3"/>
+    <!-- Bowl -->
+    <ellipse cx="620" cy="655" rx="58" ry="65" fill="#06B6D4" stroke="#0891B2" stroke-width="3"/>
+    <!-- Seat line -->
+    <ellipse cx="620" cy="655" rx="46" ry="52" fill="none" stroke="#CFFAFE" stroke-width="2" stroke-dasharray="6,3"/>
+    <!-- Water fill (lighter) -->
+    <ellipse cx="620" cy="660" rx="30" ry="35" fill="#A5F3FC" opacity="0.5"/>
+  </g>
+  <!-- Toilet label -->
+  <rect x="555" y="735" width="130" height="22" rx="3" fill="#0E7490" opacity="0.85"/>
+  <text x="620" y="751" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#CFFAFE">WC — INODORO</text>
+
+  <!-- Toilet pipe connection -->
+  <line x1="620" y1="630" x2="620" y2="680" stroke="#3B82F6" stroke-width="5" stroke-dasharray="10,4" opacity="0.8"/>
+  <circle cx="620" cy="680" r="10" fill="none" stroke="#3B82F6" stroke-width="3" opacity="0.8"/>
+
+  <!-- ===== SINK SILHOUETTE — CYAN, top-right ===== -->
+  <g opacity="0.65">
+    <rect x="570" y="105" width="120" height="95" rx="12" fill="#06B6D4" stroke="#0891B2" stroke-width="3"/>
+    <rect x="585" y="120" width="90" height="70" rx="8" fill="#A5F3FC" opacity="0.6"/>
+    <!-- Drain hole -->
+    <circle cx="630" cy="155" r="9" fill="#0891B2"/>
+    <circle cx="630" cy="155" r="4" fill="#CFFAFE"/>
+    <!-- Faucet -->
+    <rect x="620" y="105" width="20" height="12" rx="3" fill="#0E7490"/>
+    <line x1="630" y1="112" x2="630" y2="125" stroke="#0E7490" stroke-width="5"/>
+  </g>
+  <rect x="568" y="205" width="125" height="22" rx="3" fill="#0E7490" opacity="0.85"/>
+  <text x="630" y="221" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#CFFAFE">LAVABO</text>
+
+  <!-- ===== SHOWER AREA — CYAN, dashed border ===== -->
+  <rect x="105" y="105" width="210" height="210" fill="#06B6D4" opacity="0.18" stroke="#06B6D4" stroke-width="5" stroke-dasharray="15,8"/>
+  <!-- Shower head indicator -->
+  <circle cx="160" cy="160" r="22" fill="#06B6D4" opacity="0.5" stroke="#0891B2" stroke-width="3"/>
+  <circle cx="160" cy="160" r="10" fill="#A5F3FC" opacity="0.7"/>
+  <!-- Spray lines -->
+  <g stroke="#CFFAFE" stroke-width="2" opacity="0.7">
+    <line x1="160" y1="138" x2="160" y2="122"/>
+    <line x1="148" y1="143" x2="137" y2="131"/>
+    <line x1="172" y1="143" x2="183" y2="131"/>
+    <line x1="182" y1="160" x2="198" y2="160"/>
+    <line x1="138" y1="160" x2="122" y2="160"/>
+    <line x1="148" y1="177" x2="137" y2="189"/>
+    <line x1="172" y1="177" x2="183" y2="189"/>
+  </g>
+  <!-- Floor drain circle -->
+  <circle cx="210" cy="280" r="15" fill="#06B6D4" opacity="0.6" stroke="#0891B2" stroke-width="3"/>
+  <line x1="200" y1="280" x2="220" y2="280" stroke="#CFFAFE" stroke-width="2"/>
+  <line x1="210" y1="270" x2="210" y2="290" stroke="#CFFAFE" stroke-width="2"/>
+  <!-- Label -->
+  <rect x="110" y="320" width="100" height="22" rx="3" fill="#0E7490" opacity="0.85"/>
+  <text x="160" y="336" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#CFFAFE">DUCHA</text>
+
+  <!-- ===== ELECTRICAL CONDUIT — ORANGE (#F97316) ===== -->
+  <!-- Horizontal conduit near ceiling (top) -->
+  <line x1="90" y1="125" x2="710" y2="125" stroke="#F97316" stroke-width="4" opacity="0.85"/>
+  <!-- Vertical conduit right wall -->
+  <line x1="690" y1="90" x2="690" y2="710" stroke="#F97316" stroke-width="4" opacity="0.85"/>
+  <!-- Branch to switch near door -->
+  <line x1="690" y1="600" x2="600" y2="600" stroke="#F97316" stroke-width="4" opacity="0.85"/>
+  <!-- Branch to ceiling light -->
+  <line x1="400" y1="125" x2="400" y2="400" stroke="#F97316" stroke-width="4" opacity="0.75"/>
+
+  <!-- Outlet circles (orange) -->
+  <circle cx="300" cy="125" r="10" fill="#F97316" opacity="0.9"/>
+  <circle cx="300" cy="125" r="5" fill="#FED7AA"/>
+  <circle cx="500" cy="125" r="10" fill="#F97316" opacity="0.9"/>
+  <circle cx="500" cy="125" r="5" fill="#FED7AA"/>
+  <circle cx="690" cy="300" r="10" fill="#F97316" opacity="0.9"/>
+  <circle cx="690" cy="300" r="5" fill="#FED7AA"/>
+  <circle cx="690" cy="500" r="10" fill="#F97316" opacity="0.9"/>
+  <circle cx="690" cy="500" r="5" fill="#FED7AA"/>
+
+  <!-- Switch box near door -->
+  <rect x="595" y="593" width="30" height="20" rx="2" fill="#F97316" opacity="0.85" stroke="#EA580C" stroke-width="2"/>
+  <line x1="600" y1="603" x2="620" y2="603" stroke="#FED7AA" stroke-width="2"/>
+  <text x="612" y="628" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#EA580C">SW</text>
+
+  <!-- Ceiling light point (center) -->
+  <circle cx="400" cy="400" r="18" fill="none" stroke="#F97316" stroke-width="4" opacity="0.9"/>
+  <circle cx="400" cy="400" r="8" fill="#F97316" opacity="0.7"/>
+  <!-- Light rays -->
+  <g stroke="#F97316" stroke-width="2" opacity="0.6">
+    <line x1="400" y1="376" x2="400" y2="365"/>
+    <line x1="416" y1="384" x2="424" y2="375"/>
+    <line x1="424" y1="400" x2="435" y2="400"/>
+    <line x1="416" y1="416" x2="424" y2="425"/>
+    <line x1="400" y1="424" x2="400" y2="435"/>
+    <line x1="384" y1="416" x2="376" y2="425"/>
+    <line x1="376" y1="400" x2="365" y2="400"/>
+    <line x1="384" y1="384" x2="376" y2="375"/>
+  </g>
+
+  <!-- ===== MEASUREMENT ANNOTATIONS ===== -->
+  <!-- Pipe height annotation -->
+  <rect x="155" y="140" width="130" height="20" rx="10" fill="#111827" opacity="0.8"/>
+  <text x="220" y="154" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">TUB. AGUA — H:0.30m</text>
+
+  <!-- Shower area annotation -->
+  <rect x="113" y="220" width="120" height="20" rx="10" fill="#111827" opacity="0.8"/>
+  <text x="173" y="234" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">DUCHA 90×90cm</text>
+
+  <!-- Toilet annotation -->
+  <rect x="558" y="555" width="125" height="20" rx="10" fill="#111827" opacity="0.8"/>
+  <text x="620" y="569" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">WC — dist.muro: 40cm</text>
+
+  <!-- Sink annotation -->
+  <rect x="568" y="232" width="130" height="20" rx="10" fill="#111827" opacity="0.8"/>
+  <text x="633" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">LAVABO — H ins: 85cm</text>
+
+  <!-- Drain annotation -->
+  <rect x="340" y="710" width="120" height="20" rx="10" fill="#111827" opacity="0.8"/>
+  <text x="400" y="724" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">DESAGÜE ø 110mm</text>
+
+  <!-- Electrical height annotation -->
+  <rect x="500" y="115" width="125" height="20" rx="10" fill="#111827" opacity="0.8"/>
+  <text x="562" y="129" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#FFFFFF">COND. ELEC. — H:2.50m</text>
+
+  <!-- ===== LEGEND ===== -->
+  <rect x="90" y="430" width="185" height="95" rx="5" fill="#111827" opacity="0.75"/>
+  <text x="182" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">LEYENDA</text>
+  <line x1="100" y1="465" x2="130" y2="465" stroke="#3B82F6" stroke-width="4" stroke-dasharray="8,3"/>
+  <text x="140" y="469" font-family="Arial, sans-serif" font-size="11" fill="#93C5FD">Tubería agua</text>
+  <line x1="100" y1="482" x2="130" y2="482" stroke="#EF4444" stroke-width="4" stroke-dasharray="8,3"/>
+  <text x="140" y="486" font-family="Arial, sans-serif" font-size="11" fill="#FCA5A5">Agua caliente</text>
+  <line x1="100" y1="499" x2="130" y2="499" stroke="#F97316" stroke-width="4"/>
+  <text x="140" y="503" font-family="Arial, sans-serif" font-size="11" fill="#FED7AA">Conduit eléctrico</text>
+  <rect x="100" y="510" width="20" height="12" rx="2" fill="#06B6D4" opacity="0.6"/>
+  <text x="140" y="520" font-family="Arial, sans-serif" font-size="11" fill="#A5F3FC">Artefactos</text>
+
+  <!-- ===== MAIN LABEL "INSTALACIÓN OBJETIVO" ===== -->
+  <rect x="90" y="90" width="310" height="38" rx="4" fill="#15803D" opacity="0.92"/>
+  <text x="102" y="115" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">INSTALACIÓN OBJETIVO</text>
+
+  <!-- Sub-label -->
+  <rect x="90" y="135" width="260" height="24" rx="3" fill="#111827" opacity="0.75"/>
+  <text x="102" y="152" font-family="Arial, sans-serif" font-size="13" fill="#86EFAC">Fontanería + Electricidad — BAÑO</text>
+
+</svg>
