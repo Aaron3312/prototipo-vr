@@ -89,6 +89,30 @@
     .prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#86efac);transition:width .4s}
     #info-prog-label{font-size:11px;color:rgba(255,255,255,.5)}
 
+    /* ── CORNER CALIBRATION ── */
+    #corner-ui{
+      position:absolute;bottom:110px;left:16px;right:16px;
+      background:rgba(0,0,0,.75);border-radius:16px;padding:16px;
+      backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);
+      display:none;text-align:center;
+    }
+    #corner-ui.show{display:block}
+    #corner-step{font-size:15px;font-weight:800;color:#fff;margin-bottom:6px}
+    #corner-sub{font-size:12px;color:rgba(255,255,255,.5)}
+    .corner-dots{display:flex;justify-content:center;gap:8px;margin-top:10px}
+    .corner-dot{
+      width:14px;height:14px;border-radius:50%;
+      border:2px solid rgba(255,255,255,.3);background:transparent;
+      transition:all .3s;
+    }
+    .corner-dot.done{background:#22c55e;border-color:#22c55e}
+    .corner-dot.active{border-color:#60A5FA;box-shadow:0 0 8px rgba(96,165,250,.6)}
+    #reset-corners-btn{
+      margin-top:12px;padding:8px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:700;
+      cursor:pointer;pointer-events:all;display:none;
+    }
+
     /* ── LOADING ── */
     #loading{
       position:fixed;inset:0;background:rgba(0,0,0,.8);
@@ -106,7 +130,7 @@
 <div id="pre-ar">
   <div style="font-size:56px">🏗️</div>
   <h1>AR Construcción 3D</h1>
-  <p>Coloca un modelo 3D de la obra en el suelo y explóralo caminando a su alrededor</p>
+  <p>Marca las 4 esquinas de tu habitación y el modelo 3D se ajustará al tamaño real del cuarto</p>
   <button id="start-btn" onclick="startAR()">Iniciar AR</button>
   <div id="no-xr">Tu dispositivo no soporta WebXR AR.<br>Requiere Android + Chrome.</div>
 </div>
@@ -122,6 +146,18 @@
   <div id="top-bar">
     <div class="badge">🏗️ AR 3D</div>
     <div id="hint-badge">Apunta al suelo → toca para colocar</div>
+  </div>
+
+  <div id="corner-ui">
+    <div id="corner-step">Esquina 1 de 4</div>
+    <div id="corner-sub">Toca en una esquina de la habitación</div>
+    <div class="corner-dots">
+      <div class="corner-dot active" id="cdot-0"></div>
+      <div class="corner-dot" id="cdot-1"></div>
+      <div class="corner-dot" id="cdot-2"></div>
+      <div class="corner-dot" id="cdot-3"></div>
+    </div>
+    <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
   </div>
 
   <div id="info-card">
@@ -181,9 +217,17 @@ const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA
 dot.matrixAutoUpdate = false;
 reticle.add(dot);
 
+// ── CORNER CALIBRATION ──
+const corners = [];           // stores THREE.Vector3 for each corner
+const cornerMarkers = [];     // visual marker meshes
+let calibrated = false;
+const CORNER_COUNT = 4;
+
+// Default scale (will be overridden by calibration)
+let S = 1.2;     // footprint width/depth
+let SH = 0.6;    // height
+
 // ── CONSTRUCTION MODEL ──
-const S = 1.2;   // scale: 1.2m x 1.2m footprint
-const SH = 0.6;  // height: 0.6m (represents ~3m at 1:5 scale)
 
 const layerGroups = {
   estructura: new THREE.Group(),
@@ -398,6 +442,8 @@ async function startAR() {
     document.getElementById('pre-ar').style.display = 'none';
     document.getElementById('loading').classList.remove('show');
     document.getElementById('overlay').classList.add('active');
+    document.getElementById('corner-ui').classList.add('show');
+    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas';
 
     renderer.setAnimationLoop(render);
   } catch (e) {
@@ -410,6 +456,68 @@ async function startAR() {
 
 function onTap() {
   if (!reticle.visible) return;
+
+  // ── CORNER CALIBRATION PHASE ──
+  if (!calibrated) {
+    const pos = new THREE.Vector3();
+    pos.setFromMatrixPosition(reticle.matrix);
+
+    // Place corner marker
+    const markerGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.15, 16);
+    const markerMat = new THREE.MeshPhongMaterial({ color: 0x60A5FA, emissive: 0x3B82F6, emissiveIntensity: 0.4 });
+    const marker = new THREE.Mesh(markerGeo, markerMat);
+    marker.position.copy(pos);
+    marker.position.y += 0.075;
+    scene.add(marker);
+
+    // Add number label (small sphere on top with different color per corner)
+    const labelColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
+    const label = new THREE.Mesh(
+      new THREE.SphereGeometry(0.025, 12, 12),
+      new THREE.MeshPhongMaterial({ color: labelColors[corners.length], emissive: labelColors[corners.length], emissiveIntensity: 0.5 })
+    );
+    label.position.copy(pos);
+    label.position.y += 0.18;
+    scene.add(label);
+
+    corners.push(pos.clone());
+    cornerMarkers.push(marker, label);
+
+    // Draw line to previous corner
+    if (corners.length > 1) {
+      const prev = corners[corners.length - 2];
+      const curr = corners[corners.length - 1];
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(prev.x, prev.y + 0.005, prev.z),
+        new THREE.Vector3(curr.x, curr.y + 0.005, curr.z)
+      ]);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x60A5FA });
+      const line = new THREE.Line(lineGeo, lineMat);
+      scene.add(line);
+      cornerMarkers.push(line);
+    }
+
+    // Update UI
+    updateCornerUI();
+
+    // If we have all 4 corners, close the loop and calibrate
+    if (corners.length === CORNER_COUNT) {
+      // Draw closing line (4th corner -> 1st corner)
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(corners[3].x, corners[3].y + 0.005, corners[3].z),
+        new THREE.Vector3(corners[0].x, corners[0].y + 0.005, corners[0].z)
+      ]);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x60A5FA });
+      const closingLine = new THREE.Line(lineGeo, lineMat);
+      scene.add(closingLine);
+      cornerMarkers.push(closingLine);
+
+      setTimeout(() => calibrateFromCorners(), 500);
+    }
+    return;
+  }
+
+  // ── NORMAL TAP (post-calibration): reposition model ──
   if (!placed) {
     model.visible = true;
     placed = true;
@@ -425,6 +533,129 @@ function onTap() {
   );
 }
 
+function updateCornerUI() {
+  const n = corners.length;
+  document.getElementById('corner-step').textContent =
+    n < CORNER_COUNT ? `Esquina ${n + 1} de ${CORNER_COUNT}` : 'Calibrando...';
+  document.getElementById('corner-sub').textContent =
+    n < CORNER_COUNT ? 'Toca en la siguiente esquina de la habitación' : 'Ajustando modelo al cuarto';
+
+  for (let i = 0; i < CORNER_COUNT; i++) {
+    const dot = document.getElementById('cdot-' + i);
+    dot.classList.toggle('done', i < n);
+    dot.classList.toggle('active', i === n);
+  }
+
+  if (n > 0) document.getElementById('reset-corners-btn').style.display = 'inline-block';
+}
+
+function calibrateFromCorners() {
+  // Compute bounding box of corners on XZ plane
+  let minX = Infinity, maxX = -Infinity;
+  let minZ = Infinity, maxZ = -Infinity;
+  let avgY = 0;
+
+  corners.forEach(c => {
+    minX = Math.min(minX, c.x);
+    maxX = Math.max(maxX, c.x);
+    minZ = Math.min(minZ, c.z);
+    maxZ = Math.max(maxZ, c.z);
+    avgY += c.y;
+  });
+  avgY /= corners.length;
+
+  const roomW = maxX - minX;   // width in meters
+  const roomD = maxZ - minZ;   // depth in meters
+  const centerX = (minX + maxX) / 2;
+  const centerZ = (minZ + maxZ) / 2;
+
+  // Use the smaller dimension to keep proportions if room is not square
+  // The model is built as S x S square, so we scale to fit
+  const roomSize = Math.max(roomW, roomD);
+  const scaleFactor = roomSize / S;
+  // Height: assume ~3m real room -> SH should be proportional
+  const heightFactor = scaleFactor;
+
+  // Rebuild the model at new scale
+  S = roomSize;
+  SH = roomSize / 2;  // height = half footprint (reasonable for a room)
+
+  // Clear old model children
+  Object.values(layerGroups).forEach(g => {
+    while (g.children.length > 0) g.remove(g.children[0]);
+  });
+
+  buildModel();
+
+  // Position model at center of corners, on the floor
+  model.position.set(centerX, avgY, centerZ);
+
+  // Compute room orientation from the longest edge
+  // Find the two corners that form the longest edge to align the model
+  let bestAngle = 0;
+  let bestLen = 0;
+  for (let i = 0; i < corners.length; i++) {
+    const a = corners[i];
+    const b = corners[(i + 1) % corners.length];
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    if (len > bestLen) {
+      bestLen = len;
+      bestAngle = Math.atan2(dx, dz);
+    }
+  }
+  model.rotation.y = bestAngle;
+
+  // Scale for non-square rooms: apply separate X/Z scale
+  if (roomW > 0 && roomD > 0) {
+    const baseSize = Math.max(roomW, roomD);
+    model.scale.set(
+      roomW / baseSize,
+      1,
+      roomD / baseSize
+    );
+  }
+
+  // Show model and update UI
+  model.visible = true;
+  calibrated = true;
+  placed = true;
+
+  // Remove corner markers after a brief moment
+  setTimeout(() => {
+    cornerMarkers.forEach(m => scene.remove(m));
+    cornerMarkers.length = 0;
+  }, 1500);
+
+  // Update overlay UI
+  document.getElementById('corner-ui').classList.remove('show');
+  document.getElementById('hint-badge').textContent = 'Modelo ajustado al cuarto';
+  document.getElementById('hint-badge').classList.add('placed');
+  document.getElementById('info-card').classList.add('show');
+  setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 4000);
+}
+
+function resetCorners() {
+  // Remove all corner markers from scene
+  cornerMarkers.forEach(m => scene.remove(m));
+  cornerMarkers.length = 0;
+  corners.length = 0;
+  calibrated = false;
+  placed = false;
+  model.visible = false;
+
+  // Reset UI
+  document.getElementById('reset-corners-btn').style.display = 'none';
+  document.getElementById('corner-step').textContent = 'Esquina 1 de 4';
+  document.getElementById('corner-sub').textContent = 'Toca en una esquina de la habitación';
+  for (let i = 0; i < CORNER_COUNT; i++) {
+    const dot = document.getElementById('cdot-' + i);
+    dot.classList.remove('done');
+    dot.classList.toggle('active', i === 0);
+  }
+}
+
 function exitAR() {
   if (xrSession) xrSession.end();
 }
@@ -432,11 +663,25 @@ function exitAR() {
 function onSessionEnd() {
   xrSession = null;
   placed = false;
+  calibrated = false;
   model.visible = false;
   reticle.visible = false;
   hitTestSource = null;
   hitTestRequested = false;
+
+  // Clean up corner markers
+  cornerMarkers.forEach(m => scene.remove(m));
+  cornerMarkers.length = 0;
+  corners.length = 0;
+
+  // Reset model scale
+  model.scale.set(1, 1, 1);
+  S = 1.2;
+  SH = 0.6;
+
   document.getElementById('overlay').classList.remove('active');
+  document.getElementById('corner-ui').classList.remove('show');
+  document.getElementById('info-card').classList.remove('show');
   document.getElementById('pre-ar').style.display = 'flex';
   renderer.setAnimationLoop(null);
 }
