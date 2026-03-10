@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AR Construcción</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0a0a;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px}
+    h1{font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;text-align:center}
+    p{font-size:14px;color:rgba(255,255,255,.4);margin-bottom:40px;text-align:center}
+    .card{
+      width:100%;max-width:360px;
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+      border-radius:20px;padding:24px;margin-bottom:14px;
+      text-decoration:none;color:#fff;
+      transition:all .2s;display:block;
+    }
+    .card:active{transform:scale(.97);background:rgba(255,255,255,.08)}
+    .card-icon{font-size:36px;margin-bottom:12px}
+    .card-title{font-size:18px;font-weight:800;margin-bottom:6px}
+    .card-desc{font-size:13px;color:rgba(255,255,255,.5);line-height:1.5}
+    .card-arrow{float:right;opacity:.4;margin-top:-28px;font-size:20px}
+    .card.primary{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4)}
+  </style>
+</head>
+<body>
+  <h1>🏗️ AR Construcción</h1>
+  <p>Visualización de planos en realidad aumentada</p>
+
+  <a href="/room.html" class="card primary">
+    <div class="card-icon">🔍</div>
+    <div class="card-title">Explorar con cámara</div>
+    <div class="card-desc">Rota el celular para ver los planos superpuestos en el espacio real. Requiere configuración inicial.</div>
+    <div class="card-arrow">→</div>
+  </a>
+
+  <a href="/ar.html" class="card">
+    <div class="card-icon">📄</div>
+    <div class="card-title">Escanear plano impreso</div>
+    <div class="card-desc">Apunta la cámara al plano de construcción impreso para ver las capas en AR.</div>
+    <div class="card-arrow">→</div>
+  </a>
+</body>
+</html>
