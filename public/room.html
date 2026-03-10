@@ -207,12 +207,15 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
 // Lights
-scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(2, 4, 2);
+scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(2, 5, 3);
 scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+fillLight.position.set(-2, 3, -2);
+scene.add(fillLight);
 
-// ── RETICLE (placement indicator) ──
+// ── RETICLE ──
 const reticleGeo = new THREE.RingGeometry(0.06, 0.08, 32).applyMatrix4(
   new THREE.Matrix4().makeRotationX(-Math.PI / 2)
 );
@@ -220,26 +223,22 @@ const reticle = new THREE.Mesh(reticleGeo, new THREE.MeshBasicMaterial({ color: 
 reticle.matrixAutoUpdate = false;
 reticle.visible = false;
 scene.add(reticle);
-
-// Reticle inner dot
 const dotGeo = new THREE.CircleGeometry(0.02, 32);
 dotGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
-const dotMesh = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA }));
-dotMesh.matrixAutoUpdate = false;
-reticle.add(dotMesh);
+reticle.add(new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA })));
 
-// ── CORNER CALIBRATION ──
-const allPoints = [];          // all 8 THREE.Vector3 positions
-const cornerMarkers = [];      // visual marker meshes + lines
+// ── CORNER CALIBRATION STATE ──
+const allPoints = [];
+const cornerMarkers = [];
 let calibrated = false;
 const TOTAL_POINTS = 8;
 
-// Room dimensions (will be set by calibration)
-let W = 1.2;    // width  (X axis)
-let D = 1.2;    // depth  (Z axis)
-let H = 0.6;    // height (Y axis)
+// Room dimensions (set by calibration)
+let W = 1.2;
+let D = 1.2;
+let H = 0.6;
 
-// ── CONSTRUCTION MODEL ──
+// ── MODEL GROUPS ──
 const layerGroups = {
   estructura: new THREE.Group(),
   fontaneria: new THREE.Group(),
@@ -253,170 +252,490 @@ Object.values(layerGroups).forEach(g => model.add(g));
 model.visible = false;
 scene.add(model);
 
-function mat(color, opacity = 1, wire = false) {
+// ── MATERIAL & GEOMETRY HELPERS ──
+function mat(color, opacity = 1) {
   return new THREE.MeshPhongMaterial({
-    color, transparent: opacity < 1, opacity,
-    wireframe: wire, side: THREE.DoubleSide,
+    color, transparent: opacity < 1, opacity, side: THREE.DoubleSide,
   });
 }
 
-function box(bw, bh, bd, material, px = 0, py = 0, pz = 0) {
+function box(bw, bh, bd, material, px, py, pz) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
-  m.position.set(px, py, pz);
+  m.position.set(px || 0, py || 0, pz || 0);
   return m;
 }
 
-function pipe(radius, height, material, px, py, pz, rotX = 0, rotZ = 0) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 10), material);
-  m.position.set(px, py, pz);
-  m.rotation.x = rotX;
-  m.rotation.z = rotZ;
+function cyl(r, h, material, px, py, pz, rx, rz) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  if (rx) m.rotation.x = rx;
+  if (rz) m.rotation.z = rz;
   return m;
 }
+
+// ── FIXTURE: TOILET (Inodoro) ──
+function addToilet(group, px, pz, rotY) {
+  const g = new THREE.Group();
+  const white = mat(0xF0EDE8, 0.98);
+  const bright = mat(0xFAF8F5, 1);
+  const chrome = mat(0xC8C8C8, 1);
+  const dark = mat(0x222233, 0.9);
+
+  // Pedestal base
+  g.add(box(0.28, 0.04, 0.18, white, 0, 0.02, -0.10));
+  // Bowl body
+  g.add(box(0.34, 0.26, 0.44, white, 0, 0.16, 0.02));
+  // Bowl front (rounded feel - angled box)
+  const front = box(0.28, 0.20, 0.10, white, 0, 0.14, 0.26);
+  g.add(front);
+  // Bowl rim
+  g.add(box(0.36, 0.02, 0.50, bright, 0, 0.30, 0.03));
+  // Bowl interior
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11, 0.08, 0.06, 16),
+    dark
+  )).position.set(0, 0.28, 0.06);
+  // Seat (torus)
+  const seat = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 20), bright);
+  seat.rotation.x = -Math.PI / 2;
+  seat.position.set(0, 0.32, 0.06);
+  g.add(seat);
+  // Tank
+  g.add(box(0.32, 0.34, 0.14, white, 0, 0.38, -0.24));
+  // Tank lid
+  g.add(box(0.34, 0.02, 0.16, bright, 0, 0.56, -0.24));
+  // Flush button
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.018, 0.018, 0.012, 10), chrome
+  )).position.set(0, 0.575, -0.24);
+  // Supply valve on wall side
+  g.add(cyl(0.007, 0.30, mat(0x3B82F6, 0.9), -0.16, 0.15, -0.30));
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.025, 8), chrome
+  )).position.set(-0.16, 0.28, -0.30);
+
+  g.position.set(px, 0, pz);
+  g.rotation.y = rotY || 0;
+  group.add(g);
+}
+
+// ── FIXTURE: SINK (Lavabo) ──
+function addSink(group, px, pz, rotY) {
+  const g = new THREE.Group();
+  const white = mat(0xF0EDE8, 0.98);
+  const bright = mat(0xFAF8F5, 1);
+  const chrome = mat(0xC8C8C8, 1);
+  const wood = mat(0x8B6F47, 0.95);
+  const dark = mat(0x2a2a3a, 0.85);
+
+  // Vanity cabinet
+  g.add(box(0.56, 0.55, 0.38, wood, 0, 0.275, 0));
+  // Cabinet door lines
+  g.add(box(0.005, 0.45, 0.36, mat(0x7A6040, 1), 0, 0.28, 0.01));
+  // Cabinet knobs
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), chrome)).position.set(-0.06, 0.30, 0.20);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), chrome)).position.set(0.06, 0.30, 0.20);
+  // Counter top
+  g.add(box(0.60, 0.025, 0.42, mat(0xE8E0D4, 1), 0, 0.565, 0));
+  // Basin (white porcelain)
+  g.add(box(0.44, 0.12, 0.32, white, 0, 0.52, 0.02));
+  // Basin interior
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.10, 0.08, 16), dark
+  )).position.set(0, 0.52, 0.02);
+
+  // Faucet base
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.016, 0.04, 10), chrome
+  )).position.set(0, 0.60, -0.14);
+  // Faucet neck
+  g.add(cyl(0.006, 0.12, chrome, 0, 0.68, -0.12));
+  // Faucet spout
+  g.add(cyl(0.006, 0.08, chrome, 0, 0.73, -0.08, Math.PI / 2.5));
+  // Faucet handles
+  g.add(box(0.04, 0.006, 0.006, chrome, -0.04, 0.62, -0.14));
+  g.add(box(0.04, 0.006, 0.006, chrome, 0.04, 0.62, -0.14));
+
+  // Mirror
+  const mirrorM = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.48, 0.60),
+    mat(0xB0CCE0, 0.55)
+  );
+  mirrorM.position.set(0, H * 0.52, -0.20);
+  g.add(mirrorM);
+  // Mirror frame
+  g.add(box(0.50, 0.62, 0.012, mat(0xA0A0A0, 0.9), 0, H * 0.52, -0.20));
+
+  // Supply pipes (under vanity)
+  g.add(cyl(0.008, 0.35, mat(0x3B82F6, 0.9), -0.14, 0.175, -0.14));
+  g.add(cyl(0.008, 0.35, mat(0xEF4444, 0.9), 0.14, 0.175, -0.14));
+  // Drain pipe (under basin)
+  g.add(cyl(0.014, 0.30, mat(0x6B7280, 0.8), 0, 0.15, 0.02));
+  // P-trap shape
+  g.add(cyl(0.014, 0.08, mat(0x6B7280, 0.8), 0, 0.04, 0.06, Math.PI / 2));
+
+  g.position.set(px, 0, pz);
+  g.rotation.y = rotY || 0;
+  group.add(g);
+}
+
+// ── FIXTURE: SHOWER (Ducha) ──
+function addShower(group, px, pz, sw, sd, rotY) {
+  const g = new THREE.Group();
+  const chrome = mat(0xC8C8C8, 1);
+  const trayM = mat(0xE8E0D4, 0.95);
+  const glassM = mat(0xBBDDEE, 0.12);
+  const rimM = mat(0xD4CFC4, 1);
+
+  // Shower tray (raised platform)
+  g.add(box(sw, 0.045, sd, trayM, 0, 0.023, 0));
+  // Tray rim (4 edges)
+  g.add(box(sw + 0.02, 0.07, 0.025, rimM, 0, 0.035, -sd / 2));
+  g.add(box(sw + 0.02, 0.07, 0.025, rimM, 0, 0.035, sd / 2));
+  g.add(box(0.025, 0.07, sd, rimM, -sw / 2, 0.035, 0));
+  g.add(box(0.025, 0.07, sd, rimM, sw / 2, 0.035, 0));
+
+  // Drain (center)
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.006, 14), mat(0x808080, 1)
+  )).position.set(0, 0.048, 0);
+  g.add(new THREE.Mesh(
+    new THREE.RingGeometry(0.01, 0.035, 12), mat(0x606060, 1)
+  )).rotation.x = -Math.PI / 2,
+  g.children[g.children.length-1].position.set(0, 0.052, 0);
+
+  // Glass panel (front side - opens toward room)
+  const glassH = H * 0.70;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(sw * 0.95, glassH), glassM);
+  glass.position.set(0, glassH / 2 + 0.07, -sd / 2 + 0.01);
+  g.add(glass);
+  // Glass frame (chrome)
+  g.add(box(sw * 0.95, 0.012, 0.012, chrome, 0, glassH + 0.07, -sd / 2 + 0.01));
+  g.add(cyl(0.005, glassH, chrome, -sw * 0.475, glassH / 2 + 0.07, -sd / 2 + 0.01));
+  g.add(cyl(0.005, glassH, chrome, sw * 0.475, glassH / 2 + 0.07, -sd / 2 + 0.01));
+  // Glass handle
+  g.add(box(0.018, 0.12, 0.022, chrome, sw * 0.25, H * 0.40, -sd / 2 + 0.025));
+
+  // Shower column (on back wall = +Z side)
+  g.add(cyl(0.016, H * 0.55, chrome, 0, H * 0.40, sd / 2 - 0.04));
+  // Rain shower head
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.10, 0.10, 0.012, 20), chrome
+  )).position.set(0, H * 0.72, sd / 2 - 0.12);
+  // Shower arm
+  g.add(cyl(0.009, 0.14, chrome, 0, H * 0.71, sd / 2 - 0.08, Math.PI / 3));
+  // Mixer valve
+  g.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.028, 0.028, 0.025, 12), chrome
+  )).position.set(0, H * 0.38, sd / 2 - 0.02),
+  g.children[g.children.length-1].rotation.x = Math.PI / 2;
+  // Mixer handle
+  g.add(box(0.07, 0.012, 0.012, chrome, 0, H * 0.38, sd / 2 - 0.04));
+
+  // Hand shower holder
+  g.add(cyl(0.008, 0.05, chrome, 0.10, H * 0.52, sd / 2 - 0.03, 0, Math.PI / 6));
+
+  // Supply pipes (behind back wall)
+  g.add(cyl(0.008, H * 0.45, mat(0x3B82F6, 0.9), -0.05, H * 0.23, sd / 2 - 0.01));
+  g.add(cyl(0.008, H * 0.45, mat(0xEF4444, 0.9), 0.05, H * 0.23, sd / 2 - 0.01));
+  // Drain pipe (under tray)
+  g.add(cyl(0.02, 0.10, mat(0x6B7280, 0.8), 0, -0.03, 0));
+
+  g.position.set(px, 0, pz);
+  g.rotation.y = rotY || 0;
+  group.add(g);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── BUILD MODEL — Full bathroom based on plano-base.svg layout
+// ══════════════════════════════════════════════════════════════
+//
+// SVG bathroom: x 680→880, y 500→880 (200×380 units)
+// Mapping: SVG left→3D west(-X), SVG top→3D north(-Z)
+//
+// Door: west wall (x=680), y 600→680  → z -24%→-3%
+// Window: east wall (x=880), y 580→780 → z -29%→+24%
+// Toilet: left side (x≈719, y≈775)    → x -30%, z +22%
+// Sink: right/center (x≈785, y≈542)   → x +3%, z -39%
+// Shower: right-lower (x≈807, y≈755)  → x +14%, z +17%
 
 function buildModel() {
   const lg = layerGroups;
   const w2 = W / 2, d2 = D / 2;
+  const WT = 0.12; // wall thickness
 
-  // ── ESTRUCTURA ──
-  const wallM  = mat(0x9CA3AF, 0.25);
-  const wallM2 = mat(0x6B7280, 0.5);
-  const floorM = mat(0x374151, 0.35);
+  // ─────────── ESTRUCTURA ───────────
+  const wallM = mat(0x9CA3AF, 0.45);
+  const wallInt = mat(0xD1D5DB, 0.50);
+  const floorM = mat(0x4B5563, 0.50);
+  const ceilM = mat(0xE5E7EB, 0.15);
+  const frameM = mat(0x6B7280, 0.85);
 
-  // Floor (W x D)
+  // Floor
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = 0.001;
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001;
   lg.estructura.add(floor);
 
-  // 4 walls — north/south span W, east/west span D
-  lg.estructura.add(box(W, H, 0.012, wallM,  0, H/2, -d2));    // north
-  lg.estructura.add(box(W, H, 0.012, wallM,  0, H/2,  d2));    // south
-  lg.estructura.add(box(0.012, H, D, wallM,  w2, H/2, 0));     // east
-  lg.estructura.add(box(0.012, H, D, wallM, -w2, H/2, 0));     // west
+  // Ceiling
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), ceilM);
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = H - 0.001;
+  lg.estructura.add(ceil);
 
-  // Bathroom partition wall (runs along X)
-  lg.estructura.add(box(W * 0.42, H, 0.018, wallM2, -W * 0.04, H/2, -D * 0.14));
+  // ── North wall (solid interior wall, z = -d2) ──
+  lg.estructura.add(box(W, H, WT, wallM, 0, H / 2, -d2 + WT / 2));
 
-  // ── FONTANERÍA (blue/red) ──
-  const pipeC  = mat(0x3B82F6, 0.9);
-  const pipeH  = mat(0xEF4444, 0.9);
-  const pipeD  = mat(0x1D4ED8, 0.9);
-  const fixtM  = mat(0x93C5FD, 0.45);
-  const PR = 0.009, PRM = 0.013;
+  // ── South wall (solid exterior wall, z = +d2) ──
+  lg.estructura.add(box(W, H, WT, wallM, 0, H / 2, d2 - WT / 2));
 
-  // Main vertical supply (NW corner)
-  lg.fontaneria.add(pipe(PRM, H, pipeC, -w2+0.04, H/2, -d2+0.04));
+  // ── East wall (window wall, x = +w2) ──
+  // Window opening: z from -D*0.29 to +D*0.24
+  const winZ1 = -D * 0.29, winZ2 = D * 0.24;
+  const winY1 = H * 0.30, winY2 = H * 0.85;
+  // Wall below window
+  lg.estructura.add(box(WT, winY1, D, wallM, w2 - WT / 2, winY1 / 2, 0));
+  // Wall above window
+  lg.estructura.add(box(WT, H - winY2, D, wallM, w2 - WT / 2, (H + winY2) / 2, 0));
+  // Wall left of window
+  lg.estructura.add(box(WT, winY2 - winY1, d2 + winZ1, wallM,
+    w2 - WT / 2, (winY1 + winY2) / 2, (-d2 + winZ1) / 2));
+  // Wall right of window
+  lg.estructura.add(box(WT, winY2 - winY1, d2 - winZ2, wallM,
+    w2 - WT / 2, (winY1 + winY2) / 2, (d2 + winZ2) / 2));
+  // Window sill
+  lg.estructura.add(box(0.04, 0.025, winZ2 - winZ1, frameM,
+    w2 - 0.02, winY1, (winZ1 + winZ2) / 2));
+  // Window lintel
+  lg.estructura.add(box(0.04, 0.04, winZ2 - winZ1 + 0.10, frameM,
+    w2 - 0.02, winY2 + 0.02, (winZ1 + winZ2) / 2));
+  // Window glass
+  lg.estructura.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(winZ2 - winZ1, winY2 - winY1),
+    mat(0x87CEEB, 0.18)
+  )).position.set(w2 - WT / 2, (winY1 + winY2) / 2, (winZ1 + winZ2) / 2),
+  lg.estructura.children[lg.estructura.children.length-1].rotation.y = Math.PI / 2;
 
-  // Cold horizontal to bathroom (runs along X)
-  lg.fontaneria.add(pipe(PR, W*0.46, pipeC, -W*0.12, H*0.26, -d2+0.07, 0, Math.PI/2));
+  // ── West wall (door wall, x = -w2) ──
+  // Door opening: z from -D*0.24 to -D*0.03, height 0 to H*0.82
+  const doorZ1 = -D * 0.24, doorZ2 = -D * 0.03;
+  const doorH = H * 0.82;
+  // Wall above door
+  lg.estructura.add(box(WT, H - doorH, doorZ2 - doorZ1, wallM,
+    -w2 + WT / 2, (H + doorH) / 2, (doorZ1 + doorZ2) / 2));
+  // Wall south of door
+  lg.estructura.add(box(WT, H, d2 + doorZ2, wallM,
+    -w2 + WT / 2, H / 2, (doorZ2 + d2) / 2));
+  // Wall north of door
+  lg.estructura.add(box(WT, H, d2 + doorZ1, wallM,
+    -w2 + WT / 2, H / 2, (-d2 + doorZ1) / 2 - 0.001));
+  // Door frame
+  lg.estructura.add(box(0.05, doorH, 0.03, frameM, -w2 + 0.025, doorH / 2, doorZ1));
+  lg.estructura.add(box(0.05, doorH, 0.03, frameM, -w2 + 0.025, doorH / 2, doorZ2));
+  lg.estructura.add(box(0.05, 0.03, doorZ2 - doorZ1 + 0.03, frameM,
+    -w2 + 0.025, doorH, (doorZ1 + doorZ2) / 2));
 
-  // Hot water line (runs along X)
-  lg.fontaneria.add(pipe(PR, W*0.38, pipeH, -W*0.09, H*0.36, -d2+0.05, 0, Math.PI/2));
+  // ─────────── FONTANERÍA ───────────
+  const pipeC = mat(0x3B82F6, 0.9);
+  const pipeH = mat(0xEF4444, 0.9);
+  const pipeD = mat(0x6B7280, 0.8);
+  const PR = 0.009; // pipe radius
 
-  // Shower supply vertical
-  lg.fontaneria.add(pipe(PR, H*0.45, pipeC, -w2+0.06, H*0.55, -d2*0.55));
+  // Fixture positions (proportional from SVG)
+  const toiletX = -W * 0.30;
+  const toiletZ = D * 0.22;
+  const sinkX = W * 0.03;
+  const sinkZ = -d2 + 0.25;
+  const shW = Math.min(0.90, W * 0.50);
+  const shD = Math.min(0.90, D * 0.28);
+  const showerX = W * 0.14;
+  const showerZ = D * 0.17;
 
-  // Shower horizontal (runs along Z)
-  lg.fontaneria.add(pipe(PR, d2*0.3, pipeC, -w2+0.06, H*0.75, -d2*0.4, Math.PI/2, 0));
+  // Main cold water supply — vertical riser (NW corner)
+  lg.fontaneria.add(cyl(0.014, H, pipeC, -w2 + 0.08, H / 2, -d2 + 0.08));
+  // Horizontal cold distribution along north wall (H*0.25)
+  lg.fontaneria.add(cyl(PR, W * 0.65, pipeC,
+    -w2 + W * 0.35, H * 0.25, -d2 + 0.10, 0, Math.PI / 2));
 
-  // Drains
-  lg.fontaneria.add(pipe(0.016, H*0.25, pipeD,  w2*0.55, H*0.04, -d2*0.55));
-  lg.fontaneria.add(pipe(0.013, H*0.2,  pipeD, -w2*0.55, H*0.04, -d2*0.45));
+  // Hot water supply — vertical riser (NW corner, slightly offset)
+  lg.fontaneria.add(cyl(0.012, H * 0.7, pipeH, -w2 + 0.14, H * 0.35, -d2 + 0.08));
+  // Horizontal hot distribution along north wall (H*0.32)
+  lg.fontaneria.add(cyl(PR, W * 0.55, pipeH,
+    -w2 + W * 0.30, H * 0.32, -d2 + 0.06, 0, Math.PI / 2));
 
-  // Fixtures (absolute sizes, proportional positions)
-  lg.fontaneria.add(box(0.11, 0.05, 0.14, fixtM,  w2*0.55, 0.025, -d2*0.55));
-  lg.fontaneria.add(box(0.09, 0.04, 0.07, fixtM,  w2*0.15, 0.04,  -d2+0.07));
+  // Branch to toilet (cold only — vertical drop)
+  lg.fontaneria.add(cyl(PR, D * 0.50, pipeC,
+    toiletX - 0.16, H * 0.25, -d2 + D * 0.37, Math.PI / 2));
+  lg.fontaneria.add(cyl(PR, H * 0.25, pipeC,
+    toiletX - 0.16, H * 0.125, toiletZ - 0.30));
 
-  // Shower box
-  const showerBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, H*0.55, 0.18), mat(0xBAE6FD, 0.18));
-  showerBox.position.set(-w2*0.55, H*0.28, -d2*0.45);
-  lg.fontaneria.add(showerBox);
+  // Branch to sink (cold + hot — drop from north wall)
+  lg.fontaneria.add(cyl(PR, H * 0.25, pipeC, sinkX - 0.14, H * 0.125, sinkZ - 0.14));
+  lg.fontaneria.add(cyl(PR, H * 0.25, pipeH, sinkX + 0.14, H * 0.125, sinkZ - 0.14));
 
-  // Pipe joints
-  [[-w2+0.04, H*0.26, -d2+0.07], [-w2+0.04, H*0.36, -d2+0.05]].forEach(([x,y,z]) => {
-    const j = new THREE.Mesh(new THREE.SphereGeometry(PRM*1.4, 8, 8), pipeC);
-    j.position.set(x, y, z);
-    lg.fontaneria.add(j);
+  // Branch to shower (cold + hot — along east wall)
+  lg.fontaneria.add(cyl(PR, D * 0.40, pipeC,
+    showerX - 0.05, H * 0.25, sinkZ + D * 0.28, Math.PI / 2));
+  lg.fontaneria.add(cyl(PR, D * 0.40, pipeH,
+    showerX + 0.05, H * 0.32, sinkZ + D * 0.28, Math.PI / 2));
+
+  // Main drain — horizontal along south wall going east
+  lg.fontaneria.add(cyl(0.025, W * 0.6, pipeD,
+    W * 0.05, -0.03, d2 - 0.15, 0, Math.PI / 2));
+
+  // Drain branches from each fixture
+  // Toilet drain
+  lg.fontaneria.add(cyl(0.020, 0.20, pipeD, toiletX, -0.03, toiletZ + 0.15));
+  lg.fontaneria.add(cyl(0.020, D * 0.20, pipeD,
+    toiletX, -0.03, toiletZ + D * 0.18, Math.PI / 2));
+  // Sink drain
+  lg.fontaneria.add(cyl(0.016, D * 0.35, pipeD,
+    sinkX, -0.03, sinkZ + D * 0.25, Math.PI / 2));
+  // Shower drain
+  lg.fontaneria.add(cyl(0.020, D * 0.15, pipeD,
+    showerX, -0.03, showerZ + shD / 2 + D * 0.08, Math.PI / 2));
+
+  // Pipe connection joints (spheres)
+  [
+    [-w2 + 0.08, H * 0.25, -d2 + 0.10],
+    [-w2 + 0.14, H * 0.32, -d2 + 0.08],
+    [sinkX - 0.14, H * 0.25, sinkZ - 0.14],
+    [sinkX + 0.14, H * 0.32, sinkZ - 0.14],
+  ].forEach(([x, y, z]) => {
+    lg.fontaneria.add(new THREE.Mesh(
+      new THREE.SphereGeometry(0.015, 8, 8), pipeC
+    )).position.set(x, y, z);
   });
 
-  // ── ELÉCTRICO (yellow) ──
-  const condM  = mat(0xFBBF24, 0.92);
-  const outM   = mat(0xF59E0B, 1);
-  const panM   = mat(0xD97706, 1);
-  const lightM = new THREE.MeshPhongMaterial({ color: 0xFDE68A, emissive: 0xFDE68A, emissiveIntensity: 0.5 });
+  // ── 3D FIXTURES ──
+  // Toilet — left side, south area, facing east (+X)
+  addToilet(lg.fontaneria, toiletX, toiletZ, -Math.PI / 2);
+  // Sink — against north wall, facing south (+Z)
+  addSink(lg.fontaneria, sinkX, sinkZ, 0);
+  // Shower — right-center, lower area
+  addShower(lg.fontaneria, showerX, showerZ, shW, shD, 0);
+
+  // ─────────── ELÉCTRICO ───────────
+  const condM = mat(0xFBBF24, 0.92);
+  const outM = mat(0xF59E0B, 1);
+  const panM = mat(0xD97706, 1);
+  const lightEM = new THREE.MeshPhongMaterial({
+    color: 0xFDE68A, emissive: 0xFDE68A, emissiveIntensity: 0.5
+  });
   const CR = 0.007;
 
-  // Main panel (east wall)
-  lg.electrico.add(box(0.07, 0.11, 0.018, panM, w2-0.02, H*0.52, 0));
+  // Main conduit — enters from ceiling north wall, runs across ceiling
+  const condHt = H * 0.92;
+  // East-west conduit along north wall
+  lg.electrico.add(cyl(CR, W * 0.80, condM, 0, condHt, -d2 + 0.06, 0, Math.PI / 2));
+  // North-south conduit along east wall
+  lg.electrico.add(cyl(CR, D * 0.70, condM, w2 - 0.06, condHt, 0, Math.PI / 2));
+  // Cross conduit to center light
+  lg.electrico.add(cyl(CR, W * 0.40, condM, W * 0.10, condHt, D * 0.05, 0, Math.PI / 2));
 
-  // Ceiling conduits — north/south span W, east spans D
-  const condHt = H * 0.9;
-  lg.electrico.add(pipe(CR, W,      condM, 0,        condHt, -d2+0.025, 0, Math.PI/2));
-  lg.electrico.add(pipe(CR, W,      condM, 0,        condHt,  d2-0.025, 0, Math.PI/2));
-  lg.electrico.add(pipe(CR, D*0.5,  condM, w2-0.025, condHt, -D*0.15,  Math.PI/2, 0));
-  lg.electrico.add(pipe(CR, D*0.5,  condM, w2-0.025, condHt,  D*0.15,  Math.PI/2, 0));
+  // Ceiling light — center of room
+  lg.electrico.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.06, 0.015, 20), lightEM
+  )).position.set(0, H - 0.008, D * 0.05);
+  lg.electrico.add(cyl(CR, 0.10, condM, 0, H - 0.05, D * 0.05));
 
-  // Outlet drops + boxes
-  const outlets = [
-    [ w2*0.5,  d2*0.85],
-    [-w2*0.5,  d2*0.85],
-    [ w2*0.5, -d2*0.2 ],
-    [-w2*0.5, -d2*0.2 ],
-    [ 0,       d2*0.85],
-  ];
-  outlets.forEach(([x, z]) => {
-    lg.electrico.add(pipe(CR, H*0.72, condM, x, H*0.54, z));
-    lg.electrico.add(box(0.028, 0.028, 0.016, outM, x, H*0.19, z));
-  });
+  // Bathroom mirror light — above sink
+  lg.electrico.add(new THREE.Mesh(
+    new THREE.BoxGeometry(0.30, 0.025, 0.04), lightEM
+  )).position.set(sinkX, H * 0.78, sinkZ - 0.18);
+  lg.electrico.add(cyl(CR, H * 0.15, condM, sinkX, H * 0.85, sinkZ - 0.10));
 
-  // Ceiling lights
-  [[-W*0.22, -D*0.22], [W*0.22, -D*0.22], [0, D*0.25]].forEach(([x,z]) => {
-    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.012, 16), lightM);
-    l.position.set(x, H - 0.006, z);
-    lg.electrico.add(l);
-    lg.electrico.add(pipe(CR*0.85, 0.12, condM, x, H-0.06, z));
-  });
+  // Outlet — near sink at H*0.45 (above counter)
+  lg.electrico.add(box(0.06, 0.04, 0.015, outM, sinkX + 0.35, H * 0.45, -d2 + WT + 0.01));
+  lg.electrico.add(cyl(CR, H * 0.50, condM, sinkX + 0.35, H * 0.70, -d2 + WT + 0.01));
 
-  // Switches near door (south wall)
-  lg.electrico.add(box(0.025, 0.035, 0.015, outM, w2*0.15, H*0.5, d2-0.02));
+  // Outlet — near toilet (lower, for bidet/heater)
+  lg.electrico.add(box(0.06, 0.04, 0.015, outM, -w2 + WT + 0.01, H * 0.18, toiletZ - 0.30));
+  lg.electrico.add(cyl(CR, H * 0.74, condM, -w2 + WT + 0.01, H * 0.55, toiletZ - 0.30));
 
-  // ── ACABADOS ──
-  const bathFloorM = mat(0x93C5FD, 0.35);
-  const woodFloorM = mat(0xD4A974, 0.3);
-  const wallFinM   = mat(0x6EE7B7, 0.15);
-  const tileWallM  = mat(0xBAFAF1, 0.2);
+  // Switch — near door entrance (west wall inside, at H*0.42)
+  lg.electrico.add(box(0.04, 0.06, 0.015, outM, -w2 + WT + 0.01, H * 0.42, doorZ2 + 0.10));
+  lg.electrico.add(cyl(CR, H * 0.50, condM, -w2 + WT + 0.01, H * 0.67, doorZ2 + 0.10));
 
-  // Bathroom floor tiles
-  const bf = new THREE.Mesh(new THREE.PlaneGeometry(W*0.45, D*0.45), bathFloorM);
-  bf.rotation.x = -Math.PI/2;
-  bf.position.set(-W*0.275, 0.002, -D*0.275);
-  lg.acabados.add(bf);
+  // Exhaust fan — ceiling near shower
+  lg.electrico.add(new THREE.Mesh(
+    new THREE.BoxGeometry(0.20, 0.03, 0.20), mat(0xE5E7EB, 0.9)
+  )).position.set(showerX, H - 0.015, showerZ);
+  lg.electrico.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, 0.01, 16), mat(0xD1D5DB, 1)
+  )).position.set(showerX, H - 0.03, showerZ);
 
-  // Living room wood floor
-  const lf = new THREE.Mesh(new THREE.PlaneGeometry(W*0.55, D), woodFloorM);
-  lf.rotation.x = -Math.PI/2;
-  lf.position.set(W*0.225, 0.002, 0);
-  lg.acabados.add(lf);
+  // ─────────── ACABADOS ───────────
+  const tileFloorM = mat(0xC8D6E5, 0.55);
+  const tileWallM = mat(0xD4E6F1, 0.30);
+  const tileAccent = mat(0xA8C5DA, 0.35);
+  const groutM = mat(0xB0B0B0, 0.20);
 
-  // Wall finishes (north & south)
-  [[0, H/2, -d2+0.014, 0], [0, H/2, d2-0.014, Math.PI]].forEach(([x,y,z,ry]) => {
-    const wf = new THREE.Mesh(new THREE.PlaneGeometry(W, H), wallFinM);
-    wf.position.set(x,y,z); wf.rotation.y = ry;
-    lg.acabados.add(wf);
-  });
+  // Floor tiles (entire bathroom)
+  const tf = new THREE.Mesh(new THREE.PlaneGeometry(W - WT * 2, D - WT * 2), tileFloorM);
+  tf.rotation.x = -Math.PI / 2; tf.position.y = 0.003;
+  lg.acabados.add(tf);
 
-  // Bathroom wall tiles
-  // North bathroom wall
-  const tileN = new THREE.Mesh(new THREE.PlaneGeometry(W*0.44, H), tileWallM);
-  tileN.position.set(-W*0.28, H/2, -d2+0.015);
-  lg.acabados.add(tileN);
+  // Floor tile grid lines (grout)
+  const tileSize = 0.30;
+  for (let gx = -w2 + WT + tileSize; gx < w2 - WT; gx += tileSize) {
+    lg.acabados.add(box(0.004, 0.002, D - WT * 2, groutM, gx, 0.004, 0));
+  }
+  for (let gz = -d2 + WT + tileSize; gz < d2 - WT; gz += tileSize) {
+    lg.acabados.add(box(W - WT * 2, 0.002, 0.004, groutM, 0, 0.004, gz));
+  }
 
-  // Bathroom partition wall tile (rotated)
-  const tileP = new THREE.Mesh(new THREE.PlaneGeometry(D*0.44, H), tileWallM);
-  tileP.position.set(-W*0.28, H/2, -d2*0.55);
-  tileP.rotation.y = -Math.PI/2;
-  lg.acabados.add(tileP);
+  // Wall tiles — lower half of each wall (up to H*0.55)
+  const tileH = H * 0.55;
+
+  // North wall tiles
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(W - WT * 2, tileH), tileWallM
+  )).position.set(0, tileH / 2, -d2 + WT + 0.005);
+
+  // South wall tiles
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(W - WT * 2, tileH), tileWallM
+  )).position.set(0, tileH / 2, d2 - WT - 0.005),
+  lg.acabados.children[lg.acabados.children.length-1].rotation.y = Math.PI;
+
+  // East wall tiles (around window)
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(D - WT * 2, tileH), tileWallM
+  )).position.set(w2 - WT - 0.005, tileH / 2, 0),
+  lg.acabados.children[lg.acabados.children.length-1].rotation.y = -Math.PI / 2;
+
+  // West wall tiles (around door)
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(D - WT * 2, tileH), tileWallM
+  )).position.set(-w2 + WT + 0.005, tileH / 2, 0),
+  lg.acabados.children[lg.acabados.children.length-1].rotation.y = Math.PI / 2;
+
+  // Accent tile band (decorative stripe at H*0.40)
+  const bandH = 0.06;
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(W - WT * 2, bandH), tileAccent
+  )).position.set(0, H * 0.40, -d2 + WT + 0.006);
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(W - WT * 2, bandH), tileAccent
+  )).position.set(0, H * 0.40, d2 - WT - 0.006),
+  lg.acabados.children[lg.acabados.children.length-1].rotation.y = Math.PI;
+
+  // Upper wall paint (above tiles)
+  const paintM = mat(0xF3F4F6, 0.15);
+  const paintH = H - tileH;
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(W - WT * 2, paintH), paintM
+  )).position.set(0, tileH + paintH / 2, -d2 + WT + 0.005);
+  lg.acabados.add(new THREE.Mesh(
+    new THREE.PlaneGeometry(W - WT * 2, paintH), paintM
+  )).position.set(0, tileH + paintH / 2, d2 - WT - 0.005),
+  lg.acabados.children[lg.acabados.children.length-1].rotation.y = Math.PI;
+
+  // Baseboard
+  const baseM = mat(0x9CA3AF, 0.6);
+  lg.acabados.add(box(W - WT * 2, 0.06, 0.008, baseM, 0, 0.03, -d2 + WT + 0.004));
+  lg.acabados.add(box(W - WT * 2, 0.06, 0.008, baseM, 0, 0.03, d2 - WT - 0.004));
+  lg.acabados.add(box(0.008, 0.06, D - WT * 2, baseM, w2 - WT - 0.004, 0.03, 0));
+  lg.acabados.add(box(0.008, 0.06, D - WT * 2, baseM, -w2 + WT + 0.004, 0.03, 0));
 }
 
 buildModel();
@@ -425,8 +744,7 @@ buildModel();
 function toggleLayer(name) {
   layerState[name] = !layerState[name];
   layerGroups[name].visible = layerState[name];
-  const btn = document.getElementById('btn-' + name);
-  btn.classList.toggle('off', !layerState[name]);
+  document.getElementById('btn-' + name).classList.toggle('off', !layerState[name]);
 }
 
 // ── WEBXR ──
@@ -451,7 +769,6 @@ async function startAR() {
 
     renderer.xr.setReferenceSpaceType('local');
     await renderer.xr.setSession(xrSession);
-
     xrSession.addEventListener('end', onSessionEnd);
     xrSession.addEventListener('select', onTap);
 
@@ -473,36 +790,29 @@ async function startAR() {
 function onTap() {
   if (!reticle.visible) return;
 
-  // ── CORNER CALIBRATION PHASE ──
   if (!calibrated) {
     const pos = new THREE.Vector3();
     pos.setFromMatrixPosition(reticle.matrix);
 
     const n = allPoints.length;
     const isFloor = n < 4;
-    const cornerIdx = isFloor ? n : n - 4;  // which corner (0-3)
+    const cornerIdx = isFloor ? n : n - 4;
 
-    // Place visual marker
     const markerGeo = new THREE.CylinderGeometry(0.03, 0.03, isFloor ? 0.12 : 0.08, 16);
     const baseColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
-    const markerMat = new THREE.MeshPhongMaterial({
-      color: baseColors[cornerIdx],
-      emissive: baseColors[cornerIdx],
-      emissiveIntensity: 0.4
-    });
-    const marker = new THREE.Mesh(markerGeo, markerMat);
+    const marker = new THREE.Mesh(markerGeo, new THREE.MeshPhongMaterial({
+      color: baseColors[cornerIdx], emissive: baseColors[cornerIdx], emissiveIntensity: 0.4
+    }));
     marker.position.copy(pos);
     marker.position.y += (isFloor ? 0.06 : 0.04);
     scene.add(marker);
     cornerMarkers.push(marker);
 
-    // Label sphere on top
     const label = new THREE.Mesh(
       new THREE.SphereGeometry(isFloor ? 0.025 : 0.018, 12, 12),
       new THREE.MeshPhongMaterial({
         color: isFloor ? 0xffffff : 0x60A5FA,
-        emissive: isFloor ? 0xffffff : 0x60A5FA,
-        emissiveIntensity: 0.5
+        emissive: isFloor ? 0xffffff : 0x60A5FA, emissiveIntensity: 0.5
       })
     );
     label.position.copy(pos);
@@ -512,49 +822,20 @@ function onTap() {
 
     allPoints.push(pos.clone());
 
-    // Draw line connecting floor corners sequentially
-    if (isFloor && n > 0) {
-      const prev = allPoints[n - 1];
-      addLine(prev, pos, 0x60A5FA);
-    }
-
-    // If finishing floor corners, close the floor polygon
-    if (n === 3) {
-      addLine(allPoints[3], allPoints[0], 0x60A5FA);
-    }
-
-    // Draw vertical line connecting floor corner to its ceiling corner
-    if (!isFloor) {
-      const floorPt = allPoints[cornerIdx];
-      addLine(floorPt, pos, 0xFBBF24);
-    }
-
-    // If finishing ceiling corners, close the ceiling polygon
+    if (isFloor && n > 0) addLine(allPoints[n - 1], pos, 0x60A5FA);
+    if (n === 3) addLine(allPoints[3], allPoints[0], 0x60A5FA);
+    if (!isFloor) addLine(allPoints[cornerIdx], pos, 0xFBBF24);
     if (n === 7) {
-      for (let i = 4; i < 7; i++) {
-        addLine(allPoints[i], allPoints[i+1], 0xFBBF24);
-      }
+      for (let i = 4; i < 7; i++) addLine(allPoints[i], allPoints[i + 1], 0xFBBF24);
       addLine(allPoints[7], allPoints[4], 0xFBBF24);
     }
 
     updateCornerUI();
-
-    // All 8 points placed → calibrate
-    if (allPoints.length === TOTAL_POINTS) {
-      setTimeout(() => calibrateFromPoints(), 600);
-    }
+    if (allPoints.length === TOTAL_POINTS) setTimeout(() => calibrateFromPoints(), 600);
     return;
   }
 
-  // ── NORMAL TAP (post-calibration): reposition model ──
-  if (!placed) {
-    model.visible = true;
-    placed = true;
-    document.getElementById('hint-badge').textContent = 'Camina alrededor del modelo';
-    document.getElementById('hint-badge').classList.add('placed');
-    document.getElementById('info-card').classList.add('show');
-    setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 4000);
-  }
+  // Post-calibration: reposition
   model.position.setFromMatrixPosition(reticle.matrix);
   model.rotation.y = Math.atan2(
     camera.position.x - model.position.x,
@@ -574,10 +855,6 @@ function addLine(a, b, color) {
 
 function updateCornerUI() {
   const n = allPoints.length;
-  const isFloor = n < 4;
-  const phase = isFloor ? 'Piso' : 'Techo';
-  const phaseIdx = isFloor ? n : n - 4;
-
   if (n < 4) {
     document.getElementById('corner-step').textContent = `Esquina ${n + 1} de 4 — Piso`;
     document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
@@ -588,100 +865,59 @@ function updateCornerUI() {
     document.getElementById('corner-step').textContent = 'Calibrando...';
     document.getElementById('corner-sub').textContent = 'Ajustando modelo al cuarto';
   }
-
-  // Update hint badge for phase transition
   if (n === 4) {
     document.getElementById('hint-badge').textContent = 'Ahora apunta al techo → toca las 4 esquinas';
   }
-
-  // Update dots
   for (let i = 0; i < TOTAL_POINTS; i++) {
     const dot = document.getElementById('cdot-' + i);
     dot.classList.toggle('done', i < n);
     dot.classList.toggle('active', i === n);
   }
-
   if (n > 0) document.getElementById('reset-corners-btn').style.display = 'inline-block';
 }
 
 function calibrateFromPoints() {
-  // Floor corners: indices 0-3 → room footprint and position
   const floorPts = allPoints.slice(0, 4);
-  // Ceiling corners: indices 4-7 → room height
   const ceilPts = allPoints.slice(4, 8);
 
-  // Compute floor bounding box (XZ plane)
-  let minX = Infinity, maxX = -Infinity;
-  let minZ = Infinity, maxZ = -Infinity;
-  let floorY = 0;
-
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, floorY = 0;
   floorPts.forEach(c => {
-    minX = Math.min(minX, c.x);
-    maxX = Math.max(maxX, c.x);
-    minZ = Math.min(minZ, c.z);
-    maxZ = Math.max(maxZ, c.z);
+    minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
+    minZ = Math.min(minZ, c.z); maxZ = Math.max(maxZ, c.z);
     floorY += c.y;
   });
   floorY /= 4;
 
-  // Compute average ceiling Y
   let ceilY = 0;
   ceilPts.forEach(c => { ceilY += c.y; });
   ceilY /= 4;
 
-  const roomW = maxX - minX;
-  const roomD = maxZ - minZ;
-  const roomH = Math.abs(ceilY - floorY);
-  const centerX = (minX + maxX) / 2;
-  const centerZ = (minZ + maxZ) / 2;
+  W = Math.max(maxX - minX, 0.5);
+  D = Math.max(maxZ - minZ, 0.5);
+  H = Math.max(Math.abs(ceilY - floorY), 0.5);
 
-  // Safety: minimum dimensions
-  W = Math.max(roomW, 0.3);
-  D = Math.max(roomD, 0.3);
-  H = Math.max(roomH, 0.3);
-
-  // Clear old model geometry
   Object.values(layerGroups).forEach(g => {
     while (g.children.length > 0) g.remove(g.children[0]);
   });
-
-  // Rebuild with real dimensions
   buildModel();
 
-  // Position model at center of floor corners
-  model.position.set(centerX, floorY, centerZ);
+  model.position.set((minX + maxX) / 2, floorY, (minZ + maxZ) / 2);
 
-  // Align rotation to longest floor edge
-  let bestAngle = 0;
-  let bestLen = 0;
+  let bestAngle = 0, bestLen = 0;
   for (let i = 0; i < 4; i++) {
-    const a = floorPts[i];
-    const b = floorPts[(i + 1) % 4];
-    const dx = b.x - a.x;
-    const dz = b.z - a.z;
+    const a = floorPts[i], b = floorPts[(i + 1) % 4];
+    const dx = b.x - a.x, dz = b.z - a.z;
     const len = Math.sqrt(dx * dx + dz * dz);
-    if (len > bestLen) {
-      bestLen = len;
-      bestAngle = Math.atan2(dx, dz);
-    }
+    if (len > bestLen) { bestLen = len; bestAngle = Math.atan2(dx, dz); }
   }
   model.rotation.y = bestAngle;
-
-  // Reset scale (model is already built at correct W x D x H)
   model.scale.set(1, 1, 1);
-
-  // Show model
   model.visible = true;
   calibrated = true;
   placed = true;
 
-  // Remove corner markers
-  setTimeout(() => {
-    cornerMarkers.forEach(m => scene.remove(m));
-    cornerMarkers.length = 0;
-  }, 1500);
+  setTimeout(() => { cornerMarkers.forEach(m => scene.remove(m)); cornerMarkers.length = 0; }, 1500);
 
-  // Update UI
   document.getElementById('corner-ui').classList.remove('show');
   document.getElementById('hint-badge').textContent = 'Modelo ajustado al cuarto';
   document.getElementById('hint-badge').classList.add('placed');
@@ -705,7 +941,6 @@ function resetCorners() {
   document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas del piso';
   document.getElementById('hint-badge').classList.remove('placed');
   document.getElementById('hint-badge').style.display = '';
-
   for (let i = 0; i < TOTAL_POINTS; i++) {
     const dot = document.getElementById('cdot-' + i);
     dot.classList.remove('done');
@@ -713,9 +948,7 @@ function resetCorners() {
   }
 }
 
-function exitAR() {
-  if (xrSession) xrSession.end();
-}
+function exitAR() { if (xrSession) xrSession.end(); }
 
 function onSessionEnd() {
   xrSession = null;
@@ -725,14 +958,11 @@ function onSessionEnd() {
   reticle.visible = false;
   hitTestSource = null;
   hitTestRequested = false;
-
   cornerMarkers.forEach(m => scene.remove(m));
   cornerMarkers.length = 0;
   allPoints.length = 0;
-
   model.scale.set(1, 1, 1);
   W = 1.2; D = 1.2; H = 0.6;
-
   document.getElementById('overlay').classList.remove('active');
   document.getElementById('corner-ui').classList.remove('show');
   document.getElementById('info-card').classList.remove('show');
@@ -740,38 +970,29 @@ function onSessionEnd() {
   renderer.setAnimationLoop(null);
 }
 
-// ── RENDER LOOP ──
 function render(timestamp, frame) {
   if (frame) {
     const refSpace = renderer.xr.getReferenceSpace();
-    const session  = renderer.xr.getSession();
-
+    const session = renderer.xr.getSession();
     if (!hitTestRequested) {
-      session.requestReferenceSpace('viewer').then(viewerSpace => {
-        session.requestHitTestSource({ space: viewerSpace }).then(src => {
-          hitTestSource = src;
-        });
+      session.requestReferenceSpace('viewer').then(vs => {
+        session.requestHitTestSource({ space: vs }).then(src => { hitTestSource = src; });
       });
       hitTestRequested = true;
     }
-
     if (hitTestSource) {
       const results = frame.getHitTestResults(hitTestSource);
       if (results.length > 0) {
-        const pose = results[0].getPose(refSpace);
         reticle.visible = true;
-        reticle.matrix.fromArray(pose.transform.matrix);
-      } else {
-        reticle.visible = false;
-      }
+        reticle.matrix.fromArray(results[0].getPose(refSpace).transform.matrix);
+      } else { reticle.visible = false; }
     }
   }
   renderer.render(scene, camera);
 }
 
-// Check WebXR support on load
 window.addEventListener('load', async () => {
-  if (!navigator.xr || !await navigator.xr.isSessionSupported('immersive-ar').catch(()=>false)) {
+  if (!navigator.xr || !await navigator.xr.isSessionSupported('immersive-ar').catch(() => false)) {
     document.getElementById('start-btn').style.opacity = '0.5';
     document.getElementById('no-xr').style.display = 'block';
     document.getElementById('no-xr').textContent = 'Requiere Android + Chrome con ARCore instalado';
