@@ -81,10 +81,11 @@
       position:absolute;bottom:110px;left:16px;
       background:rgba(0,0,0,.75);border-radius:16px;padding:14px;
       backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);
-      max-width:200px;display:none;
+      max-width:220px;display:none;
     }
     #info-card.show{display:block}
     #info-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:6px}
+    #info-dims{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px}
     .prog-bg{background:rgba(255,255,255,.15);border-radius:99px;height:6px;overflow:hidden;margin-bottom:4px}
     .prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#86efac);transition:width .4s}
     #info-prog-label{font-size:11px;color:rgba(255,255,255,.5)}
@@ -97,9 +98,10 @@
       display:none;text-align:center;
     }
     #corner-ui.show{display:block}
-    #corner-step{font-size:15px;font-weight:800;color:#fff;margin-bottom:6px}
-    #corner-sub{font-size:12px;color:rgba(255,255,255,.5)}
-    .corner-dots{display:flex;justify-content:center;gap:8px;margin-top:10px}
+    #corner-step{font-size:15px;font-weight:800;color:#fff;margin-bottom:4px}
+    #corner-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px}
+    .corner-row-label{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+    .corner-dots{display:flex;justify-content:center;gap:8px;margin-bottom:8px}
     .corner-dot{
       width:14px;height:14px;border-radius:50%;
       border:2px solid rgba(255,255,255,.3);background:transparent;
@@ -108,7 +110,7 @@
     .corner-dot.done{background:#22c55e;border-color:#22c55e}
     .corner-dot.active{border-color:#60A5FA;box-shadow:0 0 8px rgba(96,165,250,.6)}
     #reset-corners-btn{
-      margin-top:12px;padding:8px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.2);
+      margin-top:4px;padding:8px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.2);
       background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:700;
       cursor:pointer;pointer-events:all;display:none;
     }
@@ -130,7 +132,7 @@
 <div id="pre-ar">
   <div style="font-size:56px">🏗️</div>
   <h1>AR Construcción 3D</h1>
-  <p>Marca las 4 esquinas de tu habitación y el modelo 3D se ajustará al tamaño real del cuarto</p>
+  <p>Marca 4 esquinas del piso y 4 del techo para ajustar el modelo al tamaño real de tu habitación</p>
   <button id="start-btn" onclick="startAR()">Iniciar AR</button>
   <div id="no-xr">Tu dispositivo no soporta WebXR AR.<br>Requiere Android + Chrome.</div>
 </div>
@@ -145,23 +147,32 @@
 <div id="overlay">
   <div id="top-bar">
     <div class="badge">🏗️ AR 3D</div>
-    <div id="hint-badge">Apunta al suelo → toca para colocar</div>
+    <div id="hint-badge">Apunta al suelo → toca las esquinas</div>
   </div>
 
   <div id="corner-ui">
-    <div id="corner-step">Esquina 1 de 4</div>
-    <div id="corner-sub">Toca en una esquina de la habitación</div>
+    <div id="corner-step">Esquina 1 de 4 — Piso</div>
+    <div id="corner-sub">Apunta a una esquina del piso y toca</div>
+    <div class="corner-row-label">Piso</div>
     <div class="corner-dots">
       <div class="corner-dot active" id="cdot-0"></div>
       <div class="corner-dot" id="cdot-1"></div>
       <div class="corner-dot" id="cdot-2"></div>
       <div class="corner-dot" id="cdot-3"></div>
     </div>
+    <div class="corner-row-label">Techo</div>
+    <div class="corner-dots">
+      <div class="corner-dot" id="cdot-4"></div>
+      <div class="corner-dot" id="cdot-5"></div>
+      <div class="corner-dot" id="cdot-6"></div>
+      <div class="corner-dot" id="cdot-7"></div>
+    </div>
     <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
   </div>
 
   <div id="info-card">
-    <div id="info-title">Modelo colocado</div>
+    <div id="info-title">Modelo ajustado</div>
+    <div id="info-dims"></div>
     <div class="prog-bg"><div class="prog-fill" id="overall-prog" style="width:27%"></div></div>
     <div id="info-prog-label">27% completado</div>
   </div>
@@ -213,22 +224,22 @@ scene.add(reticle);
 // Reticle inner dot
 const dotGeo = new THREE.CircleGeometry(0.02, 32);
 dotGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
-const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA }));
-dot.matrixAutoUpdate = false;
-reticle.add(dot);
+const dotMesh = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA }));
+dotMesh.matrixAutoUpdate = false;
+reticle.add(dotMesh);
 
 // ── CORNER CALIBRATION ──
-const corners = [];           // stores THREE.Vector3 for each corner
-const cornerMarkers = [];     // visual marker meshes
+const allPoints = [];          // all 8 THREE.Vector3 positions
+const cornerMarkers = [];      // visual marker meshes + lines
 let calibrated = false;
-const CORNER_COUNT = 4;
+const TOTAL_POINTS = 8;
 
-// Default scale (will be overridden by calibration)
-let S = 1.2;     // footprint width/depth
-let SH = 0.6;    // height
+// Room dimensions (will be set by calibration)
+let W = 1.2;    // width  (X axis)
+let D = 1.2;    // depth  (Z axis)
+let H = 0.6;    // height (Y axis)
 
 // ── CONSTRUCTION MODEL ──
-
 const layerGroups = {
   estructura: new THREE.Group(),
   fontaneria: new THREE.Group(),
@@ -249,8 +260,8 @@ function mat(color, opacity = 1, wire = false) {
   });
 }
 
-function box(w, h, d, material, px = 0, py = 0, pz = 0) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+function box(bw, bh, bd, material, px = 0, py = 0, pz = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
   m.position.set(px, py, pz);
   return m;
 }
@@ -265,65 +276,65 @@ function pipe(radius, height, material, px, py, pz, rotX = 0, rotZ = 0) {
 
 function buildModel() {
   const lg = layerGroups;
-  const w2 = S / 2, d2 = S / 2;
+  const w2 = W / 2, d2 = D / 2;
 
   // ── ESTRUCTURA ──
   const wallM  = mat(0x9CA3AF, 0.25);
   const wallM2 = mat(0x6B7280, 0.5);
   const floorM = mat(0x374151, 0.35);
 
-  // Floor
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(S, S), floorM);
+  // Floor (W x D)
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = 0.001;
   lg.estructura.add(floor);
 
-  // 4 walls
-  lg.estructura.add(box(S, SH, 0.012, wallM,  0, SH/2, -d2));
-  lg.estructura.add(box(S, SH, 0.012, wallM,  0, SH/2,  d2));
-  lg.estructura.add(box(0.012, SH, S, wallM,  w2, SH/2, 0));
-  lg.estructura.add(box(0.012, SH, S, wallM, -w2, SH/2, 0));
+  // 4 walls — north/south span W, east/west span D
+  lg.estructura.add(box(W, H, 0.012, wallM,  0, H/2, -d2));    // north
+  lg.estructura.add(box(W, H, 0.012, wallM,  0, H/2,  d2));    // south
+  lg.estructura.add(box(0.012, H, D, wallM,  w2, H/2, 0));     // east
+  lg.estructura.add(box(0.012, H, D, wallM, -w2, H/2, 0));     // west
 
-  // Bathroom partition wall
-  lg.estructura.add(box(S * 0.42, SH, 0.018, wallM2, -S * 0.04, SH/2, -S * 0.14));
+  // Bathroom partition wall (runs along X)
+  lg.estructura.add(box(W * 0.42, H, 0.018, wallM2, -W * 0.04, H/2, -D * 0.14));
 
   // ── FONTANERÍA (blue/red) ──
-  const pipeC  = mat(0x3B82F6, 0.9); // cold
-  const pipeH  = mat(0xEF4444, 0.9); // hot
-  const pipeD  = mat(0x1D4ED8, 0.9); // drain
+  const pipeC  = mat(0x3B82F6, 0.9);
+  const pipeH  = mat(0xEF4444, 0.9);
+  const pipeD  = mat(0x1D4ED8, 0.9);
   const fixtM  = mat(0x93C5FD, 0.45);
   const PR = 0.009, PRM = 0.013;
 
   // Main vertical supply (NW corner)
-  lg.fontaneria.add(pipe(PRM, SH, pipeC, -w2+0.04, SH/2, -d2+0.04));
+  lg.fontaneria.add(pipe(PRM, H, pipeC, -w2+0.04, H/2, -d2+0.04));
 
-  // Cold horizontal to bathroom
-  lg.fontaneria.add(pipe(PR, S*0.46, pipeC, -S*0.12, SH*0.26, -d2+0.07, 0, Math.PI/2));
+  // Cold horizontal to bathroom (runs along X)
+  lg.fontaneria.add(pipe(PR, W*0.46, pipeC, -W*0.12, H*0.26, -d2+0.07, 0, Math.PI/2));
 
-  // Hot water line
-  lg.fontaneria.add(pipe(PR, S*0.38, pipeH, -S*0.09, SH*0.36, -d2+0.05, 0, Math.PI/2));
+  // Hot water line (runs along X)
+  lg.fontaneria.add(pipe(PR, W*0.38, pipeH, -W*0.09, H*0.36, -d2+0.05, 0, Math.PI/2));
 
   // Shower supply vertical
-  lg.fontaneria.add(pipe(PR, SH*0.45, pipeC, -w2+0.06, SH*0.55, -d2*0.55, 0, 0));
+  lg.fontaneria.add(pipe(PR, H*0.45, pipeC, -w2+0.06, H*0.55, -d2*0.55));
 
-  // Shower horizontal
-  lg.fontaneria.add(pipe(PR, d2*0.3, pipeC, -w2+0.06, SH*0.75, -d2*0.4, Math.PI/2, 0));
+  // Shower horizontal (runs along Z)
+  lg.fontaneria.add(pipe(PR, d2*0.3, pipeC, -w2+0.06, H*0.75, -d2*0.4, Math.PI/2, 0));
 
   // Drains
-  lg.fontaneria.add(pipe(0.016, SH*0.25, pipeD,  w2*0.55, SH*0.04, -d2*0.55)); // toilet drain
-  lg.fontaneria.add(pipe(0.013, SH*0.2,  pipeD, -w2*0.55, SH*0.04, -d2*0.45)); // shower drain
+  lg.fontaneria.add(pipe(0.016, H*0.25, pipeD,  w2*0.55, H*0.04, -d2*0.55));
+  lg.fontaneria.add(pipe(0.013, H*0.2,  pipeD, -w2*0.55, H*0.04, -d2*0.45));
 
-  // Fixtures
-  lg.fontaneria.add(box(0.11, 0.05, 0.14, fixtM,  w2*0.55, 0.025, -d2*0.55)); // toilet
-  lg.fontaneria.add(box(0.09, 0.04, 0.07, fixtM,  w2*0.15, 0.04,  -d2+0.07)); // sink
+  // Fixtures (absolute sizes, proportional positions)
+  lg.fontaneria.add(box(0.11, 0.05, 0.14, fixtM,  w2*0.55, 0.025, -d2*0.55));
+  lg.fontaneria.add(box(0.09, 0.04, 0.07, fixtM,  w2*0.15, 0.04,  -d2+0.07));
 
   // Shower box
-  const showerBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, SH*0.55, 0.18), mat(0xBAE6FD, 0.18));
-  showerBox.position.set(-w2*0.55, SH*0.28, -d2*0.45);
+  const showerBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, H*0.55, 0.18), mat(0xBAE6FD, 0.18));
+  showerBox.position.set(-w2*0.55, H*0.28, -d2*0.45);
   lg.fontaneria.add(showerBox);
 
-  // Pipe joints (spheres at connections)
-  [[-w2+0.04, SH*0.26, -d2+0.07], [-w2+0.04, SH*0.36, -d2+0.05]].forEach(([x,y,z]) => {
+  // Pipe joints
+  [[-w2+0.04, H*0.26, -d2+0.07], [-w2+0.04, H*0.36, -d2+0.05]].forEach(([x,y,z]) => {
     const j = new THREE.Mesh(new THREE.SphereGeometry(PRM*1.4, 8, 8), pipeC);
     j.position.set(x, y, z);
     lg.fontaneria.add(j);
@@ -336,15 +347,15 @@ function buildModel() {
   const lightM = new THREE.MeshPhongMaterial({ color: 0xFDE68A, emissive: 0xFDE68A, emissiveIntensity: 0.5 });
   const CR = 0.007;
 
-  // Main panel
-  lg.electrico.add(box(0.07, 0.11, 0.018, panM, w2-0.02, SH*0.52, 0));
+  // Main panel (east wall)
+  lg.electrico.add(box(0.07, 0.11, 0.018, panM, w2-0.02, H*0.52, 0));
 
-  // Ceiling conduits along all walls
-  const condH = SH * 0.9;
-  lg.electrico.add(pipe(CR, S,    condM, 0,      condH, -d2+0.025, 0, Math.PI/2)); // north
-  lg.electrico.add(pipe(CR, S,    condM, 0,      condH,  d2-0.025, 0, Math.PI/2)); // south
-  lg.electrico.add(pipe(CR, S*0.5,condM, w2-0.025,condH, -S*0.15,  Math.PI/2, 0)); // east-north
-  lg.electrico.add(pipe(CR, S*0.5,condM, w2-0.025,condH,  S*0.15,  Math.PI/2, 0)); // east-south
+  // Ceiling conduits — north/south span W, east spans D
+  const condHt = H * 0.9;
+  lg.electrico.add(pipe(CR, W,      condM, 0,        condHt, -d2+0.025, 0, Math.PI/2));
+  lg.electrico.add(pipe(CR, W,      condM, 0,        condHt,  d2-0.025, 0, Math.PI/2));
+  lg.electrico.add(pipe(CR, D*0.5,  condM, w2-0.025, condHt, -D*0.15,  Math.PI/2, 0));
+  lg.electrico.add(pipe(CR, D*0.5,  condM, w2-0.025, condHt,  D*0.15,  Math.PI/2, 0));
 
   // Outlet drops + boxes
   const outlets = [
@@ -355,20 +366,20 @@ function buildModel() {
     [ 0,       d2*0.85],
   ];
   outlets.forEach(([x, z]) => {
-    lg.electrico.add(pipe(CR, SH*0.72, condM, x, SH*0.54, z));
-    lg.electrico.add(box(0.028, 0.028, 0.016, outM, x, SH*0.19, z));
+    lg.electrico.add(pipe(CR, H*0.72, condM, x, H*0.54, z));
+    lg.electrico.add(box(0.028, 0.028, 0.016, outM, x, H*0.19, z));
   });
 
   // Ceiling lights
-  [[-S*0.22,-S*0.22],[S*0.22,-S*0.22],[0,S*0.25]].forEach(([x,z]) => {
+  [[-W*0.22, -D*0.22], [W*0.22, -D*0.22], [0, D*0.25]].forEach(([x,z]) => {
     const l = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.012, 16), lightM);
-    l.position.set(x, SH - 0.006, z);
+    l.position.set(x, H - 0.006, z);
     lg.electrico.add(l);
-    lg.electrico.add(pipe(CR*0.85, 0.12, condM, x, SH-0.06, z));
+    lg.electrico.add(pipe(CR*0.85, 0.12, condM, x, H-0.06, z));
   });
 
-  // Switches near door
-  lg.electrico.add(box(0.025, 0.035, 0.015, outM, w2*0.15, SH*0.5, d2-0.02));
+  // Switches near door (south wall)
+  lg.electrico.add(box(0.025, 0.035, 0.015, outM, w2*0.15, H*0.5, d2-0.02));
 
   // ── ACABADOS ──
   const bathFloorM = mat(0x93C5FD, 0.35);
@@ -377,28 +388,35 @@ function buildModel() {
   const tileWallM  = mat(0xBAFAF1, 0.2);
 
   // Bathroom floor tiles
-  const bf = new THREE.Mesh(new THREE.PlaneGeometry(S*0.45, S*0.45), bathFloorM);
-  bf.rotation.x = -Math.PI/2; bf.position.set(-S*0.275, 0.002, -S*0.275);
+  const bf = new THREE.Mesh(new THREE.PlaneGeometry(W*0.45, D*0.45), bathFloorM);
+  bf.rotation.x = -Math.PI/2;
+  bf.position.set(-W*0.275, 0.002, -D*0.275);
   lg.acabados.add(bf);
 
   // Living room wood floor
-  const lf = new THREE.Mesh(new THREE.PlaneGeometry(S*0.55, S), woodFloorM);
-  lf.rotation.x = -Math.PI/2; lf.position.set(S*0.225, 0.002, 0);
+  const lf = new THREE.Mesh(new THREE.PlaneGeometry(W*0.55, D), woodFloorM);
+  lf.rotation.x = -Math.PI/2;
+  lf.position.set(W*0.225, 0.002, 0);
   lg.acabados.add(lf);
 
-  // Wall finishes
-  [[0, SH/2, -d2+0.014, 0],[0, SH/2, d2-0.014, Math.PI]].forEach(([x,y,z,ry]) => {
-    const wf = new THREE.Mesh(new THREE.PlaneGeometry(S, SH), wallFinM);
+  // Wall finishes (north & south)
+  [[0, H/2, -d2+0.014, 0], [0, H/2, d2-0.014, Math.PI]].forEach(([x,y,z,ry]) => {
+    const wf = new THREE.Mesh(new THREE.PlaneGeometry(W, H), wallFinM);
     wf.position.set(x,y,z); wf.rotation.y = ry;
     lg.acabados.add(wf);
   });
 
   // Bathroom wall tiles
-  [[-d2+0.015, 0],[-d2*0.55, -Math.PI/2]].forEach(([z, ry]) => {
-    const tf = new THREE.Mesh(new THREE.PlaneGeometry(S*0.44, SH), tileWallM);
-    tf.position.set(-S*0.28, SH/2, z); tf.rotation.y = ry;
-    lg.acabados.add(tf);
-  });
+  // North bathroom wall
+  const tileN = new THREE.Mesh(new THREE.PlaneGeometry(W*0.44, H), tileWallM);
+  tileN.position.set(-W*0.28, H/2, -d2+0.015);
+  lg.acabados.add(tileN);
+
+  // Bathroom partition wall tile (rotated)
+  const tileP = new THREE.Mesh(new THREE.PlaneGeometry(D*0.44, H), tileWallM);
+  tileP.position.set(-W*0.28, H/2, -d2*0.55);
+  tileP.rotation.y = -Math.PI/2;
+  lg.acabados.add(tileP);
 }
 
 buildModel();
@@ -435,15 +453,13 @@ async function startAR() {
     await renderer.xr.setSession(xrSession);
 
     xrSession.addEventListener('end', onSessionEnd);
-
-    // Select = tap to place
     xrSession.addEventListener('select', onTap);
 
     document.getElementById('pre-ar').style.display = 'none';
     document.getElementById('loading').classList.remove('show');
     document.getElementById('overlay').classList.add('active');
     document.getElementById('corner-ui').classList.add('show');
-    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas';
+    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas del piso';
 
     renderer.setAnimationLoop(render);
   } catch (e) {
@@ -462,57 +478,70 @@ function onTap() {
     const pos = new THREE.Vector3();
     pos.setFromMatrixPosition(reticle.matrix);
 
-    // Place corner marker
-    const markerGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.15, 16);
-    const markerMat = new THREE.MeshPhongMaterial({ color: 0x60A5FA, emissive: 0x3B82F6, emissiveIntensity: 0.4 });
+    const n = allPoints.length;
+    const isFloor = n < 4;
+    const cornerIdx = isFloor ? n : n - 4;  // which corner (0-3)
+
+    // Place visual marker
+    const markerGeo = new THREE.CylinderGeometry(0.03, 0.03, isFloor ? 0.12 : 0.08, 16);
+    const baseColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
+    const markerMat = new THREE.MeshPhongMaterial({
+      color: baseColors[cornerIdx],
+      emissive: baseColors[cornerIdx],
+      emissiveIntensity: 0.4
+    });
     const marker = new THREE.Mesh(markerGeo, markerMat);
     marker.position.copy(pos);
-    marker.position.y += 0.075;
+    marker.position.y += (isFloor ? 0.06 : 0.04);
     scene.add(marker);
+    cornerMarkers.push(marker);
 
-    // Add number label (small sphere on top with different color per corner)
-    const labelColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
+    // Label sphere on top
     const label = new THREE.Mesh(
-      new THREE.SphereGeometry(0.025, 12, 12),
-      new THREE.MeshPhongMaterial({ color: labelColors[corners.length], emissive: labelColors[corners.length], emissiveIntensity: 0.5 })
+      new THREE.SphereGeometry(isFloor ? 0.025 : 0.018, 12, 12),
+      new THREE.MeshPhongMaterial({
+        color: isFloor ? 0xffffff : 0x60A5FA,
+        emissive: isFloor ? 0xffffff : 0x60A5FA,
+        emissiveIntensity: 0.5
+      })
     );
     label.position.copy(pos);
-    label.position.y += 0.18;
+    label.position.y += (isFloor ? 0.15 : 0.10);
     scene.add(label);
+    cornerMarkers.push(label);
 
-    corners.push(pos.clone());
-    cornerMarkers.push(marker, label);
+    allPoints.push(pos.clone());
 
-    // Draw line to previous corner
-    if (corners.length > 1) {
-      const prev = corners[corners.length - 2];
-      const curr = corners[corners.length - 1];
-      const lineGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(prev.x, prev.y + 0.005, prev.z),
-        new THREE.Vector3(curr.x, curr.y + 0.005, curr.z)
-      ]);
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x60A5FA });
-      const line = new THREE.Line(lineGeo, lineMat);
-      scene.add(line);
-      cornerMarkers.push(line);
+    // Draw line connecting floor corners sequentially
+    if (isFloor && n > 0) {
+      const prev = allPoints[n - 1];
+      addLine(prev, pos, 0x60A5FA);
     }
 
-    // Update UI
+    // If finishing floor corners, close the floor polygon
+    if (n === 3) {
+      addLine(allPoints[3], allPoints[0], 0x60A5FA);
+    }
+
+    // Draw vertical line connecting floor corner to its ceiling corner
+    if (!isFloor) {
+      const floorPt = allPoints[cornerIdx];
+      addLine(floorPt, pos, 0xFBBF24);
+    }
+
+    // If finishing ceiling corners, close the ceiling polygon
+    if (n === 7) {
+      for (let i = 4; i < 7; i++) {
+        addLine(allPoints[i], allPoints[i+1], 0xFBBF24);
+      }
+      addLine(allPoints[7], allPoints[4], 0xFBBF24);
+    }
+
     updateCornerUI();
 
-    // If we have all 4 corners, close the loop and calibrate
-    if (corners.length === CORNER_COUNT) {
-      // Draw closing line (4th corner -> 1st corner)
-      const lineGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(corners[3].x, corners[3].y + 0.005, corners[3].z),
-        new THREE.Vector3(corners[0].x, corners[0].y + 0.005, corners[0].z)
-      ]);
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x60A5FA });
-      const closingLine = new THREE.Line(lineGeo, lineMat);
-      scene.add(closingLine);
-      cornerMarkers.push(closingLine);
-
-      setTimeout(() => calibrateFromCorners(), 500);
+    // All 8 points placed → calibrate
+    if (allPoints.length === TOTAL_POINTS) {
+      setTimeout(() => calibrateFromPoints(), 600);
     }
     return;
   }
@@ -533,14 +562,40 @@ function onTap() {
   );
 }
 
-function updateCornerUI() {
-  const n = corners.length;
-  document.getElementById('corner-step').textContent =
-    n < CORNER_COUNT ? `Esquina ${n + 1} de ${CORNER_COUNT}` : 'Calibrando...';
-  document.getElementById('corner-sub').textContent =
-    n < CORNER_COUNT ? 'Toca en la siguiente esquina de la habitación' : 'Ajustando modelo al cuarto';
+function addLine(a, b, color) {
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(a.x, a.y + 0.005, a.z),
+    new THREE.Vector3(b.x, b.y + 0.005, b.z)
+  ]);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color }));
+  scene.add(line);
+  cornerMarkers.push(line);
+}
 
-  for (let i = 0; i < CORNER_COUNT; i++) {
+function updateCornerUI() {
+  const n = allPoints.length;
+  const isFloor = n < 4;
+  const phase = isFloor ? 'Piso' : 'Techo';
+  const phaseIdx = isFloor ? n : n - 4;
+
+  if (n < 4) {
+    document.getElementById('corner-step').textContent = `Esquina ${n + 1} de 4 — Piso`;
+    document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
+  } else if (n < 8) {
+    document.getElementById('corner-step').textContent = `Esquina ${n - 3} de 4 — Techo`;
+    document.getElementById('corner-sub').textContent = 'Apunta arriba a la esquina del techo y toca';
+  } else {
+    document.getElementById('corner-step').textContent = 'Calibrando...';
+    document.getElementById('corner-sub').textContent = 'Ajustando modelo al cuarto';
+  }
+
+  // Update hint badge for phase transition
+  if (n === 4) {
+    document.getElementById('hint-badge').textContent = 'Ahora apunta al techo → toca las 4 esquinas';
+  }
+
+  // Update dots
+  for (let i = 0; i < TOTAL_POINTS; i++) {
     const dot = document.getElementById('cdot-' + i);
     dot.classList.toggle('done', i < n);
     dot.classList.toggle('active', i === n);
@@ -549,54 +604,59 @@ function updateCornerUI() {
   if (n > 0) document.getElementById('reset-corners-btn').style.display = 'inline-block';
 }
 
-function calibrateFromCorners() {
-  // Compute bounding box of corners on XZ plane
+function calibrateFromPoints() {
+  // Floor corners: indices 0-3 → room footprint and position
+  const floorPts = allPoints.slice(0, 4);
+  // Ceiling corners: indices 4-7 → room height
+  const ceilPts = allPoints.slice(4, 8);
+
+  // Compute floor bounding box (XZ plane)
   let minX = Infinity, maxX = -Infinity;
   let minZ = Infinity, maxZ = -Infinity;
-  let avgY = 0;
+  let floorY = 0;
 
-  corners.forEach(c => {
+  floorPts.forEach(c => {
     minX = Math.min(minX, c.x);
     maxX = Math.max(maxX, c.x);
     minZ = Math.min(minZ, c.z);
     maxZ = Math.max(maxZ, c.z);
-    avgY += c.y;
+    floorY += c.y;
   });
-  avgY /= corners.length;
+  floorY /= 4;
 
-  const roomW = maxX - minX;   // width in meters
-  const roomD = maxZ - minZ;   // depth in meters
+  // Compute average ceiling Y
+  let ceilY = 0;
+  ceilPts.forEach(c => { ceilY += c.y; });
+  ceilY /= 4;
+
+  const roomW = maxX - minX;
+  const roomD = maxZ - minZ;
+  const roomH = Math.abs(ceilY - floorY);
   const centerX = (minX + maxX) / 2;
   const centerZ = (minZ + maxZ) / 2;
 
-  // Use the smaller dimension to keep proportions if room is not square
-  // The model is built as S x S square, so we scale to fit
-  const roomSize = Math.max(roomW, roomD);
-  const scaleFactor = roomSize / S;
-  // Height: assume ~3m real room -> SH should be proportional
-  const heightFactor = scaleFactor;
+  // Safety: minimum dimensions
+  W = Math.max(roomW, 0.3);
+  D = Math.max(roomD, 0.3);
+  H = Math.max(roomH, 0.3);
 
-  // Rebuild the model at new scale
-  S = roomSize;
-  SH = roomSize / 2;  // height = half footprint (reasonable for a room)
-
-  // Clear old model children
+  // Clear old model geometry
   Object.values(layerGroups).forEach(g => {
     while (g.children.length > 0) g.remove(g.children[0]);
   });
 
+  // Rebuild with real dimensions
   buildModel();
 
-  // Position model at center of corners, on the floor
-  model.position.set(centerX, avgY, centerZ);
+  // Position model at center of floor corners
+  model.position.set(centerX, floorY, centerZ);
 
-  // Compute room orientation from the longest edge
-  // Find the two corners that form the longest edge to align the model
+  // Align rotation to longest floor edge
   let bestAngle = 0;
   let bestLen = 0;
-  for (let i = 0; i < corners.length; i++) {
-    const a = corners[i];
-    const b = corners[(i + 1) % corners.length];
+  for (let i = 0; i < 4; i++) {
+    const a = floorPts[i];
+    const b = floorPts[(i + 1) % 4];
     const dx = b.x - a.x;
     const dz = b.z - a.z;
     const len = Math.sqrt(dx * dx + dz * dz);
@@ -607,49 +667,46 @@ function calibrateFromCorners() {
   }
   model.rotation.y = bestAngle;
 
-  // Scale for non-square rooms: apply separate X/Z scale
-  if (roomW > 0 && roomD > 0) {
-    const baseSize = Math.max(roomW, roomD);
-    model.scale.set(
-      roomW / baseSize,
-      1,
-      roomD / baseSize
-    );
-  }
+  // Reset scale (model is already built at correct W x D x H)
+  model.scale.set(1, 1, 1);
 
-  // Show model and update UI
+  // Show model
   model.visible = true;
   calibrated = true;
   placed = true;
 
-  // Remove corner markers after a brief moment
+  // Remove corner markers
   setTimeout(() => {
     cornerMarkers.forEach(m => scene.remove(m));
     cornerMarkers.length = 0;
   }, 1500);
 
-  // Update overlay UI
+  // Update UI
   document.getElementById('corner-ui').classList.remove('show');
   document.getElementById('hint-badge').textContent = 'Modelo ajustado al cuarto';
   document.getElementById('hint-badge').classList.add('placed');
   document.getElementById('info-card').classList.add('show');
+  document.getElementById('info-dims').textContent =
+    `${W.toFixed(1)}m × ${D.toFixed(1)}m × ${H.toFixed(1)}m`;
   setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 4000);
 }
 
 function resetCorners() {
-  // Remove all corner markers from scene
   cornerMarkers.forEach(m => scene.remove(m));
   cornerMarkers.length = 0;
-  corners.length = 0;
+  allPoints.length = 0;
   calibrated = false;
   placed = false;
   model.visible = false;
 
-  // Reset UI
   document.getElementById('reset-corners-btn').style.display = 'none';
-  document.getElementById('corner-step').textContent = 'Esquina 1 de 4';
-  document.getElementById('corner-sub').textContent = 'Toca en una esquina de la habitación';
-  for (let i = 0; i < CORNER_COUNT; i++) {
+  document.getElementById('corner-step').textContent = 'Esquina 1 de 4 — Piso';
+  document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
+  document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas del piso';
+  document.getElementById('hint-badge').classList.remove('placed');
+  document.getElementById('hint-badge').style.display = '';
+
+  for (let i = 0; i < TOTAL_POINTS; i++) {
     const dot = document.getElementById('cdot-' + i);
     dot.classList.remove('done');
     dot.classList.toggle('active', i === 0);
@@ -669,15 +726,12 @@ function onSessionEnd() {
   hitTestSource = null;
   hitTestRequested = false;
 
-  // Clean up corner markers
   cornerMarkers.forEach(m => scene.remove(m));
   cornerMarkers.length = 0;
-  corners.length = 0;
+  allPoints.length = 0;
 
-  // Reset model scale
   model.scale.set(1, 1, 1);
-  S = 1.2;
-  SH = 0.6;
+  W = 1.2; D = 1.2; H = 0.6;
 
   document.getElementById('overlay').classList.remove('active');
   document.getElementById('corner-ui').classList.remove('show');
@@ -692,7 +746,6 @@ function render(timestamp, frame) {
     const refSpace = renderer.xr.getReferenceSpace();
     const session  = renderer.xr.getSession();
 
-    // Setup hit test source once
     if (!hitTestRequested) {
       session.requestReferenceSpace('viewer').then(viewerSpace => {
         session.requestHitTestSource({ space: viewerSpace }).then(src => {
@@ -702,7 +755,6 @@ function render(timestamp, frame) {
       hitTestRequested = true;
     }
 
-    // Update reticle from hit test
     if (hitTestSource) {
       const results = frame.getHitTestResults(hitTestSource);
       if (results.length > 0) {
