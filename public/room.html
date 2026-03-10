@@ -918,7 +918,8 @@ function calibrateFromPoints() {
   // Hide reticle — model is now locked in place
   reticle.visible = false;
 
-  setTimeout(() => { cornerMarkers.forEach(m => scene.remove(m)); cornerMarkers.length = 0; }, 1500);
+  // DEBUG: keep corner markers visible permanently
+  // cornerMarkers stay in scene so you can see where the 8 points are
 
   document.getElementById('corner-ui').classList.remove('show');
   document.getElementById('hint-badge').textContent = 'Modelo fijo — camina alrededor para explorar';
