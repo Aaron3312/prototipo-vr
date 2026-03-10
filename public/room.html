@@ -132,7 +132,7 @@
 <div id="pre-ar">
   <div style="font-size:56px">🏗️</div>
   <h1>AR Construcción 3D</h1>
-  <p>Marca 4 esquinas del piso y 4 del techo para ajustar el modelo al tamaño real de tu habitación</p>
+  <p>Marca las 4 esquinas del piso y 1 punto en el techo para ajustar el modelo al tamaño real de tu habitación</p>
   <button id="start-btn" onclick="startAR()">Iniciar AR</button>
   <div id="no-xr">Tu dispositivo no soporta WebXR AR.<br>Requiere Android + Chrome.</div>
 </div>
@@ -163,9 +163,6 @@
     <div class="corner-row-label">Techo</div>
     <div class="corner-dots">
       <div class="corner-dot" id="cdot-4"></div>
-      <div class="corner-dot" id="cdot-5"></div>
-      <div class="corner-dot" id="cdot-6"></div>
-      <div class="corner-dot" id="cdot-7"></div>
     </div>
     <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
   </div>
@@ -234,7 +231,7 @@ reticle.add(new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA
 const allPoints = [];
 const cornerMarkers = [];
 let calibrated = false;
-const TOTAL_POINTS = 8;
+const TOTAL_POINTS = 5; // 4 floor corners + 1 ceiling point
 
 // Room dimensions (set by calibration)
 let W = 1.2;
@@ -800,38 +797,47 @@ function onTap() {
 
     const n = allPoints.length;
     const isFloor = n < 4;
-    const cornerIdx = isFloor ? n : n - 4;
 
-    const markerGeo = new THREE.CylinderGeometry(0.03, 0.03, isFloor ? 0.12 : 0.08, 16);
-    const baseColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
-    const marker = new THREE.Mesh(markerGeo, new THREE.MeshPhongMaterial({
-      color: baseColors[cornerIdx], emissive: baseColors[cornerIdx], emissiveIntensity: 0.4
-    }));
+    // Floor corners: colored markers; Ceiling: single blue marker
+    const floorColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
+    const markerColor = isFloor ? floorColors[n] : 0x60A5FA;
+    const markerH = isFloor ? 0.12 : 0.08;
+
+    const marker = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, markerH, 16),
+      new THREE.MeshPhongMaterial({ color: markerColor, emissive: markerColor, emissiveIntensity: 0.4 })
+    );
     marker.position.copy(pos);
-    marker.position.y += (isFloor ? 0.06 : 0.04);
+    marker.position.y += markerH / 2;
     scene.add(marker);
     cornerMarkers.push(marker);
 
     const label = new THREE.Mesh(
-      new THREE.SphereGeometry(isFloor ? 0.025 : 0.018, 12, 12),
+      new THREE.SphereGeometry(isFloor ? 0.025 : 0.022, 12, 12),
       new THREE.MeshPhongMaterial({
-        color: isFloor ? 0xffffff : 0x60A5FA,
-        emissive: isFloor ? 0xffffff : 0x60A5FA, emissiveIntensity: 0.5
+        color: isFloor ? 0xffffff : 0xFBBF24,
+        emissive: isFloor ? 0xffffff : 0xFBBF24, emissiveIntensity: 0.5
       })
     );
     label.position.copy(pos);
-    label.position.y += (isFloor ? 0.15 : 0.10);
+    label.position.y += markerH + 0.03;
     scene.add(label);
     cornerMarkers.push(label);
 
     allPoints.push(pos.clone());
 
+    // Floor corner lines (blue polygon)
     if (isFloor && n > 0) addLine(allPoints[n - 1], pos, 0x60A5FA);
     if (n === 3) addLine(allPoints[3], allPoints[0], 0x60A5FA);
-    if (!isFloor) addLine(allPoints[cornerIdx], pos, 0xFBBF24);
-    if (n === 7) {
-      for (let i = 4; i < 7; i++) addLine(allPoints[i], allPoints[i + 1], 0xFBBF24);
-      addLine(allPoints[7], allPoints[4], 0xFBBF24);
+
+    // Ceiling point: draw vertical line from floor center to ceiling point
+    if (!isFloor) {
+      const floorCenter = new THREE.Vector3(
+        (allPoints[0].x + allPoints[1].x + allPoints[2].x + allPoints[3].x) / 4,
+        (allPoints[0].y + allPoints[1].y + allPoints[2].y + allPoints[3].y) / 4,
+        (allPoints[0].z + allPoints[1].z + allPoints[2].z + allPoints[3].z) / 4
+      );
+      addLine(floorCenter, pos, 0xFBBF24);
     }
 
     updateCornerUI();
@@ -857,28 +863,26 @@ function updateCornerUI() {
   if (n < 4) {
     document.getElementById('corner-step').textContent = `Esquina ${n + 1} de 4 — Piso`;
     document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
-  } else if (n < 8) {
-    document.getElementById('corner-step').textContent = `Esquina ${n - 3} de 4 — Techo`;
-    document.getElementById('corner-sub').textContent = 'Apunta arriba a la esquina del techo y toca';
+  } else if (n === 4) {
+    document.getElementById('corner-step').textContent = 'Punto de techo';
+    document.getElementById('corner-sub').textContent = 'Apunta al techo y toca para medir la altura';
+    document.getElementById('hint-badge').textContent = 'Apunta al techo → toca 1 punto';
   } else {
     document.getElementById('corner-step').textContent = 'Calibrando...';
     document.getElementById('corner-sub').textContent = 'Ajustando modelo al cuarto';
   }
-  if (n === 4) {
-    document.getElementById('hint-badge').textContent = 'Ahora apunta al techo → toca las 4 esquinas';
-  }
   for (let i = 0; i < TOTAL_POINTS; i++) {
     const dot = document.getElementById('cdot-' + i);
-    dot.classList.toggle('done', i < n);
-    dot.classList.toggle('active', i === n);
+    if (dot) {
+      dot.classList.toggle('done', i < n);
+      dot.classList.toggle('active', i === n);
+    }
   }
   if (n > 0) document.getElementById('reset-corners-btn').style.display = 'inline-block';
 }
 
 function calibrateFromPoints() {
   const floorPts = allPoints.slice(0, 4);
-  const ceilPts = allPoints.slice(4, 8);
-
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, floorY = 0;
   floorPts.forEach(c => {
     minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
@@ -887,9 +891,7 @@ function calibrateFromPoints() {
   });
   floorY /= 4;
 
-  let ceilY = 0;
-  ceilPts.forEach(c => { ceilY += c.y; });
-  ceilY /= 4;
+  const ceilY = allPoints[4].y;
 
   W = Math.max(maxX - minX, 0.5);
   D = Math.max(maxZ - minZ, 0.5);
