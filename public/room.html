@@ -60,9 +60,9 @@
     }
     .layer-btn{
       display:flex;flex-direction:column;align-items:center;gap:3px;
-      padding:10px 14px;border-radius:16px;border:2px solid transparent;
-      font-size:11px;font-weight:800;color:#fff;cursor:pointer;
-      backdrop-filter:blur(12px);transition:all .2s;min-width:72px;
+      padding:8px 10px;border-radius:16px;border:2px solid transparent;
+      font-size:10px;font-weight:800;color:#fff;cursor:pointer;
+      backdrop-filter:blur(12px);transition:all .2s;min-width:58px;
       background:rgba(0,0,0,.55);
     }
     .layer-btn .icon{font-size:20px}
@@ -190,6 +190,9 @@
     <button class="layer-btn" id="btn-acabados" style="border-color:#34D399" onclick="toggleLayer('acabados')">
       <span class="icon">🏠</span><span>Acabados</span>
     </button>
+    <button class="layer-btn" id="btn-muebles" style="border-color:#F472B6" onclick="toggleLayer('muebles')">
+      <span class="icon">🚿</span><span>Muebles</span>
+    </button>
   </div>
 
   <button id="exit-btn" onclick="exitAR()">✕ Salir</button>
@@ -244,8 +247,9 @@ const layerGroups = {
   fontaneria: new THREE.Group(),
   electrico:  new THREE.Group(),
   acabados:   new THREE.Group(),
+  muebles:    new THREE.Group(),
 };
-const layerState = { estructura: true, fontaneria: true, electrico: true, acabados: true };
+const layerState = { estructura: true, fontaneria: true, electrico: true, acabados: true, muebles: true };
 
 const model = new THREE.Group();
 Object.values(layerGroups).forEach(g => model.add(g));
@@ -605,13 +609,13 @@ function buildModel() {
     )).position.set(x, y, z);
   });
 
-  // ── 3D FIXTURES ──
+  // ── 3D FIXTURES (muebles layer) ──
   // Toilet — left side, south area, facing east (+X)
-  addToilet(lg.fontaneria, toiletX, toiletZ, -Math.PI / 2);
+  addToilet(lg.muebles, toiletX, toiletZ, -Math.PI / 2);
   // Sink — against north wall, facing south (+Z)
-  addSink(lg.fontaneria, sinkX, sinkZ, 0);
+  addSink(lg.muebles, sinkX, sinkZ, 0);
   // Shower — right-center, lower area
-  addShower(lg.fontaneria, showerX, showerZ, shW, shD, 0);
+  addShower(lg.muebles, showerX, showerZ, shW, shD, 0);
 
   // ─────────── ELÉCTRICO ───────────
   const condM = mat(0xFBBF24, 0.92);
@@ -835,12 +839,7 @@ function onTap() {
     return;
   }
 
-  // Post-calibration: reposition
-  model.position.setFromMatrixPosition(reticle.matrix);
-  model.rotation.y = Math.atan2(
-    camera.position.x - model.position.x,
-    camera.position.z - model.position.z
-  );
+  // Post-calibration: model is locked, ignore taps
 }
 
 function addLine(a, b, color) {
@@ -916,15 +915,18 @@ function calibrateFromPoints() {
   calibrated = true;
   placed = true;
 
+  // Hide reticle — model is now locked in place
+  reticle.visible = false;
+
   setTimeout(() => { cornerMarkers.forEach(m => scene.remove(m)); cornerMarkers.length = 0; }, 1500);
 
   document.getElementById('corner-ui').classList.remove('show');
-  document.getElementById('hint-badge').textContent = 'Modelo ajustado al cuarto';
+  document.getElementById('hint-badge').textContent = 'Modelo fijo — camina alrededor para explorar';
   document.getElementById('hint-badge').classList.add('placed');
   document.getElementById('info-card').classList.add('show');
   document.getElementById('info-dims').textContent =
     `${W.toFixed(1)}m × ${D.toFixed(1)}m × ${H.toFixed(1)}m`;
-  setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 4000);
+  setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 5000);
 }
 
 function resetCorners() {
@@ -980,7 +982,8 @@ function render(timestamp, frame) {
       });
       hitTestRequested = true;
     }
-    if (hitTestSource) {
+    // Only show reticle during calibration phase
+    if (hitTestSource && !calibrated) {
       const results = frame.getHitTestResults(hitTestSource);
       if (results.length > 0) {
         reticle.visible = true;
