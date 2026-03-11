@@ -1330,8 +1330,8 @@ function onTap() {
     return;
   }
 
-  // Post-calibration: raycast para inspeccionar elementos
-  const hit = raycastModel(lastTouchNDC);
+  // Post-calibration: raycast desde el centro (crosshair) — toca donde sea para inspeccionar
+  const hit = raycastModel(new THREE.Vector2(0, 0));
   if (hit) {
     showSpecPanel(hit.object.userData);
   } else {

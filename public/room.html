@@ -547,10 +547,8 @@ function onTap() {
     return;
   }
 
-  // Post-calibration: raycast para inspeccionar elementos
-  console.log('[AR-inspect] tap NDC:', lastTouchNDC.x.toFixed(2), lastTouchNDC.y.toFixed(2), '| model visible:', model.visible, '| children:', model.children.length);
-  const hit = raycastModel(lastTouchNDC);
-  console.log('[AR-inspect] hit:', hit ? hit.object.userData.nombre : 'ninguno');
+  // Post-calibration: raycast desde el centro (crosshair) — toca donde sea para inspeccionar
+  const hit = raycastModel(new THREE.Vector2(0, 0));
   if (hit) {
     showSpecPanel(hit.object.userData);
   } else {
