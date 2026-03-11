@@ -497,6 +497,14 @@
       0%,100%{box-shadow:0 0 40px rgba(34,197,94,.5),inset 0 1px 0 rgba(255,255,255,.2)}
       50%{box-shadow:0 0 70px rgba(34,197,94,.9),inset 0 1px 0 rgba(255,255,255,.2)}
     }
+    #mock-start-wrap.pending-start::after{
+      content:'Toca la pantalla para continuar';
+      display:block;color:rgba(34,197,94,.9);
+      font-size:11px;font-weight:600;letter-spacing:.5px;
+      text-align:center;margin-top:8px;
+      animation:pendingFade 1.2s ease-in-out infinite;
+    }
+    @keyframes pendingFade{0%,100%{opacity:.5}50%{opacity:1}}
 
     /* Landscape: todo en columna pero compacto, header arriba, iniciar abajo */
     @media (orientation:landscape){
@@ -1916,21 +1924,19 @@ function clearFingerDwell() {
   if (fingerHovering) { fingerHovering.classList.remove('dwelling'); fingerHovering = null; }
 }
 
-// Dwell completado en Iniciar — espera tap físico (requerido por WebXR)
+// Dwell completado en Iniciar — captura el próximo toque en pantalla para iniciar XR
+// (requestSession exige gesto físico del usuario — requisito del navegador, no se puede saltar)
 let pendingStart = false;
 function activatePendingStart() {
   if (pendingStart) return;
   pendingStart = true;
-  const btn = document.getElementById('mock-start-btn');
   const wrap = document.getElementById('mock-start-wrap');
-  btn.innerHTML = '<span style="font-size:22px">👆</span> TOCA PARA INICIAR';
   wrap.classList.add('pending-start');
   // Cualquier toque en la pantalla activa el inicio (eso SÍ es gesto de usuario)
   const handler = (e) => {
     e.preventDefault();
     pendingStart = false;
     wrap.classList.remove('pending-start');
-    btn.innerHTML = '<span style="font-size:20px">🚀</span> Iniciar';
     document.removeEventListener('touchstart', handler, true);
     document.removeEventListener('mousedown', handler, true);
     startCalibration();
