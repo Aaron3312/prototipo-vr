@@ -45,6 +45,9 @@
     }
     #back-link:hover{color:rgba(255,255,255,.7)}
 
+    /* Wrappers de columna: invisibles en portrait */
+    #pre-ar-left,#pre-ar-right{display:contents}
+
     /* ── TOAST ── */
     #toast{
       position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -236,21 +239,104 @@
     #loading.show{display:flex}
     .spin{font-size:44px;animation:spin 1.2s linear infinite}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+    /* ── LANDSCAPE ORIENTATION ── */
+    @media (orientation: landscape) {
+
+      /* Pre-AR: dos columnas para aprovechar el ancho */
+      #pre-ar{
+        flex-direction:row;
+        align-items:center;
+        justify-content:center;
+        gap:0;
+        padding:16px 40px;
+      }
+      #pre-ar::before{display:none}
+
+      /* Columna izquierda: icono + título */
+      #pre-ar-left{
+        display:flex;flex-direction:column;align-items:center;
+        gap:8px;flex:0 0 auto;padding-right:32px;
+        border-right:1px solid rgba(255,255,255,.08);
+      }
+      .pre-icon{font-size:44px;filter:drop-shadow(0 0 16px rgba(99,102,241,.4))}
+      #pre-ar h1{font-size:20px;font-weight:900;color:#fff;text-align:center}
+
+      /* Columna derecha: descripción + botón + link */
+      #pre-ar-right{
+        display:flex;flex-direction:column;align-items:flex-start;
+        gap:12px;flex:1 1 auto;padding-left:32px;max-width:380px;
+      }
+      #pre-ar p{font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;text-align:left;max-width:100%}
+      #start-btn{padding:12px 32px;font-size:14px;width:100%}
+      #no-xr{font-size:11px}
+      #back-link{font-size:11px}
+
+      /* Top-bar compacto */
+      #top-bar{top:8px;left:10px;right:10px}
+      .badge{padding:5px 10px;font-size:11px;border-radius:10px}
+      #hint-badge{padding:5px 10px;font-size:11px;border-radius:10px}
+
+      /* Capas: columna vertical a la derecha */
+      #layers{
+        flex-direction:column;
+        bottom:auto;top:50%;transform:translateY(-50%);
+        right:10px;left:auto;
+        padding:0;gap:5px;
+        width:auto;justify-content:center;
+      }
+      .layer-btn{
+        padding:6px 8px;min-width:50px;font-size:9px;border-radius:10px;
+        flex-direction:column;
+      }
+      .layer-btn .icon{font-size:18px}
+
+      /* Herramientas */
+      #tools-toggle{bottom:10px;left:10px;width:40px;height:40px;font-size:18px;border-radius:12px}
+      #ar-tools-drawer.open{max-height:75vh;padding:12px 12px 14px}
+
+      /* Corner-UI: esquina inferior izquierda, compacto */
+      #corner-ui{
+        bottom:10px;left:60px;right:70px;
+        padding:10px 14px;border-radius:12px;
+        display:none;
+      }
+      #corner-ui.show{display:block}
+      #corner-step{font-size:12px;margin-bottom:2px}
+      #corner-sub{font-size:10px;margin-bottom:6px}
+      .corner-row-label{font-size:8px;margin-bottom:3px}
+      .corner-dots{gap:5px;margin-bottom:5px}
+      .corner-dot{width:11px;height:11px}
+
+      /* Info card: izquierda media altura */
+      #info-card{
+        bottom:10px;left:60px;max-width:180px;padding:10px;border-radius:12px;
+      }
+      #info-title{font-size:12px;margin-bottom:4px}
+      #info-dims{font-size:10px;margin-bottom:4px}
+
+      /* Exit */
+      #exit-btn{top:8px;right:10px;padding:5px 12px;font-size:11px;border-radius:10px}
+    }
   </style>
 </head>
 <body>
 
 <!-- Pre-AR screen -->
 <div id="pre-ar">
-  <div class="pre-icon">🏗️</div>
-  <h1>AR Cocina 3D</h1>
-  <p>Marca las 4 esquinas del piso y 1 punto en el techo para ajustar el modelo al tamano real de tu cocina</p>
-  <button id="start-btn" onclick="startAR()">
-    <span style="font-size:20px">🚀</span>
-    Iniciar — Tomar medidas
-  </button>
-  <div id="no-xr">Tu dispositivo no soporta WebXR AR.<br>Requiere Android + Chrome.</div>
-  <a href="/" id="back-link">← Volver al menu</a>
+  <div id="pre-ar-left">
+    <div class="pre-icon">🏗️</div>
+    <h1>AR Cocina 3D</h1>
+  </div>
+  <div id="pre-ar-right">
+    <p>Marca las 4 esquinas del piso y 1 punto en el techo para ajustar el modelo al tamano real de tu cocina</p>
+    <button id="start-btn" onclick="startAR()">
+      <span style="font-size:20px">🚀</span>
+      Iniciar — Tomar medidas
+    </button>
+    <div id="no-xr">Tu dispositivo no soporta WebXR AR.<br>Requiere Android + Chrome.</div>
+    <a href="/" id="back-link">← Volver al menu</a>
+  </div>
 </div>
 
 <!-- Toast notification -->
@@ -1678,6 +1764,12 @@ function toggleToolsDrawer() {
   // hide layers bar when drawer is open so they don't overlap
   document.getElementById('layers').style.display = drawerOpen ? 'none' : 'flex';
 }
+
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
 
 window.addEventListener('load', async () => {
   if (!navigator.xr || !await navigator.xr.isSessionSupported('immersive-ar').catch(() => false)) {
