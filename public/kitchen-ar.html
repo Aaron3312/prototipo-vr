@@ -387,40 +387,41 @@
     /* Grid 2 columnas en portrait, 4 en landscape */
     .mock-grid{
       display:grid;grid-template-columns:repeat(2,1fr);
-      gap:8px;width:100%;max-width:360px;flex-shrink:0;
+      gap:10px;width:100%;max-width:420px;flex-shrink:0;
       position:relative;z-index:1;
     }
 
     /* Holographic card */
     .mock-card{
-      background:rgba(2,4,20,.55);
-      border:1px solid rgba(var(--cc),0.45);
-      border-radius:14px;padding:18px 8px 12px;
-      display:flex;flex-direction:column;align-items:center;gap:7px;
+      background:rgba(var(--cc),0.06);
+      border:1px solid rgba(var(--cc),0.5);
+      border-radius:18px;padding:24px 10px 18px;
+      display:flex;flex-direction:column;align-items:center;gap:10px;
       cursor:pointer;pointer-events:all;
       position:relative;overflow:hidden;
-      box-shadow:0 0 20px rgba(var(--cc),.15),inset 0 0 30px rgba(var(--cc),.06);
+      box-shadow:0 0 24px rgba(var(--cc),.12),inset 0 0 40px rgba(var(--cc),.04);
       transition:background .25s,box-shadow .25s;
       user-select:none;-webkit-user-select:none;
       -webkit-tap-highlight-color:transparent;
+      min-height:110px;
     }
     .mock-card::before{
-      content:'';position:absolute;inset:0;border-radius:14px;
-      background:linear-gradient(180deg,rgba(var(--cc),.09) 0%,transparent 100%);
+      content:'';position:absolute;inset:0;border-radius:18px;
+      background:linear-gradient(180deg,rgba(var(--cc),.08) 0%,transparent 60%);
     }
     .mock-card.dwelling,.mock-card:hover{
-      background:rgba(2,4,20,.7);
-      box-shadow:0 0 32px rgba(var(--cc),.4),inset 0 0 30px rgba(var(--cc),.1);
+      background:rgba(var(--cc),.12);
+      box-shadow:0 0 40px rgba(var(--cc),.4),inset 0 0 30px rgba(var(--cc),.08);
     }
     .mock-card.activated{
-      background:rgba(2,4,20,.75);
-      box-shadow:0 0 55px rgba(var(--cc),.75);
+      background:rgba(var(--cc),.22);
+      box-shadow:0 0 60px rgba(var(--cc),.75);
       transition:none;
     }
 
-    /* Dwell ring — círculo SVG que se llena al mantener pulsado */
+    /* Dwell ring */
     .dwell-ring{
-      position:absolute;width:56px;height:56px;
+      position:absolute;width:64px;height:64px;
       top:50%;left:50%;
       transform:translate(-50%,-50%) rotate(-90deg);
       pointer-events:none;z-index:2;
@@ -435,14 +436,14 @@
     .mock-card.dwelling .dwell-fill{animation:dwellProgress .7s linear forwards}
     @keyframes dwellProgress{to{stroke-dashoffset:0}}
 
-    /* Icon con glow del color del panel */
+    /* Icon con glow */
     .mock-card-icon{
-      font-size:28px;line-height:1;position:relative;z-index:1;
-      filter:drop-shadow(0 0 8px rgba(var(--cc),.55));
+      font-size:34px;line-height:1;position:relative;z-index:1;
+      filter:drop-shadow(0 0 10px rgba(var(--cc),.6));
     }
     .mock-card-label{
-      font-size:9px;font-weight:700;color:rgba(255,255,255,.75);
-      text-align:center;line-height:1.3;
+      font-size:10px;font-weight:700;color:rgba(255,255,255,.8);
+      text-align:center;line-height:1.4;
       position:relative;z-index:1;
       text-transform:uppercase;letter-spacing:.8px;
     }
@@ -500,12 +501,12 @@
       .mock-hud-status{font-size:8px}
       .mock-grid{
         grid-template-columns:repeat(4,1fr);
-        max-width:none;width:100%;gap:6px;
+        max-width:none;width:100%;gap:8px;
       }
-      .mock-card{padding:8px 6px 6px;border-radius:10px;gap:4px}
-      .mock-card-icon{font-size:18px}
+      .mock-card{padding:12px 8px 10px;border-radius:14px;gap:6px;min-height:80px}
+      .mock-card-icon{font-size:24px}
       .mock-card-label{font-size:8px;letter-spacing:.3px}
-      .dwell-ring{width:40px;height:40px}
+      .dwell-ring{width:48px;height:48px}
       #mock-start-wrap{max-width:none;margin-top:6px}
       #mock-start-btn{
         padding:10px 20px;font-size:13px;letter-spacing:2px;border-radius:12px;
@@ -1863,21 +1864,15 @@ function checkFingerHover(x, y) {
     fingerHovering = found;
     if (found) beginFingerDwell(found);
   }
-  // Detectar hover sobre botón Iniciar
+  // Hover visual sobre Iniciar — NO auto-dispara (WebXR requiere gesto real del usuario)
   const btn = document.getElementById('mock-start-btn');
   const br = btn.getBoundingClientRect();
   const onBtn = x >= br.left && x <= br.right && y >= br.top && y <= br.bottom;
   if (onBtn && !startBtnHovering) {
     startBtnHovering = true;
     btn.classList.add('dwelling');
-    startBtnDwellTimer = setTimeout(() => {
-      btn.classList.remove('dwelling');
-      startBtnHovering = false;
-      startCalibration();
-    }, 1000);
   } else if (!onBtn && startBtnHovering) {
     startBtnHovering = false;
-    clearTimeout(startBtnDwellTimer);
     btn.classList.remove('dwelling');
   }
 }
@@ -1915,11 +1910,40 @@ function stopMockCamera() {
 }
 
 // ── MOCK MENU → CALIBRACIÓN ──
+// requestSession() debe ser la primera llamada async — requiere gesto del usuario
+// Liberamos la cámara DESPUÉS de obtener la sesión XR para evitar conflictos
 async function startCalibration() {
   document.getElementById('mock-menu').classList.remove('active');
   document.getElementById('loading').classList.add('show');
-  stopMockCamera();
-  await startAR();
+  stopHandTracking(); // parar MediaPipe sin tocar la cámara todavía
+  try {
+    // 1. Pedir sesión XR inmediatamente (aún dentro del gesto del usuario)
+    xrSession = await navigator.xr.requestSession('immersive-ar', {
+      requiredFeatures: ['hit-test'],
+      optionalFeatures: ['dom-overlay'],
+      domOverlay: { root: document.getElementById('overlay') },
+    });
+    // 2. Ahora sí liberamos la cámara (XR ya tiene el control)
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    const vb = document.getElementById('camera-bg');
+    vb.srcObject = null; vb.classList.remove('active');
+    // 3. Configurar sesión XR
+    renderer.xr.setReferenceSpaceType('local');
+    await renderer.xr.setSession(xrSession);
+    xrSession.addEventListener('end', onSessionEnd);
+    xrSession.addEventListener('select', onTap);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('corner-ui').classList.add('show');
+    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
+    renderer.setAnimationLoop(render);
+  } catch(e) {
+    console.error(e);
+    stopMockCamera();
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('mock-menu').classList.add('active');
+    showToast('Error al iniciar AR: ' + e.message);
+  }
 }
 
 // ── WEBXR ──
