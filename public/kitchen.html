@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Cocina 3D — Construcción</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0d1117;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    canvas{display:block}
+
+    /* ── TOP BAR ── */
+    #top-bar{
+      position:fixed;top:0;left:0;right:0;height:54px;
+      background:rgba(13,17,23,.92);border-bottom:1px solid rgba(255,255,255,.08);
+      backdrop-filter:blur(16px);display:flex;align-items:center;
+      padding:0 16px;gap:12px;z-index:50;
+    }
+    #top-bar h1{font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
+    .badge-mode{
+      background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.5);
+      color:#818cf8;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;
+    }
+    .spacer{flex:1}
+    #back-btn{
+      padding:7px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.15);
+      background:transparent;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;
+      cursor:pointer;text-decoration:none;transition:all .2s;
+    }
+    #back-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+
+    /* ── SIDE PANEL ── */
+    #panel{
+      position:fixed;top:54px;right:0;bottom:0;width:220px;
+      background:rgba(13,17,23,.95);border-left:1px solid rgba(255,255,255,.08);
+      backdrop-filter:blur(16px);padding:16px;overflow-y:auto;z-index:40;
+      display:flex;flex-direction:column;gap:20px;
+    }
+
+    .section-title{
+      font-size:10px;font-weight:700;color:rgba(255,255,255,.35);
+      text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
+    }
+
+    /* Layers */
+    .layer-item{
+      display:flex;align-items:center;gap:10px;padding:9px 10px;
+      border-radius:12px;cursor:pointer;border:1px solid transparent;
+      transition:all .2s;margin-bottom:6px;
+    }
+    .layer-item:hover{background:rgba(255,255,255,.05)}
+    .layer-item.active{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+    .layer-item.off{opacity:.35}
+    .layer-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .layer-label{font-size:13px;font-weight:600;color:#fff;flex:1}
+    .layer-icon{font-size:18px}
+
+    /* Sliders */
+    .slider-row{margin-bottom:12px}
+    .slider-header{display:flex;justify-content:space-between;margin-bottom:5px}
+    .slider-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
+    .slider-val{font-size:12px;font-weight:700;color:#60a5fa;font-variant-numeric:tabular-nums}
+    input[type=range]{
+      width:100%;appearance:none;height:4px;border-radius:2px;
+      background:rgba(255,255,255,.12);outline:none;cursor:pointer;
+    }
+    input[type=range]::-webkit-slider-thumb{
+      appearance:none;width:14px;height:14px;border-radius:50%;
+      background:#6366f1;cursor:pointer;transition:transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+
+    /* Rebuild button */
+    #rebuild-btn{
+      width:100%;padding:11px;border-radius:12px;border:none;cursor:pointer;
+      font-size:13px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,#6366f1,#3b82f6);
+      transition:opacity .2s;
+    }
+    #rebuild-btn:hover{opacity:.85}
+
+    /* Camera presets */
+    .preset-btn{
+      flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;
+    }
+    .preset-btn:hover{background:rgba(255,255,255,.09);color:#fff}
+    .preset-row{display:flex;gap:6px}
+
+    /* ── HELP HINT ── */
+    #hint{
+      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
+      border-radius:99px;padding:8px 18px;font-size:12px;color:rgba(255,255,255,.5);
+      backdrop-filter:blur(12px);pointer-events:none;white-space:nowrap;
+      transition:opacity 1s;
+    }
+    #hint.hidden{opacity:0}
+
+    /* ── CROSSHAIR ── */
+    #crosshair{
+      position:fixed;top:50%;left:calc(50% - 110px);transform:translate(-50%,-50%);
+      width:20px;height:20px;pointer-events:none;opacity:.25;
+    }
+    #crosshair::before,#crosshair::after{
+      content:'';position:absolute;background:#fff;border-radius:1px;
+    }
+    #crosshair::before{width:1px;height:100%;left:50%;top:0}
+    #crosshair::after{height:1px;width:100%;top:50%;left:0}
+
+    /* ── DIMS BADGE ── */
+    #dims{
+      position:fixed;bottom:20px;left:20px;
+      background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.1);
+      border-radius:12px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.5);
+      backdrop-filter:blur(12px);line-height:1.8;
+    }
+    #dims strong{color:#fff;font-weight:700}
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <span style="font-size:20px">🍳</span>
+  <h1>AR Construcción</h1>
+  <span class="badge-mode">Cocina 3D</span>
+  <div class="spacer"></div>
+  <a href="/" class="badge-mode" style="text-decoration:none;cursor:pointer">← Menú</a>
+</div>
+
+<!-- SIDE PANEL -->
+<div id="panel">
+
+  <!-- LAYERS -->
+  <div>
+    <div class="section-title">Capas</div>
+    <div class="layer-item active" id="li-estructura" onclick="toggleLayer('estructura')">
+      <span class="layer-icon">🧱</span>
+      <span class="layer-label">Estructura</span>
+      <span class="layer-dot" style="background:#9CA3AF"></span>
+    </div>
+    <div class="layer-item active" id="li-fontaneria" onclick="toggleLayer('fontaneria')">
+      <span class="layer-icon">💧</span>
+      <span class="layer-label">Fontanería</span>
+      <span class="layer-dot" style="background:#60A5FA"></span>
+    </div>
+    <div class="layer-item active" id="li-electrico" onclick="toggleLayer('electrico')">
+      <span class="layer-icon">⚡</span>
+      <span class="layer-label">Eléctrico</span>
+      <span class="layer-dot" style="background:#FBBF24"></span>
+    </div>
+    <div class="layer-item active" id="li-acabados" onclick="toggleLayer('acabados')">
+      <span class="layer-icon">🏠</span>
+      <span class="layer-label">Acabados</span>
+      <span class="layer-dot" style="background:#34D399"></span>
+    </div>
+    <div class="layer-item active" id="li-muebles" onclick="toggleLayer('muebles')">
+      <span class="layer-icon">🪑</span>
+      <span class="layer-label">Muebles</span>
+      <span class="layer-dot" style="background:#F472B6"></span>
+    </div>
+  </div>
+
+  <!-- DIMENSIONES -->
+  <div>
+    <div class="section-title">Dimensiones de la cocina</div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Ancho (X)</span>
+        <span class="slider-val" id="val-w">10.0 m</span>
+      </div>
+      <input type="range" id="sl-w" min="2.5" max="15.0" step="0.1" value="10.0"
+             oninput="updateDim('w',this.value)">
+    </div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Profundo (Z)</span>
+        <span class="slider-val" id="val-d">11.0 m</span>
+      </div>
+      <input type="range" id="sl-d" min="2.0" max="15.0" step="0.1" value="11.0"
+             oninput="updateDim('d',this.value)">
+    </div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Altura (Y)</span>
+        <span class="slider-val" id="val-h">2.60 m</span>
+      </div>
+      <input type="range" id="sl-h" min="2.0" max="4.0" step="0.05" value="2.60"
+             oninput="updateDim('h',this.value)">
+    </div>
+    <button id="rebuild-btn" onclick="rebuildModel()">↺ Reconstruir modelo</button>
+  </div>
+
+  <!-- CÁMARA -->
+  <div>
+    <div class="section-title">Vista rápida</div>
+    <div class="preset-row" style="margin-bottom:6px">
+      <button class="preset-btn" onclick="setView('top')">Planta</button>
+      <button class="preset-btn" onclick="setView('front')">Frente</button>
+      <button class="preset-btn" onclick="setView('side')">Lado</button>
+    </div>
+    <div class="preset-row">
+      <button class="preset-btn" onclick="setView('iso')">Iso</button>
+      <button class="preset-btn" onclick="setView('inside')">Interior</button>
+    </div>
+  </div>
+
+  <!-- OPCIONES -->
+  <div>
+    <div class="section-title">Opciones</div>
+    <div class="layer-item active" id="li-grid" onclick="toggleGrid()" style="margin-bottom:0">
+      <span class="layer-icon">⊞</span>
+      <span class="layer-label">Grilla</span>
+      <span class="layer-dot" style="background:#4B5563"></span>
+    </div>
+    <div class="layer-item active" id="li-axes" onclick="toggleAxes()" style="margin-bottom:0;margin-top:6px">
+      <span class="layer-icon">🎯</span>
+      <span class="layer-label">Ejes</span>
+      <span class="layer-dot" style="background:#EF4444"></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- HINT -->
+<div id="hint">🖱 Drag para rotar · Scroll para zoom · Click derecho para desplazar</div>
+
+<!-- CROSSHAIR -->
+<div id="crosshair"></div>
+
+<!-- DIMS -->
+<div id="dims">
+  <strong id="dims-text">10.0 × 11.0 × 2.6 m</strong><br>
+  <span id="dims-area">110.0 m²</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// THREE.JS SETUP
+// ════════════════════════════════════════════════
+const W_PANEL = 220;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth - W_PANEL, window.innerHeight - 54);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.domElement.style.position = 'fixed';
+renderer.domElement.style.top = '54px';
+renderer.domElement.style.left = '0';
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1117);
+scene.fog = new THREE.Fog(0x0d1117, 20, 55);
+
+const camera = new THREE.PerspectiveCamera(55,
+  (window.innerWidth - W_PANEL) / (window.innerHeight - 54), 0.01, 60);
+camera.position.set(10.0, 9.0, 13.0);
+camera.lookAt(0, 0.9, 0);
+
+// ── ORBIT CONTROLS ──
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.minDistance = 0.4;
+controls.maxDistance = 40;
+controls.target.set(0, 0.90, 0);
+controls.update();
+
+// ── LIGHTS ──
+const ambLight = new THREE.AmbientLight(0xffffff, 0.70);
+scene.add(ambLight);
+
+const sunLight = new THREE.DirectionalLight(0xffffff, 0.85);
+sunLight.position.set(5, 9, 6);
+sunLight.castShadow = true;
+sunLight.shadow.camera.near = 0.5;
+sunLight.shadow.camera.far = 30;
+sunLight.shadow.camera.left = -7;
+sunLight.shadow.camera.right = 7;
+sunLight.shadow.camera.top = 7;
+sunLight.shadow.camera.bottom = -7;
+sunLight.shadow.mapSize.set(1024, 1024);
+scene.add(sunLight);
+
+const fillLight = new THREE.DirectionalLight(0x8fb4ff, 0.35);
+fillLight.position.set(-4, 5, -5);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffd0a0, 0.22);
+rimLight.position.set(0, -3, 7);
+scene.add(rimLight);
+
+// ── GRID & AXES ──
+const gridHelper = new THREE.GridHelper(30, 60, 0x334155, 0x1e293b);
+gridHelper.position.y = -0.001;
+scene.add(gridHelper);
+
+const axesHelper = new THREE.AxesHelper(0.6);
+axesHelper.position.set(-5, 0.01, -5);
+scene.add(axesHelper);
+
+let showGrid = true;
+let showAxes = true;
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  gridHelper.visible = showGrid;
+  document.getElementById('li-grid').classList.toggle('off', !showGrid);
+}
+function toggleAxes() {
+  showAxes = !showAxes;
+  axesHelper.visible = showAxes;
+  document.getElementById('li-axes').classList.toggle('off', !showAxes);
+}
+
+// ════════════════════════════════════════════════
+// KITCHEN DIMENSIONS (editable via sliders)
+// ════════════════════════════════════════════════
+let W = 10.0;
+let D = 11.0;
+let H = 2.60;
+
+// Kitchen constants
+const CH = 0.90;   // counter height
+const CD = 0.62;   // counter depth (north wall cabinets)
+const CT = 0.04;   // countertop slab thickness
+const UH = 0.68;   // upper cabinet height
+const UB = 1.45;   // upper cabinet bottom from floor
+const UD = 0.33;   // upper cabinet depth
+const TK = 0.10;   // toe kick height
+
+// ── LAYER SYSTEM ──
+const layerGroups = {
+  estructura: new THREE.Group(),
+  fontaneria: new THREE.Group(),
+  electrico:  new THREE.Group(),
+  acabados:   new THREE.Group(),
+  muebles:    new THREE.Group(),
+};
+const layerState = { estructura: true, fontaneria: true, electrico: true, acabados: true, muebles: true };
+
+const model = new THREE.Group();
+Object.values(layerGroups).forEach(g => model.add(g));
+scene.add(model);
+
+// ── MATERIAL & GEOMETRY HELPERS ──
+function mat(color, opacity = 1, emissive = 0, emissiveIntensity = 0) {
+  const m = new THREE.MeshPhongMaterial({
+    color,
+    transparent: opacity < 1,
+    opacity,
+    side: THREE.DoubleSide,
+    depthWrite: opacity >= 0.75,
+  });
+  if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = emissiveIntensity; }
+  return m;
+}
+
+function box(bw, bh, bd, material, px, py, pz) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+
+function cyl(r, h, material, px, py, pz, rx, rz) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  if (rx !== undefined) m.rotation.x = rx;
+  if (rz !== undefined) m.rotation.z = rz;
+  m.castShadow = true;
+  return m;
+}
+
+// ════════════════════════════════════════════════
+// BUILD MODEL
+// ════════════════════════════════════════════════
+function buildModel() {
+  const lg = layerGroups;
+  const w2 = W / 2;
+  const d2 = D / 2;
+  const WT = 0.12;
+
+  // ── Derived kitchen layout constants ──
+  const NWI = -d2 + WT;          // north wall interior face Z
+  const CAB_ZF = NWI + CD;       // front face of north-wall lower cabinets
+  const CAB_ZC = NWI + CD / 2;   // center Z of north-wall cabinets
+
+  // Appliance fixed widths
+  const FRW = 0.76, FRD = 0.70, FRH = 1.92;   // fridge
+  const STW = 0.62, STD = 0.62;                 // stove
+  const DWW = 0.60;                              // dishwasher
+  const SKW = 0.86;                              // sink zone
+
+  const totalFixed = FRW + STW + DWW + SKW;
+  const extra = Math.max(0, W - 2 * WT - totalFixed);
+  const C1 = Math.max(0.18, extra * 0.30);
+  const C2 = Math.max(0.18, extra * 0.30);
+
+  // West-to-east positions along north wall (x coords, left edges)
+  const SK_LEFT  = -w2 + WT;
+  const FR_L  = SK_LEFT;
+  const FR_R  = FR_L + FRW;
+  const C1_L  = FR_R;
+  const C1_R  = C1_L + C1;
+  const ST_L  = C1_R;
+  const ST_R  = ST_L + STW;
+  const DW_L  = ST_R;
+  const DW_R  = DW_L + DWW;
+  const C2_L  = DW_R;
+  const C2_R  = C2_L + C2;
+  const SK_L  = C2_R;
+  const SK_R  = SK_L + SKW;
+  const C3_L  = SK_R;
+  const C3_R  = w2 - WT;
+  const C3    = Math.max(0, C3_R - C3_L);
+
+  // Center X of each zone
+  const FR_X  = (FR_L + FR_R) / 2;
+  const ST_X  = (ST_L + ST_R) / 2;
+  const DW_X  = (DW_L + DW_R) / 2;
+  const SK_X  = (SK_L + SK_R) / 2;
+
+  // Window above sink
+  const WIN_X1 = SK_L - 0.04;
+  const WIN_X2 = SK_R + 0.04;
+  const WIN_Y1 = CH + 0.15;
+  const WIN_Y2 = H * 0.90;
+
+  // South wall door
+  const DOOR_X1 = -0.50;
+  const DOOR_X2 = +0.40;
+  const DOOR_H  = H * 0.84;
+
+  // East wall L-cabinets
+  const EW_Z1 = -d2 + WT;
+  const EW_Z2 = EW_Z1 + Math.min(1.40, D * 0.37);
+  const EW_CABW = CD;
+  const EW_CAB_X = w2 - WT - EW_CABW / 2;
+
+  // Island
+  const ISL_W = Math.min(1.80, W * 0.42);
+  const ISL_D = 0.80;
+  const ISL_X = 0;
+  const ISL_Z = d2 * 0.20;
+
+  // ════════════════════════════════════════════════
+  // ESTRUCTURA LAYER
+  // ════════════════════════════════════════════════
+  const wallM  = mat(0x9CA3AF, 0.40);
+  const floorM = mat(0x3B2E24, 0.92);
+  const ceilM  = mat(0xE5E7EB, 0.10);
+  const frameM = mat(0x6B7280, 0.88);
+  const glassM = mat(0x87CEEB, 0.20);
+
+  // Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; floor.receiveShadow = true;
+  lg.estructura.add(floor);
+
+  // Ceiling
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), ceilM);
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = H - 0.001;
+  lg.estructura.add(ceil);
+
+  // North wall — broken by window above sink
+  // Left of window
+  if (WIN_X1 > -w2) {
+    const segW = WIN_X1 - (-w2);
+    lg.estructura.add(box(segW, H, WT, wallM, -w2 + segW/2, H/2, NWI + WT/2));
+  }
+  // Right of window
+  if (WIN_X2 < w2) {
+    const segW = w2 - WIN_X2;
+    lg.estructura.add(box(segW, H, WT, wallM, WIN_X2 + segW/2, H/2, NWI + WT/2));
+  }
+  // Above window
+  {
+    const segW = WIN_X2 - WIN_X1;
+    const segH = H - WIN_Y2;
+    lg.estructura.add(box(segW, segH, WT, wallM, (WIN_X1+WIN_X2)/2, WIN_Y2 + segH/2, NWI + WT/2));
+  }
+  // Below window (behind counter - only above floor to WIN_Y1)
+  {
+    const segW = WIN_X2 - WIN_X1;
+    lg.estructura.add(box(segW, WIN_Y1, WT, wallM, (WIN_X1+WIN_X2)/2, WIN_Y1/2, NWI + WT/2));
+  }
+
+  // Window glass
+  const winGlass = new THREE.Mesh(
+    new THREE.PlaneGeometry(WIN_X2 - WIN_X1, WIN_Y2 - WIN_Y1), glassM);
+  winGlass.position.set((WIN_X1+WIN_X2)/2, (WIN_Y1+WIN_Y2)/2, NWI + WT/2 + 0.001);
+  lg.estructura.add(winGlass);
+
+  // Window frame (4 bars)
+  const wfM = frameM;
+  const WFT = 0.04;
+  const winCX = (WIN_X1+WIN_X2)/2, winCY = (WIN_Y1+WIN_Y2)/2;
+  const winW = WIN_X2 - WIN_X1, winH2 = WIN_Y2 - WIN_Y1;
+  lg.estructura.add(box(winW + WFT*2, WFT, WT*0.5, wfM, winCX, WIN_Y1 - WFT/2, NWI + WT/2 + 0.012));
+  lg.estructura.add(box(winW + WFT*2, WFT, WT*0.5, wfM, winCX, WIN_Y2 + WFT/2, NWI + WT/2 + 0.012));
+  lg.estructura.add(box(WFT, winH2 + WFT*2, WT*0.5, wfM, WIN_X1 - WFT/2, winCY, NWI + WT/2 + 0.012));
+  lg.estructura.add(box(WFT, winH2 + WFT*2, WT*0.5, wfM, WIN_X2 + WFT/2, winCY, NWI + WT/2 + 0.012));
+  // Window sill
+  lg.estructura.add(box(winW + WFT*2 + 0.06, 0.04, 0.12, mat(0xC8C0B0, 1), winCX, WIN_Y1 - 0.02, NWI + WT/2 + 0.06));
+
+  // South wall — broken by door
+  const swZ = d2 - WT/2;
+  // Left of door
+  if (DOOR_X1 > -w2) {
+    const segW = DOOR_X1 - (-w2);
+    lg.estructura.add(box(segW, H, WT, wallM, -w2 + segW/2, H/2, swZ));
+  }
+  // Right of door
+  if (DOOR_X2 < w2) {
+    const segW = w2 - DOOR_X2;
+    lg.estructura.add(box(segW, H, WT, wallM, DOOR_X2 + segW/2, H/2, swZ));
+  }
+  // Above door
+  {
+    const segW = DOOR_X2 - DOOR_X1;
+    const segH = H - DOOR_H;
+    lg.estructura.add(box(segW, segH, WT, wallM, (DOOR_X1+DOOR_X2)/2, DOOR_H + segH/2, swZ));
+  }
+  // Door frame
+  lg.estructura.add(box(0.05, DOOR_H, 0.04, frameM, DOOR_X1 - 0.025, DOOR_H/2, swZ));
+  lg.estructura.add(box(0.05, DOOR_H, 0.04, frameM, DOOR_X2 + 0.025, DOOR_H/2, swZ));
+  lg.estructura.add(box(DOOR_X2-DOOR_X1 + 0.10, 0.05, 0.04, frameM, (DOOR_X1+DOOR_X2)/2, DOOR_H + 0.025, swZ));
+
+  // East wall (solid)
+  lg.estructura.add(box(WT, H, D, wallM, w2 - WT/2, H/2, 0));
+
+  // West wall (solid)
+  lg.estructura.add(box(WT, H, D, wallM, -w2 + WT/2, H/2, 0));
+
+  // ════════════════════════════════════════════════
+  // MUEBLES LAYER
+  // ════════════════════════════════════════════════
+  const cabM    = mat(0xF5F1EC, 1);
+  const cabFaceM= mat(0xEDE8DF, 1);
+  const toeKickM= mat(0x222222, 1);
+  const handleM = mat(0xB5B5B5, 1);
+  const drawerM = mat(0xE8E4DA, 1);
+  const graniteM= mat(0x252020, 1);
+  const stainM  = mat(0xD5D5D5, 1);
+  const blackM  = mat(0x111111, 1);
+  const darkGrayM = mat(0x333333, 1);
+  const chromM  = mat(0xC8C8C8, 1);
+  const woodDoorM = mat(0x8B7355, 1);
+
+  // Helper: build a lower cabinet section
+  function lowerCabinet(grp, xL, xR, zFront, zBack) {
+    const cw = xR - xL;
+    if (cw < 0.05) return;
+    const cx = (xL + xR) / 2;
+    const cz = (zFront + zBack) / 2;
+    const cd2 = zFront - zBack;
+    const bodyH = CH - CT - TK;
+
+    // Body
+    grp.add(box(cw, bodyH, cd2, cabM, cx, TK + bodyH/2, cz));
+    // Toe kick (recessed)
+    grp.add(box(cw - 0.02, TK, cd2 * 0.5, toeKickM, cx, TK/2, zFront - cd2*0.25));
+    // Door panel on front face
+    const dpH = bodyH * 0.88;
+    const dpW = cw - 0.04;
+    grp.add(box(dpW, dpH, 0.015, cabFaceM, cx, TK + bodyH*0.06 + dpH/2, zFront + 0.008));
+    // Drawer panel (top 12%)
+    const drH = bodyH * 0.20;
+    grp.add(box(dpW, drH, 0.015, drawerM, cx, TK + bodyH - drH/2 - 0.005, zFront + 0.008));
+    // Handle on door
+    const hW = Math.min(dpW * 0.5, 0.20);
+    grp.add(box(hW, 0.012, 0.012, handleM, cx, TK + bodyH * 0.50, zFront + 0.022));
+    // Handle on drawer
+    grp.add(box(hW, 0.012, 0.012, handleM, cx, TK + bodyH * 0.91, zFront + 0.022));
+  }
+
+  // Helper: build an upper cabinet section
+  function upperCabinet(grp, xL, xR, zFront, zBack) {
+    const cw = xR - xL;
+    if (cw < 0.05) return;
+    const cx = (xL + xR) / 2;
+    const cz = (zFront + zBack) / 2;
+    const cd2 = zFront - zBack;
+
+    grp.add(box(cw, UH, cd2, cabM, cx, UB + UH/2, cz));
+    const dpH = UH * 0.90;
+    const dpW = cw - 0.04;
+    grp.add(box(dpW, dpH, 0.015, cabFaceM, cx, UB + UH*0.05 + dpH/2, zFront + 0.008));
+    const hW = Math.min(dpW * 0.5, 0.18);
+    grp.add(box(hW, 0.012, 0.012, handleM, cx, UB + UH * 0.40, zFront + 0.022));
+    // LED strip under cabinet
+    const ledM = mat(0xFFF8E7, 0.9, 0xFDE68A, 0.55);
+    grp.add(box(cw * 0.90, 0.018, 0.020, ledM, cx, UB - 0.009, zFront - 0.010));
+  }
+
+  // ── North wall lower cabinets ──
+  const NW_ZF = NWI + CD;   // front face
+  const NW_ZB = NWI;        // back face (at wall)
+
+  // C1
+  lowerCabinet(lg.muebles, C1_L, C1_R, NW_ZF, NW_ZB);
+  // C2
+  lowerCabinet(lg.muebles, C2_L, C2_R, NW_ZF, NW_ZB);
+  // C3
+  if (C3 > 0.05) lowerCabinet(lg.muebles, C3_L, C3_R, NW_ZF, NW_ZB);
+
+  // Countertop — continuous slab from right of fridge to east wall (minus fridge zone)
+  // Slab from C1_L to C3_R (over C1, stove, dishwasher, C2, sink, C3)
+  const CTW = C3_R - C1_L;
+  const CTX = (C1_L + C3_R) / 2;
+  lg.muebles.add(box(CTW + 0.02, CT, CD + 0.04, graniteM, CTX, CH - CT/2, NW_ZF - (CD+0.04)/2 + CD));
+
+  // ── North wall upper cabinets ──
+  const UCF = NWI + UD;
+  const UCB = NWI;
+  // Left section: from FR_R to ST_L
+  upperCabinet(lg.muebles, FR_R, ST_L, UCF, UCB);
+  // Middle section: from ST_R+0.04 to WIN_X1
+  if (ST_R + 0.04 < WIN_X1 - 0.05)
+    upperCabinet(lg.muebles, ST_R + 0.04, WIN_X1, UCF, UCB);
+  // Right section: from WIN_X2 to C3_R
+  if (WIN_X2 + 0.06 < C3_R)
+    upperCabinet(lg.muebles, WIN_X2 + 0.06, C3_R, UCF, UCB);
+
+  // ── East wall L-section lower cabinets ──
+  const EW_CD = EW_Z2 - EW_Z1;
+  const EW_FRONT_X = w2 - WT - EW_CABW;
+  const EW_BACK_X  = w2 - WT;
+  const EW_CZ = (EW_Z1 + EW_Z2) / 2;
+  const ewBodyH = CH - CT - TK;
+
+  lg.muebles.add(box(EW_CABW, ewBodyH, EW_CD, cabM, EW_CAB_X, TK + ewBodyH/2, EW_CZ));
+  lg.muebles.add(box(EW_CABW - 0.02, TK, EW_CD*0.5, toeKickM, EW_CAB_X, TK/2, EW_Z1 + EW_CD*0.25));
+  lg.muebles.add(box(EW_CABW - 0.04, ewBodyH * 0.85, 0.015, cabFaceM, EW_CAB_X - 0.006, TK + ewBodyH*0.10, EW_Z1 + 0.01));
+  // East wall upper cabinets
+  upperCabinet(lg.muebles, EW_FRONT_X, EW_BACK_X - 0.01, EW_Z2 - 0.01, EW_Z1);
+  // East wall countertop
+  lg.muebles.add(box(EW_CABW + 0.04, CT, EW_CD + 0.02, graniteM, EW_CAB_X, CH - CT/2, EW_CZ));
+
+  // ── REFRIGERATOR ──
+  const fridgeG = new THREE.Group();
+  // Main body
+  fridgeG.add(box(FRW, FRH, FRD, stainM, 0, FRH/2, 0));
+  // Two fridge doors (top 63%)
+  const fdH = FRH * 0.63;
+  const fdY = FRH - fdH/2;
+  fridgeG.add(box(FRW/2 - 0.01, fdH, 0.04, mat(0xC0C0C0, 1), -FRW/4, fdY, FRD/2 + 0.02));
+  fridgeG.add(box(FRW/2 - 0.01, fdH, 0.04, mat(0xC0C0C0, 1), FRW/4, fdY, FRD/2 + 0.02));
+  // Freezer drawer (bottom 30%)
+  const fzH = FRH * 0.30;
+  fridgeG.add(box(FRW - 0.02, fzH, 0.04, mat(0xB8B8B8, 1), 0, fzH/2 + 0.04, FRD/2 + 0.02));
+  // Handles on fridge doors
+  fridgeG.add(box(0.014, fdH * 0.55, 0.014, chromM, -0.04, fdY, FRD/2 + 0.055));
+  fridgeG.add(box(0.014, fdH * 0.55, 0.014, chromM,  0.04 + FRW/2 - 0.04, fdY, FRD/2 + 0.055));
+  // Gap line between fridge and freezer
+  fridgeG.add(box(FRW, 0.012, 0.045, darkGrayM, 0, fzH + 0.04, FRD/2 + 0.02));
+  // Water dispenser panel
+  fridgeG.add(box(0.12, 0.18, 0.015, mat(0xA0A0A0, 1), -FRW/4, fdY * 0.65, FRD/2 + 0.045));
+
+  fridgeG.position.set(FR_X, 0, NW_ZB + FRD/2);
+  lg.muebles.add(fridgeG);
+
+  // ── STOVE / RANGE ──
+  const stoveG = new THREE.Group();
+  // Main body
+  stoveG.add(box(STW, CH, STD, mat(0xC8CACA, 1), 0, CH/2, 0));
+  // Black ceramic top
+  stoveG.add(box(STW, 0.025, STD, blackM, 0, CH + 0.012, 0));
+  // 4 burner rings
+  const burnerPos = [[-0.14, -0.12],[0.14,-0.12],[-0.14,0.12],[0.14,0.12]];
+  burnerPos.forEach(([bx, bz]) => {
+    stoveG.add(cyl(0.075, 0.012, mat(0x222222, 1), bx, CH + 0.027, bz));
+    stoveG.add(cyl(0.045, 0.014, mat(0x555555, 1), bx, CH + 0.032, bz));
+  });
+  // Control knob row (5 knobs)
+  for (let k = 0; k < 5; k++) {
+    const kx = -STW/2 + 0.055 + k * (STW - 0.11) / 4;
+    stoveG.add(cyl(0.022, 0.022, mat(0x888888, 1), kx, CH * 0.92, STD/2 + 0.012, 0, 0));
+  }
+  // Oven door (lower 42%)
+  const ovenH = CH * 0.42;
+  const ovenDoor = box(STW - 0.02, ovenH, 0.035, mat(0x444444, 1), 0, ovenH/2 + 0.06, STD/2 + 0.018);
+  stoveG.add(ovenDoor);
+  // Oven door glass
+  stoveG.add(box(STW * 0.72, ovenH * 0.50, 0.015, mat(0x333344, 0.7), 0, ovenH/2 + 0.06, STD/2 + 0.038));
+  // Oven handle
+  stoveG.add(box(STW * 0.70, 0.016, 0.016, chromM, 0, ovenH * 0.85 + 0.06, STD/2 + 0.042));
+  // Bottom storage drawer
+  stoveG.add(box(STW - 0.02, 0.055, 0.035, mat(0x555555, 1), 0, 0.03, STD/2 + 0.018));
+
+  stoveG.position.set(ST_X, 0, NW_ZB + STD/2);
+  lg.muebles.add(stoveG);
+
+  // ── RANGE HOOD ──
+  const hoodG = new THREE.Group();
+  const hoodW = STW + 0.12;
+  const hoodFlangeY = H * 0.635;
+  const hoodTopY = H * 0.730;
+  const hoodX = ST_X;
+  const hoodZ = NWI + 0.34;
+
+  // Flange (wide lower)
+  hoodG.add(box(hoodW, 0.10, 0.68, mat(0xC8C8C8, 1), 0, 0, 0));
+  // Grease filter grate
+  hoodG.add(box(hoodW * 0.88, 0.012, 0.55, mat(0xAAAAAA, 0.9), 0, -0.06, 0));
+  // Emissive light under hood
+  const hoodLightM = mat(0xFFF5CC, 0.9, 0xFDE68A, 0.8);
+  hoodG.add(box(hoodW * 0.70, 0.015, 0.28, hoodLightM, 0, -0.052, 0.06));
+  // Tapered hood body
+  hoodG.add(box(hoodW * 0.75, H*0.095, 0.55, mat(0xC0C0C0, 1), 0, H*0.048, 0));
+  // Chimney column
+  const chimneyH = H - hoodTopY - 0.05;
+  hoodG.add(box(0.28, chimneyH, 0.22, mat(0xC8C8C8, 1), 0, H*0.095 + chimneyH/2, 0));
+  // Fan motor top
+  hoodG.add(cyl(0.07, 0.08, mat(0x888888, 1), 0, H*0.095 + chimneyH, 0));
+
+  hoodG.position.set(hoodX, hoodFlangeY, hoodZ);
+  lg.muebles.add(hoodG);
+
+  // ── KITCHEN SINK ──
+  const sinkG = new THREE.Group();
+  // Basin housing (counter level)
+  sinkG.add(box(SKW - 0.04, 0.012, CD - 0.06, graniteM, 0, 0, 0));
+  // Left basin (dark stainless inset)
+  sinkG.add(box((SKW - 0.12)/2, 0.16, CD * 0.55, mat(0x888888, 0.95), -(SKW*0.24), -0.09, -0.02));
+  // Right basin
+  sinkG.add(box((SKW - 0.12)/2, 0.16, CD * 0.55, mat(0x888888, 0.95),  (SKW*0.24), -0.09, -0.02));
+  // Basin rims chrome
+  sinkG.add(box((SKW-0.12)/2 + 0.02, 0.012, CD*0.55 + 0.02, chromM, -(SKW*0.24), -0.006, -0.02));
+  sinkG.add(box((SKW-0.12)/2 + 0.02, 0.012, CD*0.55 + 0.02, chromM,  (SKW*0.24), -0.006, -0.02));
+  // Faucet base
+  sinkG.add(cyl(0.016, 0.04, chromM, 0, 0.025, -CD*0.25));
+  // Faucet neck (vertical)
+  sinkG.add(cyl(0.009, 0.20, chromM, 0, 0.13, -CD*0.25));
+  // Faucet arc (angled)
+  sinkG.add(cyl(0.009, 0.18, chromM, 0, 0.20, -CD*0.10, Math.PI/2.8));
+  // Spout end
+  sinkG.add(cyl(0.014, 0.025, chromM, 0, 0.225, CD*0.04));
+  // Hot handle
+  sinkG.add(box(0.10, 0.014, 0.014, chromM, -SKW*0.28, 0.040, -CD*0.30));
+  // Cold handle
+  sinkG.add(box(0.10, 0.014, 0.014, chromM,  SKW*0.28, 0.040, -CD*0.30));
+  // Sprayer
+  sinkG.add(cyl(0.016, 0.10, chromM, SKW*0.38, 0.055, -CD*0.22));
+
+  sinkG.position.set(SK_X, CH, NW_ZF - CD/2 - 0.01);
+  lg.muebles.add(sinkG);
+
+  // ── DISHWASHER ──
+  const dwG = new THREE.Group();
+  const dwBodyH = CH;
+  // Body
+  dwG.add(box(DWW, dwBodyH, STD, mat(0xF0EEE8, 1), 0, dwBodyH/2, 0));
+  // Front panel
+  dwG.add(box(DWW - 0.02, dwBodyH - 0.04, 0.025, mat(0xEDE9E1, 1), 0, dwBodyH/2, STD/2 + 0.013));
+  // Top vent strip (stainless)
+  dwG.add(box(DWW - 0.02, 0.04, 0.025, chromM, 0, dwBodyH - 0.022, STD/2 + 0.013));
+  // Control panel strip
+  dwG.add(box(DWW - 0.04, 0.055, 0.020, mat(0x444455, 1), 0, dwBodyH - 0.085, STD/2 + 0.016));
+  // Handle bar
+  dwG.add(box(DWW * 0.65, 0.014, 0.014, handleM, 0, dwBodyH * 0.88, STD/2 + 0.030));
+
+  dwG.position.set(DW_X, 0, NW_ZB + STD/2);
+  lg.muebles.add(dwG);
+
+  // ── ISLAND ──
+  const islG = new THREE.Group();
+  // Cabinet body
+  islG.add(box(ISL_W, CH - CT, ISL_D, cabM, 0, (CH-CT)/2, 0));
+  // Cabinet doors on south and north faces
+  const islDoorH = (CH - CT) * 0.85;
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM, -ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, ISL_D/2 + 0.008));
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM,  ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, ISL_D/2 + 0.008));
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM, -ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, -ISL_D/2 - 0.008));
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM,  ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, -ISL_D/2 - 0.008));
+  // Handles
+  islG.add(box(0.14, 0.012, 0.012, handleM, -ISL_W*0.25, (CH-CT)*0.52, ISL_D/2 + 0.022));
+  islG.add(box(0.14, 0.012, 0.012, handleM,  ISL_W*0.25, (CH-CT)*0.52, ISL_D/2 + 0.022));
+  // Marble countertop (overhangs south for seating)
+  const marbleM = mat(0xEBE5DC, 1);
+  islG.add(box(ISL_W + 0.04, CT, ISL_D + 0.24, marbleM, 0, CH - CT/2, 0.12));
+  // Toe kicks
+  islG.add(box(ISL_W - 0.02, TK, ISL_D * 0.5, toeKickM, 0, TK/2,  ISL_D/2 - ISL_D*0.25));
+  islG.add(box(ISL_W - 0.02, TK, ISL_D * 0.5, toeKickM, 0, TK/2, -ISL_D/2 + ISL_D*0.25));
+
+  // 3 bar stools on south side
+  const stoolOffsets = [-ISL_W*0.38, 0, ISL_W*0.38];
+  stoolOffsets.forEach(sx => {
+    // Seat
+    islG.add(cyl(0.19, 0.04, mat(0x4A3728, 1), sx, CH + 0.28, ISL_D/2 + 0.40));
+    // Legs (4)
+    [[-0.12,-0.12],[0.12,-0.12],[-0.12,0.12],[0.12,0.12]].forEach(([lx,lz]) => {
+      islG.add(cyl(0.015, CH + 0.25, chromM, sx + lx, (CH+0.25)/2, ISL_D/2 + 0.40 + lz));
+    });
+    // Footrest ring
+    islG.add(cyl(0.17, 0.018, chromM, sx, 0.35, ISL_D/2 + 0.40));
+  });
+
+  islG.position.set(ISL_X, 0, ISL_Z);
+  lg.muebles.add(islG);
+
+  // ── DOOR (south wall) ──
+  const doorG = new THREE.Group();
+  const doorW = DOOR_X2 - DOOR_X1;
+  doorG.add(box(doorW - 0.04, DOOR_H - 0.04, 0.042, woodDoorM, 0, DOOR_H/2, 0));
+  // Door panel insets
+  doorG.add(box(doorW * 0.70, DOOR_H * 0.35, 0.015, mat(0x7A6340, 1), 0, DOOR_H * 0.68, 0.025));
+  doorG.add(box(doorW * 0.70, DOOR_H * 0.35, 0.015, mat(0x7A6340, 1), 0, DOOR_H * 0.26, 0.025));
+  // Knob
+  const knobM2 = mat(0xD4C090, 1);
+  doorG.add(new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), knobM2));
+  doorG.children[doorG.children.length-1].position.set(doorW*0.40, DOOR_H*0.50, 0.045);
+
+  doorG.position.set((DOOR_X1+DOOR_X2)/2, 0, d2 - WT - 0.022);
+  lg.muebles.add(doorG);
+
+  // ════════════════════════════════════════════════
+  // FONTANERIA LAYER
+  // ════════════════════════════════════════════════
+  const pipeC = mat(0x3B82F6, 0.88);
+  const pipeH = mat(0xEF4444, 0.88);
+  const pipeD = mat(0x6B7280, 0.80);
+  const PR = 0.009;
+
+  // Cold supply riser under sink
+  lg.fontaneria.add(cyl(0.012, CH, pipeC, SK_X - 0.18, CH/2, NWI + 0.14));
+  // Hot supply riser under sink
+  lg.fontaneria.add(cyl(0.012, CH, pipeH, SK_X + 0.14, CH/2, NWI + 0.14));
+  // Horizontal cold run along north wall
+  lg.fontaneria.add(cyl(PR, W * 0.55, pipeC, SK_X - W*0.20, CH*0.24, NWI + 0.10, 0, Math.PI/2));
+  // Horizontal hot run
+  lg.fontaneria.add(cyl(PR, W * 0.40, pipeH, SK_X + W*0.10, CH*0.28, NWI + 0.07, 0, Math.PI/2));
+  // Branch to dishwasher (horizontal)
+  lg.fontaneria.add(cyl(PR, Math.abs(SK_X - DW_X) + 0.10, pipeC, (SK_X+DW_X)/2, CH*0.24, NWI + 0.10, 0, Math.PI/2));
+  // Drain under sink (P-trap)
+  lg.fontaneria.add(cyl(0.022, 0.28, pipeD, SK_X, 0.35, NWI + 0.14));
+  lg.fontaneria.add(cyl(0.022, 0.22, pipeD, SK_X + 0.11, 0.25, NWI + 0.14, Math.PI/2));
+  // Main drain horizontal at y=-0.05 to south wall
+  lg.fontaneria.add(cyl(0.028, D * 0.5, pipeD, SK_X, -0.04, 0, Math.PI/2));
+  // Dishwasher drain branch
+  lg.fontaneria.add(cyl(PR, Math.abs(SK_L - DW_X) + 0.05, pipeD, (SK_L+DW_X)/2 - 0.05, 0.55, NWI + 0.12, 0, Math.PI/2));
+  // Under-sink shutoff valves
+  const valveM2 = mat(0xC0C0C0, 1);
+  lg.fontaneria.add(cyl(0.016, 0.030, valveM2, SK_X - 0.18, 0.28, NWI + 0.14));
+  lg.fontaneria.add(cyl(0.016, 0.030, valveM2, SK_X + 0.14, 0.28, NWI + 0.14));
+  // Pipe joints
+  [[SK_X-0.18, CH*0.24, NWI+0.10],[SK_X+0.14, CH*0.28, NWI+0.07]].forEach(([x,y,z]) => {
+    const jt = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), pipeC);
+    jt.position.set(x, y, z); lg.fontaneria.add(jt);
+  });
+
+  // ════════════════════════════════════════════════
+  // ELECTRICO LAYER
+  // ════════════════════════════════════════════════
+  const condM = mat(0xFBBF24, 0.92);
+  const outM  = mat(0xF59E0B, 1);
+  const lightEM = mat(0xFDE68A, 0.9, 0xFDE68A, 0.7);
+  const CR = 0.007;
+  const condHt = H * 0.93;
+
+  // Main conduit east-west run at ceiling along north wall
+  lg.electrico.add(cyl(CR, W * 0.88, condM, 0, condHt, NWI + 0.06, 0, Math.PI/2));
+  // North-south cross run
+  lg.electrico.add(cyl(CR, D * 0.72, condM, w2 - 0.08, condHt, 0, Math.PI/2));
+  // Center ceiling run
+  lg.electrico.add(cyl(CR, W * 0.70, condM, 0, condHt, ISL_Z - 0.10, 0, Math.PI/2));
+
+  // Outlets above backsplash along north wall
+  [-w2+WT+0.60, ST_X + 0.80, SK_X + 0.40].forEach(ox => {
+    lg.electrico.add(box(0.06, 0.04, 0.015, outM, ox, CH + 0.30, NWI + 0.012));
+    lg.electrico.add(cyl(CR, H - CH - 0.30, condM, ox, CH + 0.30 + (H-CH-0.30)/2, NWI + 0.006));
+  });
+  // Near fridge outlet
+  lg.electrico.add(box(0.06, 0.04, 0.015, outM, FR_R + 0.05, H*0.40, NWI + 0.012));
+  // Dishwasher outlet
+  lg.electrico.add(box(0.06, 0.04, 0.015, outM, DW_X + 0.10, H*0.35, NWI + 0.012));
+  // East wall outlet
+  lg.electrico.add(box(0.015, 0.04, 0.06, outM, w2 - WT - 0.012, H*0.35, EW_CZ));
+
+  // Switches near door (2)
+  lg.electrico.add(box(0.04, 0.07, 0.015, mat(0xFBBF24, 1), DOOR_X1 - 0.12, H*0.42, d2 - WT - 0.012));
+  lg.electrico.add(box(0.04, 0.07, 0.015, mat(0xFBBF24, 1), DOOR_X1 - 0.12, H*0.42 + 0.10, d2 - WT - 0.012));
+  lg.electrico.add(cyl(CR, H*0.50, condM, DOOR_X1 - 0.12, H*0.67, d2 - WT - 0.006));
+
+  // 3 Recessed ceiling lights
+  [-w2*0.50, 0, w2*0.50].forEach(cx => {
+    const recessed = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.018, 20), lightEM);
+    recessed.position.set(cx, H - 0.009, NWI + D*0.45);
+    lg.electrico.add(recessed);
+    lg.electrico.add(cyl(CR, 0.12, condM, cx, H - 0.06, NWI + D*0.45));
+  });
+
+  // 2 Pendant lights over island
+  [-ISL_W*0.30, ISL_W*0.30].forEach(px => {
+    const pendY = H - 0.50;
+    const cord = cyl(0.006, 0.48, condM, ISL_X + px, H - 0.24, ISL_Z);
+    lg.electrico.add(cord);
+    const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.16, 0.14, 16), mat(0x888888, 0.85));
+    shade.position.set(ISL_X + px, pendY - 0.07, ISL_Z);
+    lg.electrico.add(shade);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), lightEM);
+    bulb.position.set(ISL_X + px, pendY + 0.01, ISL_Z);
+    lg.electrico.add(bulb);
+  });
+
+  // Under-cabinet LED strips on upper cabinets (already placed via upperCabinet helper)
+  // Range hood electrical conduit
+  lg.electrico.add(cyl(CR, 0.28, condM, ST_X, condHt, NWI + 0.06));
+  // Exhaust conduit from hood through ceiling
+  lg.electrico.add(box(0.10, 0.15, 0.10, mat(0x888888, 0.8), ST_X, H - 0.07, NWI + 0.08));
+  // Island outlet
+  lg.electrico.add(box(0.04, 0.07, 0.015, outM, ISL_X + ISL_W/2 + 0.06, CH + 0.28, ISL_Z + 0.008));
+
+  // ════════════════════════════════════════════════
+  // ACABADOS LAYER
+  // ════════════════════════════════════════════════
+  const woodFloorM = mat(0x5C4033, 0.85);
+  const plankGroutM = mat(0x3A2820, 0.55);
+  const subwayM = mat(0xE8EAED, 0.55);
+  const groutM2 = mat(0xC0BEB8, 0.25);
+  const wallPaintM = mat(0xF5F0E8, 0.18);
+  const baseM = mat(0x9CA3AF, 0.70);
+  const crownM = mat(0xD4CFC4, 0.60);
+
+  // Wood floor planks
+  const wf = new THREE.Mesh(new THREE.PlaneGeometry(W - WT*2, D - WT*2), woodFloorM);
+  wf.rotation.x = -Math.PI / 2; wf.position.y = 0.003; wf.receiveShadow = true;
+  lg.acabados.add(wf);
+  // Plank lines (east-west planks running north-south)
+  const plankW = 0.12;
+  for (let px = -w2 + WT + plankW; px < w2 - WT; px += plankW) {
+    lg.acabados.add(box(0.006, 0.003, D - WT*2, plankGroutM, px, 0.004, 0));
+  }
+  // Plank end lines (occasional)
+  for (let pz = -d2 + WT + 0.60; pz < d2 - WT; pz += 0.60) {
+    lg.acabados.add(box(plankW, 0.003, 0.006, plankGroutM, -w2 + WT + plankW/2, 0.004, pz));
+  }
+
+  // Backsplash north wall (between counter and upper cabinets)
+  const bsH = UB - CH;
+  const bsZF = NWI + 0.008;
+  // Left of window
+  if (WIN_X1 > -w2 + WT) {
+    const bsW2 = WIN_X1 - (-w2 + WT);
+    const bs = new THREE.Mesh(new THREE.PlaneGeometry(bsW2, bsH), subwayM);
+    bs.position.set(-w2 + WT + bsW2/2, CH + bsH/2, bsZF);
+    lg.acabados.add(bs);
+  }
+  // Right of window
+  if (WIN_X2 < w2 - WT) {
+    const bsW2 = (w2 - WT) - WIN_X2;
+    const bs = new THREE.Mesh(new THREE.PlaneGeometry(bsW2, bsH), subwayM);
+    bs.position.set(WIN_X2 + bsW2/2, CH + bsH/2, bsZF);
+    lg.acabados.add(bs);
+  }
+
+  // Tile grout lines on backsplash (horizontal rows)
+  const tileH2 = 0.075, tileSpan = W - WT*2;
+  for (let ty = CH + tileH2; ty < UB; ty += tileH2) {
+    lg.acabados.add(box(tileSpan, 0.005, 0.006, groutM2, 0, ty, bsZF + 0.003));
+  }
+  // Vertical grout lines on backsplash
+  const tileWid = 0.150;
+  for (let tx = -w2 + WT + tileWid; tx < w2 - WT; tx += tileWid) {
+    lg.acabados.add(box(0.005, bsH, 0.006, groutM2, tx, CH + bsH/2, bsZF + 0.003));
+  }
+
+  // East wall backsplash (above L-cabinet countertop to UB)
+  {
+    const ebsW = EW_CD;
+    const ebsH = UB - CH;
+    const ebs = new THREE.Mesh(new THREE.PlaneGeometry(ebsW, ebsH), subwayM);
+    ebs.rotation.y = -Math.PI/2;
+    ebs.position.set(w2 - WT - 0.008, CH + ebsH/2, (EW_Z1 + EW_Z2)/2);
+    lg.acabados.add(ebs);
+  }
+
+  // Wall paint above upper cabinets (north wall)
+  {
+    const wpH = H - (UB + UH);
+    if (wpH > 0.02) {
+      const wp = new THREE.Mesh(new THREE.PlaneGeometry(W - WT*2, wpH), wallPaintM);
+      wp.position.set(0, UB + UH + wpH/2, NWI + 0.010);
+      lg.acabados.add(wp);
+    }
+  }
+
+  // Baseboard along all 4 walls
+  const baseH = 0.06, baseT = 0.008;
+  lg.acabados.add(box(W - WT*2, baseH, baseT, baseM, 0, baseH/2, NWI + baseT/2 + 0.001));
+  lg.acabados.add(box(W - WT*2, baseH, baseT, baseM, 0, baseH/2, d2 - WT - baseT/2 - 0.001));
+  lg.acabados.add(box(baseT, baseH, D - WT*2, baseM, w2 - WT - baseT/2 - 0.001, baseH/2, 0));
+  lg.acabados.add(box(baseT, baseH, D - WT*2, baseM, -w2 + WT + baseT/2 + 0.001, baseH/2, 0));
+
+  // Crown molding at ceiling perimeter
+  const crowH = 0.08, crowT = 0.06;
+  lg.acabados.add(box(W - WT*2, crowH, crowT, crownM, 0, H - crowH/2, NWI + crowT/2));
+  lg.acabados.add(box(W - WT*2, crowH, crowT, crownM, 0, H - crowH/2, d2 - WT - crowT/2));
+  lg.acabados.add(box(crowT, crowH, D - WT*2, crownM, w2 - WT - crowT/2, H - crowH/2, 0));
+  lg.acabados.add(box(crowT, crowH, D - WT*2, crownM, -w2 + WT + crowT/2, H - crowH/2, 0));
+}
+
+buildModel();
+
+// ════════════════════════════════════════════════
+// LAYER TOGGLE
+// ════════════════════════════════════════════════
+function toggleLayer(name) {
+  layerState[name] = !layerState[name];
+  layerGroups[name].visible = layerState[name];
+  const el = document.getElementById('li-' + name);
+  el.classList.toggle('off', !layerState[name]);
+}
+
+// ════════════════════════════════════════════════
+// DIMENSION SLIDERS
+// ════════════════════════════════════════════════
+function updateDim(axis, val) {
+  val = parseFloat(val);
+  if (axis === 'w') { W = val; document.getElementById('val-w').textContent = val.toFixed(1) + ' m'; }
+  if (axis === 'd') { D = val; document.getElementById('val-d').textContent = val.toFixed(1) + ' m'; }
+  if (axis === 'h') { H = val; document.getElementById('val-h').textContent = val.toFixed(2) + ' m'; }
+  updateDimsDisplay();
+}
+
+function updateDimsDisplay() {
+  document.getElementById('dims-text').textContent = `${W.toFixed(1)} × ${D.toFixed(1)} × ${H.toFixed(1)} m`;
+  document.getElementById('dims-area').textContent = `${(W * D).toFixed(2)} m²`;
+}
+
+function rebuildModel() {
+  Object.values(layerGroups).forEach(g => {
+    while (g.children.length > 0) g.remove(g.children[0]);
+  });
+  buildModel();
+  Object.entries(layerState).forEach(([name, visible]) => {
+    layerGroups[name].visible = visible;
+  });
+  updateDimsDisplay();
+  controls.target.set(0, CH, 0);
+  controls.update();
+}
+
+updateDimsDisplay();
+
+// ════════════════════════════════════════════════
+// CAMERA PRESETS
+// ════════════════════════════════════════════════
+function setView(preset) {
+  const cy = CH;
+  const dist = Math.max(W, D, H) * 1.7;
+  let pos, target;
+
+  switch (preset) {
+    case 'top':
+      pos    = new THREE.Vector3(0, dist * 1.9, 0.001);
+      target = new THREE.Vector3(0, 0, 0);
+      break;
+    case 'front':
+      pos    = new THREE.Vector3(0, cy, D / 2 + dist);
+      target = new THREE.Vector3(0, cy, 0);
+      break;
+    case 'side':
+      pos    = new THREE.Vector3(W / 2 + dist, cy, 0);
+      target = new THREE.Vector3(0, cy, 0);
+      break;
+    case 'iso':
+      pos    = new THREE.Vector3(dist * 1.2, dist * 1.1, dist * 1.2);
+      target = new THREE.Vector3(0, cy, 0);
+      break;
+    case 'inside':
+      pos    = new THREE.Vector3(0, 1.6, D * 0.3);
+      target = new THREE.Vector3(0, 1.2, -D * 0.35);
+      break;
+  }
+
+  animateCamera(camera.position.clone(), controls.target.clone(), pos, target, 650);
+}
+
+function animateCamera(fromPos, fromTarget, toPos, toTarget, duration) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    camera.position.lerpVectors(fromPos, toPos, ease);
+    controls.target.lerpVectors(fromTarget, toTarget, ease);
+    controls.update();
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ════════════════════════════════════════════════
+// RESIZE
+// ════════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  const w = window.innerWidth - W_PANEL;
+  const h = window.innerHeight - 54;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+// ════════════════════════════════════════════════
+// HINT AUTO-HIDE
+// ════════════════════════════════════════════════
+setTimeout(() => document.getElementById('hint').classList.add('hidden'), 4000);
+
+// ════════════════════════════════════════════════
+// RENDER LOOP
+// ════════════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
