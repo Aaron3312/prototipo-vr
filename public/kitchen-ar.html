@@ -352,10 +352,10 @@
     }
     .mock-header-sub{font-size:9px;color:rgba(255,255,255,.22);letter-spacing:3px;text-transform:uppercase}
 
-    /* Grid 4 columnas */
+    /* Grid 2 columnas en portrait, 4 en landscape */
     .mock-grid{
-      display:grid;grid-template-columns:repeat(4,1fr);
-      gap:8px;width:100%;max-width:540px;flex-shrink:0;
+      display:grid;grid-template-columns:repeat(2,1fr);
+      gap:8px;width:100%;max-width:360px;flex-shrink:0;
       position:relative;z-index:1;
     }
 
@@ -1756,6 +1756,10 @@ function setupMockMenu() {
 // ── MOCK MENU → CALIBRATION ──
 function startCalibration() {
   document.getElementById('mock-menu').classList.remove('active');
+  // Mostrar controles AR ahora que empieza la calibración
+  ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
+    document.getElementById(id).style.display = ''
+  );
   document.getElementById('corner-ui').classList.add('show');
   document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
 }
@@ -1789,6 +1793,10 @@ async function startAR() {
     document.getElementById('loading').classList.remove('show');
     document.getElementById('overlay').classList.add('active');
     document.getElementById('mock-menu').classList.add('active');
+    // Ocultar controles AR hasta que el usuario presione Iniciar
+    ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
+      document.getElementById(id).style.display = 'none'
+    );
 
     renderer.setAnimationLoop(render);
   } catch (e) {
