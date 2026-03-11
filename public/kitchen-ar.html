@@ -556,14 +556,17 @@
   <p style="font-size:16px;font-weight:700">Iniciando AR...</p>
 </div>
 
-<!-- Camera background (fase mock menu, antes de WebXR) -->
+<!-- Video de cámara trasera — fondo visual durante mock menu + fuente para MediaPipe -->
 <video id="camera-bg" playsinline autoplay muted></video>
 
 <!-- Finger cursor (MediaPipe) -->
 <div id="finger-cursor"><div class="fc-ring"></div><div class="fc-dot"></div></div>
 
-<!-- Mock menu — UI estilo VR/gafas, cámara de fondo -->
-<div id="mock-menu">
+<!-- AR Overlay (dom-overlay) — contiene mock menu + UI de calibración -->
+<div id="overlay">
+
+  <!-- Mock menu dentro del overlay: la cámara XR es el fondo real -->
+  <div id="mock-menu">
 
     <div class="mock-header">
       <div class="mock-hud-line">
@@ -646,10 +649,7 @@
       </button>
     </div>
 
-</div>
-
-<!-- AR Overlay (dom-overlay) -->
-<div id="overlay">
+  </div>
 
   <div id="top-bar">
     <div class="badge">🍳 AR Cocina</div>
@@ -755,7 +755,7 @@
 
 <script>
 // ── THREE.JS SETUP ──
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
@@ -1817,6 +1817,7 @@ function setupMockMenu() {
 let cameraStream = null;
 let mpHands = null;
 let handTrackingActive = false;
+let lastHandSendTime = 0;
 let fingerHovering = null;
 let fingerDwellTimer = null;
 let startBtnHovering = false;
@@ -1844,7 +1845,9 @@ async function initHandTracking() {
   handTrackingActive = true;
   (async function loop() {
     if (!handTrackingActive || !mpHands) return;
-    if (vb.readyState >= 2) await mpHands.send({ image: vb });
+    if (vb.readyState >= 2 && !vb.paused) {
+      await mpHands.send({ image: vb }).catch(() => {});
+    }
     requestAnimationFrame(loop);
   })();
 }
@@ -1877,7 +1880,7 @@ function checkFingerHover(x, y) {
     fingerHovering = found;
     if (found) beginFingerDwell(found);
   }
-  // Hover + dwell sobre Iniciar — al completar pide tap físico (requerido por WebXR)
+  // Dwell sobre Iniciar — activa "pendingStart" que espera un tap real (requerido para XR)
   const btn = document.getElementById('mock-start-btn');
   const br = btn.getBoundingClientRect();
   const onBtn = x >= br.left && x <= br.right && y >= br.top && y <= br.bottom;
@@ -1887,7 +1890,7 @@ function checkFingerHover(x, y) {
     startBtnDwellTimer = setTimeout(() => {
       startBtnHovering = false;
       btn.classList.remove('dwelling');
-      activatePendingStart();
+      activatePendingStart(); // espera tap físico → startCalibration()
     }, 1000);
   } else if (!onBtn && startBtnHovering) {
     startBtnHovering = false;
@@ -1955,40 +1958,45 @@ function stopMockCamera() {
   vb.srcObject = null; vb.classList.remove('active');
 }
 
-// ── MOCK MENU → CALIBRACIÓN ──
-// requestSession() debe ser la primera llamada async — requiere gesto del usuario
-// Liberamos la cámara DESPUÉS de obtener la sesión XR para evitar conflictos
+// ── MOCK MENU → CALIBRACIÓN: aquí arranca XR (llamado desde click/touch = user activation ✓) ──
 async function startCalibration() {
+  if (!navigator.xr) { alert('WebXR no disponible'); return; }
+  const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+  if (!supported) { alert('AR no soportado en este dispositivo'); return; }
+
+  // Parar cámara getUserMedia para liberar hardware antes de XR
+  stopMockCamera();
   document.getElementById('mock-menu').classList.remove('active');
   document.getElementById('loading').classList.add('show');
-  stopHandTracking(); // parar MediaPipe sin tocar la cámara todavía
+
   try {
-    // 1. Pedir sesión XR inmediatamente (aún dentro del gesto del usuario)
+    // Re-mostrar canvas de Three.js para XR
+    renderer.domElement.style.display = '';
+
     xrSession = await navigator.xr.requestSession('immersive-ar', {
       requiredFeatures: ['hit-test'],
       optionalFeatures: ['dom-overlay'],
       domOverlay: { root: document.getElementById('overlay') },
     });
-    // 2. Ahora sí liberamos la cámara (XR ya tiene el control)
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-    const vb = document.getElementById('camera-bg');
-    vb.srcObject = null; vb.classList.remove('active');
-    // 3. Configurar sesión XR
     renderer.xr.setReferenceSpaceType('local');
     await renderer.xr.setSession(xrSession);
     xrSession.addEventListener('end', onSessionEnd);
     xrSession.addEventListener('select', onTap);
+
     document.getElementById('loading').classList.remove('show');
     document.getElementById('overlay').classList.add('active');
+    ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
+      document.getElementById(id).style.display = ''
+    );
     document.getElementById('corner-ui').classList.add('show');
     document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
+
     renderer.setAnimationLoop(render);
   } catch(e) {
     console.error(e);
-    stopMockCamera();
     document.getElementById('loading').classList.remove('show');
-    document.getElementById('mock-menu').classList.add('active');
-    showToast('Error al iniciar AR: ' + e.message);
+    document.getElementById('no-xr').textContent = 'Error XR: ' + e.message;
+    document.getElementById('no-xr').style.display = 'block';
   }
 }
 
@@ -1998,57 +2006,40 @@ let hitTestRequested = false;
 let placed = false;
 let xrSession = null;
 
-// ── SHOW MOCK MENU (antes de WebXR) ──
+// ── SHOW MOCK MENU: solo cámara + MediaPipe, SIN XR todavía ──
 async function showMockMenu() {
-  if (!navigator.xr) {
-    document.getElementById('no-xr').style.display = 'block'; return;
-  }
-  const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
-  if (!supported) {
-    document.getElementById('no-xr').style.display = 'block';
-    document.getElementById('no-xr').textContent = 'Requiere Android + Chrome con ARCore instalado'; return;
-  }
   document.getElementById('loading').classList.add('show');
-  // Iniciar cámara trasera para fondo
   try {
+    // Ocultar canvas de Three.js durante mock menu (tapa el video)
+    renderer.domElement.style.display = 'none';
+
+    // Cámara via getUserMedia — visible como fondo real (sin XR)
+    const vb = document.getElementById('camera-bg');
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
     });
-    const vb = document.getElementById('camera-bg');
     vb.srcObject = cameraStream;
     await vb.play();
-    vb.classList.add('active');
-  } catch(e) { console.warn('Cámara no disponible:', e); }
-  document.getElementById('loading').classList.remove('show');
-  document.getElementById('pre-ar').style.display = 'none';
-  document.getElementById('mock-menu').classList.add('active');
-  // Cargar MediaPipe en segundo plano
-  loadMediaPipe();
-}
+    vb.classList.add('active'); // visible
 
-// ── INICIAR WebXR (después del mock menu) ──
-async function startAR() {
-  try {
-    xrSession = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['hit-test'],
-      optionalFeatures: ['dom-overlay'],
-      domOverlay: { root: document.getElementById('overlay') },
-    });
-    renderer.xr.setReferenceSpaceType('local');
-    await renderer.xr.setSession(xrSession);
-    xrSession.addEventListener('end', onSessionEnd);
-    xrSession.addEventListener('select', onTap);
+    document.getElementById('pre-ar').style.display = 'none';
     document.getElementById('loading').classList.remove('show');
+    // Activar overlay (contiene al mock-menu) + mock-menu
     document.getElementById('overlay').classList.add('active');
-    document.getElementById('corner-ui').classList.add('show');
-    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
-    renderer.setAnimationLoop(render);
+    document.getElementById('mock-menu').classList.add('active');
+    // Ocultar controles AR que no se necesitan en mock menu
+    ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
+      document.getElementById(id).style.display = 'none'
+    );
+
+    // MediaPipe lee del video ✓
+    loadMediaPipe();
+
   } catch(e) {
     console.error(e);
     document.getElementById('loading').classList.remove('show');
-    document.getElementById('no-xr').textContent = 'Error: ' + e.message;
+    document.getElementById('no-xr').textContent = 'Error al acceder a la cámara: ' + e.message;
     document.getElementById('no-xr').style.display = 'block';
-    document.getElementById('pre-ar').style.display = 'flex';
   }
 }
 
