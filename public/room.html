@@ -35,6 +35,64 @@
     }
     #overlay.active{display:block}
 
+    /* ── SPEC PANEL ── */
+    #spec-panel{
+      position:absolute;bottom:100px;left:16px;right:16px;
+      background:rgba(10,10,30,.9);border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;padding:16px 18px;
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      display:none;pointer-events:all;
+      box-shadow:0 8px 40px rgba(0,0,0,.6);
+      animation:specIn .25s cubic-bezier(.4,0,.2,1);
+    }
+    #spec-panel.show{display:block}
+    @keyframes specIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    #spec-panel-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+    #spec-panel-name{font-size:14px;font-weight:800;color:#fff;line-height:1.3}
+    #spec-panel-system{
+      display:inline-block;margin-top:4px;font-size:10px;font-weight:700;
+      padding:2px 8px;border-radius:99px;
+      background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.5);color:#a5b4fc;
+    }
+    #spec-panel-close{
+      flex-shrink:0;width:28px;height:28px;border-radius:50%;
+      background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.55);
+      font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      pointer-events:all;margin-left:8px;
+    }
+    .spec-row{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;
+    }
+    .spec-row:last-child{border-bottom:none}
+    .spec-key{color:rgba(255,255,255,.45);white-space:nowrap}
+    .spec-val{color:#e2e8f0;font-weight:700;text-align:right;margin-left:8px}
+    #ar-crosshair{
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:36px;height:36px;pointer-events:none;display:none;
+    }
+    #ar-crosshair.show{display:block}
+    #ar-crosshair.hit .ch-ring{border-color:#60A5FA;box-shadow:0 0 10px rgba(96,165,250,.6)}
+    .ch-ring{
+      position:absolute;inset:0;border-radius:50%;
+      border:2px solid rgba(255,255,255,.5);transition:all .15s;
+    }
+    .ch-dot{
+      position:absolute;width:6px;height:6px;border-radius:50%;
+      background:rgba(255,255,255,.8);top:50%;left:50%;
+      transform:translate(-50%,-50%);transition:all .15s;
+    }
+    #ar-crosshair.hit .ch-dot{background:#60A5FA;box-shadow:0 0 8px rgba(96,165,250,.8)}
+    #tap-hint{
+      position:absolute;bottom:180px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.6);color:rgba(255,255,255,.7);
+      padding:8px 18px;border-radius:99px;font-size:12px;font-weight:600;
+      backdrop-filter:blur(10px);white-space:nowrap;pointer-events:none;
+      display:none;animation:pulse 2s infinite;
+    }
+    #tap-hint.show{display:block}
+
     #top-bar{
       position:absolute;top:16px;left:16px;right:16px;
       display:flex;justify-content:space-between;align-items:center;
@@ -242,6 +300,24 @@
     </button>
   </div>
 
+  <!-- Spec panel -->
+  <div id="spec-panel">
+    <div id="spec-panel-header">
+      <div>
+        <div id="spec-panel-name">—</div>
+        <div id="spec-panel-system">—</div>
+      </div>
+      <button id="spec-panel-close" onclick="hideSpecPanel()">✕</button>
+    </div>
+    <div id="spec-rows"></div>
+  </div>
+
+  <!-- Crosshair central -->
+  <div id="ar-crosshair"><div class="ch-ring"></div><div class="ch-dot"></div></div>
+
+  <!-- Hint -->
+  <div id="tap-hint">Toca un elemento para ver sus medidas</div>
+
   <button id="exit-btn" onclick="exitAR()">✕ Salir</button>
 </div>
 
@@ -433,7 +509,13 @@ function onTap() {
     return;
   }
 
-  // Post-calibration: model is locked, ignore taps
+  // Post-calibration: raycast para inspeccionar elementos
+  const hit = raycastModel(lastTouchNDC);
+  if (hit) {
+    showSpecPanel(hit.object.userData);
+  } else {
+    hideSpecPanel();
+  }
 }
 
 function addLine(a, b, color) {
@@ -523,6 +605,10 @@ function calibrateFromPoints() {
   document.getElementById('info-dims').textContent =
     `${W.toFixed(1)}m × ${D.toFixed(1)}m × ${H.toFixed(1)}m`;
   setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 5000);
+  // Mostrar crosshair y hint de inspección
+  document.getElementById('ar-crosshair').classList.add('show');
+  document.getElementById('tap-hint').classList.add('show');
+  setTimeout(() => document.getElementById('tap-hint').classList.remove('show'), 6000);
 }
 
 function resetCorners() {
@@ -539,6 +625,9 @@ function resetCorners() {
   document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas del piso';
   document.getElementById('hint-badge').classList.remove('placed');
   document.getElementById('hint-badge').style.display = '';
+  document.getElementById('ar-crosshair').classList.remove('show', 'hit');
+  document.getElementById('tap-hint').classList.remove('show');
+  hideSpecPanel();
   for (let i = 0; i < 5; i++) {
     const dot = document.getElementById('cdot-' + i);
     if (dot) {
@@ -566,8 +655,62 @@ function onSessionEnd() {
   document.getElementById('overlay').classList.remove('active');
   document.getElementById('corner-ui').classList.remove('show');
   document.getElementById('info-card').classList.remove('show');
+  document.getElementById('ar-crosshair').classList.remove('show', 'hit');
+  document.getElementById('tap-hint').classList.remove('show');
+  hideSpecPanel();
   document.getElementById('pre-ar').style.display = 'flex';
   renderer.setAnimationLoop(null);
+}
+
+// ── SPEC PANEL ──
+const _raycaster = new THREE.Raycaster();
+let lastTouchNDC = new THREE.Vector2(0, 0);
+
+document.getElementById('overlay').addEventListener('touchstart', (e) => {
+  if (!calibrated) return;
+  const t = e.touches[0];
+  lastTouchNDC.x = (t.clientX / window.innerWidth) * 2 - 1;
+  lastTouchNDC.y = -(t.clientY / window.innerHeight) * 2 + 1;
+}, { passive: true });
+
+function raycastModel(ndc) {
+  _raycaster.setFromCamera(ndc, camera);
+  const hits = _raycaster.intersectObjects(model.children, true);
+  return hits.find(h => h.object.userData._hasSpecs) || null;
+}
+
+const SPEC_LABELS = {
+  material: 'Material', longitud: 'Longitud', diametro: 'Diámetro (mm)',
+  ancho: 'Ancho', alto: 'Alto', profundo: 'Profundo',
+  potencia: 'Potencia', calibre: 'Calibre', capacidad: 'Capacidad',
+};
+
+function showSpecPanel(ud) {
+  document.getElementById('spec-panel-name').textContent = ud.nombre || 'Elemento';
+  document.getElementById('spec-panel-system').textContent = ud.sistema || '';
+  const rows = Object.entries(ud)
+    .filter(([k]) => !['_hasSpecs', 'nombre', 'sistema'].includes(k))
+    .map(([k, v]) => {
+      const label = SPEC_LABELS[k] || k;
+      let val = v;
+      if (typeof v === 'number') {
+        val = k === 'longitud' ? v.toFixed(3) + ' m' : k === 'diametro' ? v + ' mm' : v;
+      }
+      return `<div class="spec-row"><span class="spec-key">${label}</span><span class="spec-val">${val}</span></div>`;
+    }).join('');
+  document.getElementById('spec-rows').innerHTML = rows || '<div class="spec-row"><span class="spec-key">Sin especificaciones detalladas</span></div>';
+  document.getElementById('spec-panel').classList.add('show');
+}
+
+function hideSpecPanel() {
+  document.getElementById('spec-panel').classList.remove('show');
+}
+
+function updateCrosshair() {
+  if (!calibrated) return;
+  const hit = raycastModel(new THREE.Vector2(0, 0));
+  const ch = document.getElementById('ar-crosshair');
+  ch.classList.toggle('hit', !!hit);
 }
 
 function render(timestamp, frame) {
@@ -589,6 +732,7 @@ function render(timestamp, frame) {
       } else { reticle.visible = false; }
     }
   }
+  if (calibrated) updateCrosshair();
   renderer.render(scene, camera);
 }
 
