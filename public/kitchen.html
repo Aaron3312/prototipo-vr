@@ -152,6 +152,69 @@
       backdrop-filter:blur(12px);line-height:1.8;
     }
     #dims strong{color:#fff;font-weight:700}
+
+    /* ── SPEC TOOLTIP ── */
+    #spec-tooltip{
+      position:fixed;z-index:120;min-width:210px;
+      background:rgba(13,17,23,.97);border:1px solid rgba(251,191,36,.45);
+      border-radius:14px;padding:14px 16px;pointer-events:auto;
+      backdrop-filter:blur(18px);box-shadow:0 8px 32px rgba(0,0,0,.5);
+      display:none;
+    }
+    #spec-tooltip.show{display:block}
+    .tt-sistema{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+    .tt-nombre{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.4}
+    .tt-row{display:flex;justify-content:space-between;align-items:center;
+      padding:4px 0;border-top:1px solid rgba(255,255,255,.05);gap:12px}
+    .tt-key{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap}
+    .tt-val{font-size:12px;font-weight:700;color:#fff;text-align:right}
+    #tt-close{
+      position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:99px;
+      border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);
+      font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    #tt-close:hover{background:rgba(255,255,255,.18);color:#fff}
+
+    /* ── SUMMARY MODAL ── */
+    #summary-overlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.72);z-index:200;
+      align-items:center;justify-content:center;
+    }
+    #summary-overlay.show{display:flex}
+    #summary-modal{
+      background:#0d1117;border:1px solid rgba(255,255,255,.1);
+      border-radius:20px;padding:28px 24px;
+      max-width:660px;width:92vw;max-height:82vh;
+      overflow-y:auto;position:relative;
+      box-shadow:0 24px 64px rgba(0,0,0,.6);
+    }
+    #summary-modal h2{font-size:16px;font-weight:800;color:#fff;margin-bottom:18px}
+    .sum-group{margin-bottom:22px}
+    .sum-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.35);margin-bottom:8px}
+    .sum-table{width:100%;border-collapse:collapse;font-size:12px}
+    .sum-table th{text-align:left;padding:6px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.07)}
+    .sum-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.85);vertical-align:middle}
+    .sum-table tr:hover td{background:rgba(255,255,255,.03)}
+    .sum-table td.num{font-variant-numeric:tabular-nums;font-weight:700;color:#60a5fa;text-align:right}
+    .sum-table td.diam{color:#34d399;text-align:right;font-weight:700}
+    .sum-total{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.6);text-align:right}
+    .sum-total strong{color:#fff}
+    #sum-close{
+      position:absolute;top:16px;right:16px;width:32px;height:32px;
+      border-radius:99px;border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);
+      font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    #sum-close:hover{background:rgba(255,255,255,.12);color:#fff}
+    .click-hint{
+      position:fixed;bottom:56px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
+      border-radius:99px;padding:6px 16px;font-size:11px;color:rgba(255,255,255,.45);
+      backdrop-filter:blur(12px);pointer-events:none;white-space:nowrap;
+      transition:opacity .6s;z-index:30;
+    }
+    .click-hint.hidden{opacity:0}
   </style>
 </head>
 <body>
@@ -263,7 +326,41 @@
     </div>
   </div>
 
+  <!-- MEDIDAS -->
+  <div>
+    <div class="section-title">Medidas</div>
+    <div class="layer-item active" onclick="openSummary()" style="margin-bottom:0">
+      <span class="layer-icon">📐</span>
+      <span class="layer-label">Tabla de materiales</span>
+      <span class="layer-dot" style="background:#60A5FA"></span>
+    </div>
+  </div>
+
 </div>
+
+<!-- SPEC TOOLTIP -->
+<div id="spec-tooltip">
+  <button id="tt-close" onclick="closeTooltip()">✕</button>
+  <div class="tt-sistema" id="tt-sistema"></div>
+  <div class="tt-nombre" id="tt-nombre"></div>
+  <div class="tt-row"><span class="tt-key">Longitud</span><span class="tt-val" id="tt-long"></span></div>
+  <div class="tt-row"><span class="tt-key">Diámetro</span><span class="tt-val" id="tt-diam"></span></div>
+  <div class="tt-row"><span class="tt-key">Material</span><span class="tt-val" id="tt-mat"></span></div>
+  <div class="tt-row" id="tt-notas-row" style="display:none">
+    <span class="tt-key">Nota</span><span class="tt-val" id="tt-notas"></span></div>
+</div>
+
+<!-- SUMMARY MODAL -->
+<div id="summary-overlay" onclick="if(event.target===this)closeSummary()">
+  <div id="summary-modal">
+    <button id="sum-close" onclick="closeSummary()">✕</button>
+    <h2>📐 Tabla de materiales</h2>
+    <div id="summary-content"></div>
+  </div>
+</div>
+
+<!-- CLICK HINT -->
+<div class="click-hint" id="click-hint">Click en un conduit para ver medidas</div>
 
 <!-- HINT -->
 <div id="hint">🖱 Drag para rotar · Scroll para zoom · Click derecho para desplazar</div>
@@ -409,12 +506,18 @@ function box(bw, bh, bd, material, px, py, pz) {
   return m;
 }
 
-function cyl(r, h, material, px, py, pz, rx, rz) {
+function cyl(r, h, material, px, py, pz, rx, rz, specs) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), material);
   m.position.set(px || 0, py || 0, pz || 0);
   if (rx !== undefined) m.rotation.x = rx;
   if (rz !== undefined) m.rotation.z = rz;
   m.castShadow = true;
+  if (specs) m.userData = {
+    _hasSpecs: true,
+    longitud: Math.round(Math.abs(h) * 1000) / 1000,
+    diametro: Math.round(r * 2 * 1000),
+    ...specs
+  };
   return m;
 }
 
@@ -1086,85 +1189,106 @@ function buildModel() {
   // Interruptor general
   lg.electrico.add(box(0.018, 0.058, 0.145, mat(0x111111, 1), PANEL_X + 0.022, H * 0.48 + 0.28, PANEL_Z));
 
-  // ── CIRCUITO 240V — subcuadro → cocina (naranja, mayor sección) ──
-  // Bajante panel → techo
-  lg.electrico.add(cyl(CR2, condHt - (H * 0.48 - 0.31), cond240, PANEL_X, (condHt + H * 0.48 - 0.31)/2, PANEL_Z));
-  // Tramo E-O techo hasta fogón
-  const run240Len = ST_X - PANEL_X;
-  lg.electrico.add(cyl(CR2, run240Len, cond240, PANEL_X + run240Len/2, condHt, NWI + 0.06, 0, Math.PI/2));
-  // Bajante hasta conexión en pared detrás del fogón
-  lg.electrico.add(cyl(CR2, condHt, cond240, ST_X, condHt/2, NWI + 0.05));
-  // Caja de conexión en suelo
+  // ── BACKBONE ANCHOR POSITIONS (usados por todos los drops/circuitos) ──
+  const CW_X  = -w2 + WT + 0.08;   // pared oeste conduit X
+  const CE_X  =  w2 - WT - 0.08;   // pared este conduit X
+  const CI_X  = ISL_X;              // conduit central X (= 0)
+  const CN_Z  = NWI + 0.06;        // pared norte conduit Z
+  const CS_Z  =  d2 - WT - 0.06;   // pared sur conduit Z
+  const RUN_EW = CE_X - CW_X;      // longitud E-O completa
+  const RUN_NS = CS_Z - CN_Z;      // longitud N-S completa
+  const EWcx   = (CW_X + CE_X) / 2;
+  const NScz   = (CN_Z + CS_Z) / 2;
+  // Posiciones E-W de travesaños (norte → sur)
+  const crossZs = [CN_Z, -d2 * 0.10, ISL_Z * 0.50, ISL_Z, d2 * 0.35, CS_Z];
+
+  function ejbox(px, py, pz) {
+    const j = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.052, 0.072), panelM);
+    j.position.set(px, py, pz); return j;
+  }
+
+  // ── CIRCUITO 240V — subcuadro → troncal norte → fogón ──
+  const panTop = H * 0.48 - 0.31;
+  // Bajante panel → techo (junto a pared oeste, al nivel del troncal)
+  lg.electrico.add(cyl(CR2, condHt - panTop, cond240, CW_X, (condHt + panTop) / 2, PANEL_Z, undefined, undefined, {nombre:'Bajante 240V Panel', sistema:'Eléctrico', material:'Conduit EMT Ø9mm'}));
+  lg.electrico.add(ejbox(CW_X, condHt, PANEL_Z));
+  // Tramo norte 240V: de pared oeste al fogón (ligeramente delante del troncal 120V)
+  const z240 = CN_Z - 0.025;
+  const run240NW = ST_X - CW_X;
+  lg.electrico.add(cyl(CR2, run240NW, cond240, CW_X + run240NW / 2, condHt, z240, 0, Math.PI / 2, {nombre:'Troncal Norte 240V', sistema:'Eléctrico', material:'Conduit EMT Ø9mm'}));
+  // Bajante 240V hasta placa de conexión del fogón
+  lg.electrico.add(cyl(CR2, condHt, cond240, ST_X, condHt / 2, z240, undefined, undefined, {nombre:'Bajante Fogón 240V', sistema:'Eléctrico', material:'Conduit EMT Ø9mm'}));
   lg.electrico.add(box(0.10, 0.06, 0.06, panelM, ST_X, 0.08, NWI + 0.04));
 
-  // ── CANALETAS 120V — recorrido en techo ──
-  // Tramo E-O principal (pared norte, todo el ancho)
-  lg.electrico.add(cyl(CR, W * 0.92, condM, 0, condHt, NWI + 0.06, 0, Math.PI/2));
-  // Tramo N-S pared oeste
-  lg.electrico.add(cyl(CR, D * 0.82, condM, -w2 + WT + 0.08, condHt, 0, Math.PI/2));
-  // Tramo N-S pared este
-  lg.electrico.add(cyl(CR, D * 0.70, condM, w2 - WT - 0.08, condHt, 0, Math.PI/2));
-  // Tramo N-S central (alimenta island y zona sur)
-  lg.electrico.add(cyl(CR, D * 0.65, condM, ISL_X, condHt, 0, Math.PI/2));
-  // Travesaños E-O para filas de luminarias
-  [-d2 * 0.10, ISL_Z * 0.50, d2 * 0.35].forEach(lz => {
-    lg.electrico.add(cyl(CR, W * 0.80, condM, 0, condHt, lz, 0, Math.PI/2));
+  // ── TRONCAL 120V — red completamente conectada en techo ──
+  // N-S: Pared oeste — longitud completa CN_Z → CS_Z
+  lg.electrico.add(cyl(CR, RUN_NS, condM, CW_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Pared Oeste', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // N-S: Pared este — longitud completa
+  lg.electrico.add(cyl(CR, RUN_NS, condM, CE_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Pared Este', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // N-S: Central — isla y zona sur
+  lg.electrico.add(cyl(CR, RUN_NS, condM, CI_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Central', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // E-W: Norte + 4 travesaños + sur — longitud completa CW_X → CE_X
+  crossZs.forEach((cz, cwi) => {
+    lg.electrico.add(cyl(CR, RUN_EW, condM, EWcx, condHt, cz, 0, Math.PI / 2, {nombre:'Travesaño E-W '+(cwi+1), sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   });
-  // Cajas de derivación en intersecciones
-  [
-    [0,            condHt, NWI + 0.06],
-    [0,            condHt, ISL_Z],
-    [0,            condHt, d2 * 0.35],
-    [-w2+WT+0.08,  condHt, 0],
-    [w2-WT-0.08,   condHt, 0],
-    [ISL_X,        condHt, 0],
-  ].forEach(([x, y, z]) => {
-    lg.electrico.add(box(0.072, 0.052, 0.072, panelM, x, y, z));
+  // Cajas de derivación en TODAS las intersecciones (3 × 6 = 18)
+  [CW_X, CI_X, CE_X].forEach(rx => {
+    crossZs.forEach(cz => {
+      lg.electrico.add(ejbox(rx, condHt, cz));
+    });
   });
 
   // ── ENCHUFES PARED NORTE — cada 1.1m sobre salpicadero ──
   // (GFCI a menos de 1.8m del fregadero, estándar el resto)
-  for (let ox = -w2 + WT + 0.60; ox < w2 - WT - 0.18; ox += 1.10) {
-    if (Math.abs(ox - ST_X) < 0.38) continue; // sin enchufe encima del fogón
-    const nearSink = Math.abs(ox - SK_X) < 1.85;
-    const om = nearSink ? gfciM : outM;
-    lg.electrico.add(box(0.065, 0.043, 0.016, om, ox, CH + 0.28, NWI + 0.013));
-    lg.electrico.add(cyl(CR, condHt - CH - 0.28, condM, ox, CH + 0.28 + (condHt - CH - 0.28)/2, NWI + 0.007));
+  { let _nwi = 0;
+    for (let ox = -w2 + WT + 0.60; ox < w2 - WT - 0.18; ox += 1.10) {
+      if (Math.abs(ox - ST_X) < 0.38) continue; // sin enchufe encima del fogón
+      const nearSink = Math.abs(ox - SK_X) < 1.85;
+      const om = nearSink ? gfciM : outM;
+      _nwi++;
+      lg.electrico.add(box(0.065, 0.043, 0.016, om, ox, CH + 0.28, NWI + 0.013));
+      lg.electrico.add(cyl(CR, condHt - CH - 0.28, condM, ox, CH + 0.28 + (condHt - CH - 0.28)/2, CN_Z, undefined, undefined, {nombre:'Bajante Enchufe Norte '+_nwi, sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+    }
   }
 
   // ── CIRCUITOS DEDICADOS ──
   // Nevera (15A, detrás de la nevera)
   lg.electrico.add(box(0.065, 0.043, 0.016, outM, FR_X, H * 0.34, NWI + 0.013));
-  lg.electrico.add(cyl(CR, condHt - H * 0.34, condM, FR_X, (condHt + H * 0.34)/2, NWI + 0.007));
+  lg.electrico.add(cyl(CR, condHt - H * 0.34, condM, FR_X, (condHt + H * 0.34)/2, CN_Z, undefined, undefined, {nombre:'Bajante Nevera 15A', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   // Lavavajillas (20A, bajo encimera)
   lg.electrico.add(box(0.065, 0.043, 0.016, outM, DW_X, H * 0.22, NWI + 0.013));
-  lg.electrico.add(cyl(CR, condHt - H * 0.22, condM, DW_X, (condHt + H * 0.22)/2, NWI + 0.007));
+  lg.electrico.add(cyl(CR, condHt - H * 0.22, condM, DW_X, (condHt + H * 0.22)/2, CN_Z, undefined, undefined, {nombre:'Bajante Lavavajillas 20A', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   // Triturador (enchufe con interruptor bajo fregadero)
   lg.electrico.add(box(0.065, 0.043, 0.016, gfciM, SK_X - 0.20, H * 0.28, NWI + 0.013));
   // Microondas (20A, en zona armario alto)
   const micX = C1_L + (C1_R - C1_L) * 0.55;
   lg.electrico.add(box(0.065, 0.043, 0.016, outM, micX, UB + UH * 0.52, NWI + 0.013));
-  lg.electrico.add(cyl(CR, condHt - UB - UH * 0.52, condM, micX, (condHt + UB + UH * 0.52)/2, NWI + 0.007));
+  lg.electrico.add(cyl(CR, condHt - UB - UH * 0.52, condM, micX, (condHt + UB + UH * 0.52)/2, CN_Z, undefined, undefined, {nombre:'Bajante Microondas 20A', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   // Control BT campana extractora
   lg.electrico.add(box(0.055, 0.036, 0.016, condLV, ST_X + STW * 0.32, UB + 0.06, NWI + 0.013));
 
   // ── ENCHUFES PARED ESTE — sobre encimera en L ──
-  for (let oz = EW_Z1 + 0.55; oz < EW_Z2 - 0.10; oz += 1.00) {
-    const ewXf = w2 - WT - EW_CABW - 0.014;
-    lg.electrico.add(box(0.016, 0.043, 0.065, outM, ewXf, CH + 0.28, oz));
-    lg.electrico.add(cyl(CR, condHt - CH - 0.28, condM, w2 - WT - 0.007, (condHt + CH + 0.28)/2, oz));
+  { let _ewi = 0;
+    for (let oz = EW_Z1 + 0.55; oz < EW_Z2 - 0.10; oz += 1.00) {
+      const ewXf = w2 - WT - EW_CABW - 0.014;
+      _ewi++;
+      lg.electrico.add(box(0.016, 0.043, 0.065, outM, ewXf, CH + 0.28, oz));
+      lg.electrico.add(cyl(CR, condHt - CH - 0.28, condM, CE_X, (condHt + CH + 0.28)/2, oz, undefined, undefined, {nombre:'Bajante Enchufe Este '+_ewi, sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+    }
   }
 
   // ── ENCHUFES POP-UP EN ISLAND ──
-  [-ISL_W * 0.24, ISL_W * 0.24].forEach(ipx => {
+  [-ISL_W * 0.24, ISL_W * 0.24].forEach((ipx, ipi) => {
     const pX = ISL_X + ipx;
     const pZ = ISL_Z - ISL_D * 0.15;
     // Cápsula flush en encimera
     lg.electrico.add(cyl(0.044, 0.058, panFM, pX, CH + 0.029, pZ));
     lg.electrico.add(box(0.060, 0.054, 0.060, outM, pX, CH + 0.065, pZ));
     // Canaleta interior island hasta suelo
-    lg.electrico.add(cyl(CR, CH * 0.84, condM, pX, CH * 0.42, pZ));
+    lg.electrico.add(cyl(CR, CH * 0.84, condM, pX, CH * 0.42, pZ, undefined, undefined, {nombre:'Canaleta Pop-up Isla '+(ipi+1), sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   });
+  // Troncal vertical isla: sube desde suelo hasta red de techo en CI_X
+  lg.electrico.add(cyl(CR, condHt, condM, CI_X, condHt / 2, ISL_Z, undefined, undefined, {nombre:'Troncal Vertical Isla', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
 
   // ── INTERRUPTORES — zona puerta (caja triple + regulador) ──
   const SW_Z = d2 - WT - 0.014;
@@ -1177,13 +1301,14 @@ function buildModel() {
   // Regulador de intensidad (island)
   lg.electrico.add(box(0.040, 0.070, 0.017, dimmerM, SW_X - 0.065, H * 0.43, SW_Z));
   // Canaleta bajante al switch
-  lg.electrico.add(cyl(CR, condHt - H * 0.43 - 0.068, condM, SW_X, (condHt + H * 0.43 + 0.068)/2, SW_Z - 0.008));
+  lg.electrico.add(cyl(CR, condHt - H * 0.43 - 0.068, condM, SW_X, (condHt + H * 0.43 + 0.068)/2, SW_Z - 0.008, undefined, undefined, {nombre:'Bajante Interruptores Puerta', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   // Interruptor conmutado en pared oeste (2ª entrada)
   const SW2_X = -w2 + WT + 0.015;
   const SW2_Z =  d2 * 0.34;
   lg.electrico.add(box(0.016, 0.070, 0.042, panelM, SW2_X, H * 0.43, SW2_Z));
   lg.electrico.add(box(0.012, 0.034, 0.028, switchM, SW2_X + 0.005, H * 0.43, SW2_Z));
-  lg.electrico.add(cyl(CR, condHt - H * 0.43 - 0.035, condM, SW2_X + 0.008, (condHt + H * 0.43)/2, SW2_Z));
+  lg.electrico.add(cyl(CR, condHt - H * 0.43 - 0.035, condM, SW2_X + 0.008, (condHt + H * 0.43)/2, SW2_Z, undefined, undefined, {nombre:'Bajante Interruptor Oeste', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  lg.electrico.add(ejbox(CW_X, condHt, SW2_Z));
 
   // ── LUMINARIAS DE TECHO — 9 downlights en cuadrícula 3×3 ──
   const litColX = [-w2 * 0.40, 0, w2 * 0.40];
@@ -1475,6 +1600,139 @@ function togglePanel() {
 // HINT AUTO-HIDE
 // ════════════════════════════════════════════════
 setTimeout(() => document.getElementById('hint').classList.add('hidden'), 4000);
+setTimeout(() => document.getElementById('click-hint').classList.add('hidden'), 6000);
+
+// ════════════════════════════════════════════════
+// RAYCASTING — click to inspect conduits
+// ════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse2D   = new THREE.Vector2();
+let   selMesh   = null;
+let   selOrigMat = null;
+
+const hlMat = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, emissive: new THREE.Color(0xFFEE55),
+  emissiveIntensity: 0.6, transparent: true, opacity: 0.88,
+});
+
+renderer.domElement.addEventListener('click', e => {
+  if (e.target !== renderer.domElement) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse2D.x =  ((e.clientX - rect.left)  / rect.width)  * 2 - 1;
+  mouse2D.y = -((e.clientY - rect.top)   / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse2D, camera);
+
+  const targets = [];
+  ['fontaneria', 'electrico'].forEach(name => {
+    if (layerState[name])
+      layerGroups[name].traverse(o => { if (o.isMesh && o.userData._hasSpecs) targets.push(o); });
+  });
+
+  const hits = raycaster.intersectObjects(targets, false);
+
+  if (hits.length > 0) {
+    const hit = hits[0].object;
+    if (hit !== selMesh) {
+      clearSel();
+      selMesh     = hit;
+      selOrigMat  = hit.material;
+      const hm = hlMat.clone();
+      hm.color.copy(selOrigMat.color);
+      hit.material = hm;
+    }
+    showTooltip(hit.userData, e.clientX, e.clientY);
+  } else {
+    clearSel();
+    closeTooltip();
+  }
+});
+
+function clearSel() {
+  if (selMesh && selOrigMat) selMesh.material = selOrigMat;
+  selMesh = null; selOrigMat = null;
+}
+
+function showTooltip(s, cx, cy) {
+  const sysColors = { 'Fontanería': '#60a5fa', 'Eléctrico': '#fbbf24' };
+  const col = sysColors[s.sistema] || '#9ca3af';
+  document.getElementById('tt-sistema').textContent = s.sistema || '';
+  document.getElementById('tt-sistema').style.color = col;
+  document.getElementById('tt-nombre').textContent  = s.nombre  || '—';
+  document.getElementById('tt-long').textContent    = s.longitud ? s.longitud.toFixed(3) + ' m' : '—';
+  document.getElementById('tt-diam').textContent    = s.diametro ? s.diametro + ' mm ⌀' : '—';
+  document.getElementById('tt-mat').textContent     = s.material || '—';
+  const notasRow = document.getElementById('tt-notas-row');
+  if (s.notas) {
+    document.getElementById('tt-notas').textContent = s.notas;
+    notasRow.style.display = '';
+  } else { notasRow.style.display = 'none'; }
+
+  const tt = document.getElementById('spec-tooltip');
+  const tw = 230, th = 155, mg = 14;
+  let tx = cx + mg, ty = cy + mg;
+  if (tx + tw > window.innerWidth - 220) tx = cx - tw - mg;
+  if (ty + th > window.innerHeight)      ty = cy - th - mg;
+  tt.style.left = tx + 'px';
+  tt.style.top  = ty + 'px';
+  tt.classList.add('show');
+}
+
+function closeTooltip() {
+  document.getElementById('spec-tooltip').classList.remove('show');
+  clearSel();
+}
+
+// ════════════════════════════════════════════════
+// SUMMARY TABLE MODAL
+// ════════════════════════════════════════════════
+function openSummary() {
+  const items = [];
+  scene.traverse(o => { if (o.isMesh && o.userData._hasSpecs) items.push(o.userData); });
+
+  const groups = {};
+  items.forEach(s => {
+    const g = s.sistema || 'Otro';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+
+  const sysIcons = { 'Fontanería': '💧', 'Eléctrico': '⚡' };
+  let html = '';
+
+  for (const [grupo, list] of Object.entries(groups)) {
+    const totalLen = list.reduce((sum, s) => sum + (s.longitud || 0), 0);
+    const icon = sysIcons[grupo] || '🔧';
+    html += `<div class="sum-group">
+      <div class="sum-group-title">${icon} ${grupo}</div>
+      <table class="sum-table">
+        <thead><tr>
+          <th>Tramo / Nombre</th>
+          <th style="text-align:right">Long.</th>
+          <th style="text-align:right">Ø</th>
+          <th>Material</th>
+        </tr></thead><tbody>`;
+    list.forEach(s => {
+      html += `<tr>
+        <td>${s.nombre || '—'}</td>
+        <td class="num">${s.longitud ? s.longitud.toFixed(3) + ' m' : '—'}</td>
+        <td class="diam">${s.diametro ? s.diametro + ' mm' : '—'}</td>
+        <td>${s.material || '—'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>
+      <div class="sum-total">Total ${grupo}: <strong>${totalLen.toFixed(3)} m</strong> lineales</div>
+    </div>`;
+  }
+
+  document.getElementById('summary-content').innerHTML = html;
+  document.getElementById('summary-overlay').classList.add('show');
+}
+
+function closeSummary() {
+  document.getElementById('summary-overlay').classList.remove('show');
+}
 
 // ════════════════════════════════════════════════
 // RENDER LOOP
