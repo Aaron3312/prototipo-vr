@@ -347,7 +347,7 @@
   <div class="tt-row"><span class="tt-key">Diámetro</span><span class="tt-val" id="tt-diam"></span></div>
   <div class="tt-row"><span class="tt-key">Material</span><span class="tt-val" id="tt-mat"></span></div>
   <div class="tt-row" id="tt-notas-row" style="display:none">
-    <span class="tt-key">Nota</span><span class="tt-val" id="tt-notas"></span></div>
+    <span class="tt-key" id="tt-notas-key">Nota</span><span class="tt-val" id="tt-notas"></span></div>
 </div>
 
 <!-- SUMMARY MODAL -->
@@ -499,10 +499,11 @@ function mat(color, opacity = 1, emissive = 0, emissiveIntensity = 0) {
   return m;
 }
 
-function box(bw, bh, bd, material, px, py, pz) {
+function box(bw, bh, bd, material, px, py, pz, specs) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
   m.position.set(px || 0, py || 0, pz || 0);
   m.castShadow = true; m.receiveShadow = true;
+  if (specs) m.userData = { _hasSpecs: true, ...specs };
   return m;
 }
 
@@ -698,7 +699,7 @@ function buildModel() {
   const woodDoorM = mat(0x8B7355, 1);
 
   // Helper: build a lower cabinet section
-  function lowerCabinet(grp, xL, xR, zFront, zBack) {
+  function lowerCabinet(grp, xL, xR, zFront, zBack, nombre) {
     const cw = xR - xL;
     if (cw < 0.05) return;
     const cx = (xL + xR) / 2;
@@ -707,7 +708,9 @@ function buildModel() {
     const bodyH = CH - CT - TK;
 
     // Body
-    grp.add(box(cw, bodyH, cd2, cabM, cx, TK + bodyH/2, cz));
+    grp.add(box(cw, bodyH, cd2, cabM, cx, TK + bodyH/2, cz,
+      nombre ? {nombre, sistema:'Muebles', material:'MDF Lacado', notas:`${cw.toFixed(2)} × ${bodyH.toFixed(2)} × ${cd2.toFixed(2)} m`} : undefined
+    ));
     // Toe kick (recessed)
     grp.add(box(cw - 0.02, TK, cd2 * 0.5, toeKickM, cx, TK/2, zFront - cd2*0.25));
     // Door panel on front face
@@ -725,14 +728,16 @@ function buildModel() {
   }
 
   // Helper: build an upper cabinet section
-  function upperCabinet(grp, xL, xR, zFront, zBack) {
+  function upperCabinet(grp, xL, xR, zFront, zBack, nombre) {
     const cw = xR - xL;
     if (cw < 0.05) return;
     const cx = (xL + xR) / 2;
     const cz = (zFront + zBack) / 2;
     const cd2 = zFront - zBack;
 
-    grp.add(box(cw, UH, cd2, cabM, cx, UB + UH/2, cz));
+    grp.add(box(cw, UH, cd2, cabM, cx, UB + UH/2, cz,
+      nombre ? {nombre, sistema:'Muebles', material:'MDF Lacado', notas:`${cw.toFixed(2)} × ${UH.toFixed(2)} × ${cd2.toFixed(2)} m`} : undefined
+    ));
     const dpH = UH * 0.90;
     const dpW = cw - 0.04;
     grp.add(box(dpW, dpH, 0.015, cabFaceM, cx, UB + UH*0.05 + dpH/2, zFront + 0.008));
@@ -748,29 +753,36 @@ function buildModel() {
   const NW_ZB = NWI;        // back face (at wall)
 
   // C1
-  lowerCabinet(lg.muebles, C1_L, C1_R, NW_ZF, NW_ZB);
+  lowerCabinet(lg.muebles, C1_L, C1_R, NW_ZF, NW_ZB, 'Armario Bajo Norte Izq');
   // C2
-  lowerCabinet(lg.muebles, C2_L, C2_R, NW_ZF, NW_ZB);
+  lowerCabinet(lg.muebles, C2_L, C2_R, NW_ZF, NW_ZB, 'Armario Bajo Norte Centro');
   // C3
-  if (C3 > 0.05) lowerCabinet(lg.muebles, C3_L, C3_R, NW_ZF, NW_ZB);
+  if (C3 > 0.05) lowerCabinet(lg.muebles, C3_L, C3_R, NW_ZF, NW_ZB, 'Armario Bajo Norte Der');
 
   // Countertop — continuous slab from right of fridge to east wall (minus fridge zone)
   // Slab from C1_L to C3_R (over C1, stove, dishwasher, C2, sink, C3)
-  const CTW = C3_R - C1_L;
+  // Encimera norte en dos tramos: deja hueco para el fregadero (SK_L → SK_R)
+  const CTW = C3_R - C1_L;   // ancho total tramo norte (usado tb por el carril de spots)
   const CTX = (C1_L + C3_R) / 2;
-  lg.muebles.add(box(CTW + 0.02, CT, CD + 0.04, graniteM, CTX, CH - CT/2, NW_ZF - (CD+0.04)/2 + CD));
+  const ctZ = NW_ZB + (CD + 0.04) / 2;
+  const ctLeftW  = SK_L - C1_L - 0.01;
+  const ctRightW = C3_R - SK_R - 0.01;
+  if (ctLeftW  > 0.05) lg.muebles.add(box(ctLeftW,  CT, CD + 0.04, graniteM, C1_L  + ctLeftW/2,  CH - CT/2, ctZ,
+    {nombre:'Encimera Norte Izq', sistema:'Muebles', material:'Granito', notas:`${ctLeftW.toFixed(2)} × ${CT.toFixed(2)} × ${(CD+0.04).toFixed(2)} m`}));
+  if (ctRightW > 0.05) lg.muebles.add(box(ctRightW, CT, CD + 0.04, graniteM, SK_R  + ctRightW/2, CH - CT/2, ctZ,
+    {nombre:'Encimera Norte Der', sistema:'Muebles', material:'Granito', notas:`${ctRightW.toFixed(2)} × ${CT.toFixed(2)} × ${(CD+0.04).toFixed(2)} m`}));
 
   // ── North wall upper cabinets ──
   const UCF = NWI + UD;
   const UCB = NWI;
   // Left section: from FR_R to ST_L
-  upperCabinet(lg.muebles, FR_R, ST_L, UCF, UCB);
+  upperCabinet(lg.muebles, FR_R, ST_L, UCF, UCB, 'Armario Alto Norte Izq');
   // Middle section: from ST_R+0.04 to WIN_X1
   if (ST_R + 0.04 < WIN_X1 - 0.05)
-    upperCabinet(lg.muebles, ST_R + 0.04, WIN_X1, UCF, UCB);
+    upperCabinet(lg.muebles, ST_R + 0.04, WIN_X1, UCF, UCB, 'Armario Alto Norte Centro');
   // Right section: from WIN_X2 to C3_R
   if (WIN_X2 + 0.06 < C3_R)
-    upperCabinet(lg.muebles, WIN_X2 + 0.06, C3_R, UCF, UCB);
+    upperCabinet(lg.muebles, WIN_X2 + 0.06, C3_R, UCF, UCB, 'Armario Alto Norte Der');
 
   // ── East wall L-section lower cabinets ──
   const EW_CD = EW_Z2 - EW_Z1;
@@ -779,18 +791,21 @@ function buildModel() {
   const EW_CZ = (EW_Z1 + EW_Z2) / 2;
   const ewBodyH = CH - CT - TK;
 
-  lg.muebles.add(box(EW_CABW, ewBodyH, EW_CD, cabM, EW_CAB_X, TK + ewBodyH/2, EW_CZ));
+  lg.muebles.add(box(EW_CABW, ewBodyH, EW_CD, cabM, EW_CAB_X, TK + ewBodyH/2, EW_CZ,
+    {nombre:'Armario Bajo Este', sistema:'Muebles', material:'MDF Lacado', notas:`${EW_CABW.toFixed(2)} × ${ewBodyH.toFixed(2)} × ${EW_CD.toFixed(2)} m`}));
   lg.muebles.add(box(EW_CABW - 0.02, TK, EW_CD*0.5, toeKickM, EW_CAB_X, TK/2, EW_Z1 + EW_CD*0.25));
   lg.muebles.add(box(EW_CABW - 0.04, ewBodyH * 0.85, 0.015, cabFaceM, EW_CAB_X - 0.006, TK + ewBodyH*0.10, EW_Z1 + 0.01));
   // East wall upper cabinets
-  upperCabinet(lg.muebles, EW_FRONT_X, EW_BACK_X - 0.01, EW_Z2 - 0.01, EW_Z1);
+  upperCabinet(lg.muebles, EW_FRONT_X, EW_BACK_X - 0.01, EW_Z2 - 0.01, EW_Z1, 'Armario Alto Este');
   // East wall countertop
-  lg.muebles.add(box(EW_CABW + 0.04, CT, EW_CD + 0.02, graniteM, EW_CAB_X, CH - CT/2, EW_CZ));
+  lg.muebles.add(box(EW_CABW + 0.04, CT, EW_CD + 0.02, graniteM, EW_CAB_X, CH - CT/2, EW_CZ,
+    {nombre:'Encimera Este', sistema:'Muebles', material:'Granito', notas:`${(EW_CABW+0.04).toFixed(2)} × ${CT.toFixed(2)} × ${(EW_CD+0.02).toFixed(2)} m`}));
 
   // ── REFRIGERATOR ──
   const fridgeG = new THREE.Group();
   // Main body
-  fridgeG.add(box(FRW, FRH, FRD, stainM, 0, FRH/2, 0));
+  fridgeG.add(box(FRW, FRH, FRD, stainM, 0, FRH/2, 0,
+    {nombre:'Nevera', sistema:'Muebles', material:'Acero inoxidable', notas:`${FRW.toFixed(2)} × ${FRH.toFixed(2)} × ${FRD.toFixed(2)} m`}));
   // Two fridge doors (top 63%)
   const fdH = FRH * 0.63;
   const fdY = FRH - fdH/2;
@@ -813,7 +828,8 @@ function buildModel() {
   // ── STOVE / RANGE ──
   const stoveG = new THREE.Group();
   // Main body
-  stoveG.add(box(STW, CH, STD, mat(0xC8CACA, 1), 0, CH/2, 0));
+  stoveG.add(box(STW, CH, STD, mat(0xC8CACA, 1), 0, CH/2, 0,
+    {nombre:'Fogón / Horno', sistema:'Muebles', material:'Acero esmaltado', notas:`${STW.toFixed(2)} × ${CH.toFixed(2)} × ${STD.toFixed(2)} m`}));
   // Black ceramic top
   stoveG.add(box(STW, 0.025, STD, blackM, 0, CH + 0.012, 0));
   // 4 burner rings
@@ -870,7 +886,8 @@ function buildModel() {
   // ── KITCHEN SINK ──
   const sinkG = new THREE.Group();
   // Basin housing (counter level)
-  sinkG.add(box(SKW - 0.04, 0.012, CD - 0.06, graniteM, 0, 0, 0));
+  sinkG.add(box(SKW - 0.04, 0.012, CD - 0.06, graniteM, 0, 0, 0,
+    {nombre:'Fregadero Doble', sistema:'Muebles', material:'Granito / Inox', notas:`${(SKW-0.04).toFixed(2)} × 0.012 × ${(CD-0.06).toFixed(2)} m`}));
   // Left basin (dark stainless inset)
   sinkG.add(box((SKW - 0.12)/2, 0.16, CD * 0.55, mat(0x888888, 0.95), -(SKW*0.24), -0.09, -0.02));
   // Right basin
@@ -900,7 +917,8 @@ function buildModel() {
   const dwG = new THREE.Group();
   const dwBodyH = CH;
   // Body
-  dwG.add(box(DWW, dwBodyH, STD, mat(0xF0EEE8, 1), 0, dwBodyH/2, 0));
+  dwG.add(box(DWW, dwBodyH, STD, mat(0xF0EEE8, 1), 0, dwBodyH/2, 0,
+    {nombre:'Lavavajillas', sistema:'Muebles', material:'Acero inoxidable', notas:`${DWW.toFixed(2)} × ${dwBodyH.toFixed(2)} × ${STD.toFixed(2)} m`}));
   // Front panel
   dwG.add(box(DWW - 0.02, dwBodyH - 0.04, 0.025, mat(0xEDE9E1, 1), 0, dwBodyH/2, STD/2 + 0.013));
   // Top vent strip (stainless)
@@ -916,7 +934,8 @@ function buildModel() {
   // ── ISLAND ──
   const islG = new THREE.Group();
   // Cabinet body
-  islG.add(box(ISL_W, CH - CT, ISL_D, cabM, 0, (CH-CT)/2, 0));
+  islG.add(box(ISL_W, CH - CT, ISL_D, cabM, 0, (CH-CT)/2, 0,
+    {nombre:'Isla — Cuerpo', sistema:'Muebles', material:'MDF Lacado', notas:`${ISL_W.toFixed(2)} × ${(CH-CT).toFixed(2)} × ${ISL_D.toFixed(2)} m`}));
   // Cabinet doors on south and north faces
   const islDoorH = (CH - CT) * 0.85;
   islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM, -ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, ISL_D/2 + 0.008));
@@ -928,7 +947,8 @@ function buildModel() {
   islG.add(box(0.14, 0.012, 0.012, handleM,  ISL_W*0.25, (CH-CT)*0.52, ISL_D/2 + 0.022));
   // Marble countertop (overhangs south for seating)
   const marbleM = mat(0xEBE5DC, 1);
-  islG.add(box(ISL_W + 0.04, CT, ISL_D + 0.24, marbleM, 0, CH - CT/2, 0.12));
+  islG.add(box(ISL_W + 0.04, CT, ISL_D + 0.24, marbleM, 0, CH - CT/2, 0.12,
+    {nombre:'Isla — Encimera', sistema:'Muebles', material:'Mármol', notas:`${(ISL_W+0.04).toFixed(2)} × ${CT.toFixed(2)} × ${(ISL_D+0.24).toFixed(2)} m`}));
   // Toe kicks
   islG.add(box(ISL_W - 0.02, TK, ISL_D * 0.5, toeKickM, 0, TK/2,  ISL_D/2 - ISL_D*0.25));
   islG.add(box(ISL_W - 0.02, TK, ISL_D * 0.5, toeKickM, 0, TK/2, -ISL_D/2 + ISL_D*0.25));
@@ -1150,6 +1170,21 @@ function buildModel() {
     j.position.set(x, y, z); lg.fontaneria.add(j);
   });
 
+  // ── AUTO-TAG FONTANERÍA ──
+  { const hx = {'3b82f6':'CPVC agua fría','ef4444':'PEX agua caliente','6b7280':'PVC desagüe','111111':'Gas acero negro','86efac':'PVC ventilación','9ca3af':'Flexible armado'};
+    const sz = r => r<=.007?'Ø6mm (1/4")':r<=.013?'Ø12mm (1/2")':r<=.017?'Ø16mm':r<=.020?'Ø19mm (3/4")':r<=.030?'Ø28mm (1.5")':'Ø38mm (2")';
+    lg.fontaneria.traverse(o => {
+      if (!o.isMesh || o.userData._hasSpecs) return;
+      const p = o.geometry && o.geometry.parameters;
+      if (!p || p.radiusTop === undefined) return;
+      const r = p.radiusTop; if (r < .004 || r > .055) return;
+      const h = o.material.color.getHexString();
+      const mn = hx[h] || 'Tubería';
+      const sistema = h === '111111' ? 'Gas' : 'Fontanería';
+      o.userData = { _hasSpecs:true, nombre:mn+' '+sz(r), sistema, material:mn, longitud:Math.round(Math.abs(p.height)*1000)/1000, diametro:Math.round(r*2*1000) };
+    });
+  }
+
   // ════════════════════════════════════════════════
   // ELECTRICO LAYER — Sistema eléctrico detallado
   // ════════════════════════════════════════════════
@@ -1200,7 +1235,7 @@ function buildModel() {
   const EWcx   = (CW_X + CE_X) / 2;
   const NScz   = (CN_Z + CS_Z) / 2;
   // Posiciones E-W de travesaños (norte → sur)
-  const crossZs = [CN_Z, -d2 * 0.10, ISL_Z * 0.50, ISL_Z, d2 * 0.35, CS_Z];
+  const crossZs = [CN_Z, ISL_Z, CS_Z];  // solo donde hay dispositivos
 
   function ejbox(px, py, pz) {
     const j = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.052, 0.072), panelM);
@@ -1225,14 +1260,12 @@ function buildModel() {
   lg.electrico.add(cyl(CR, RUN_NS, condM, CW_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Pared Oeste', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   // N-S: Pared este — longitud completa
   lg.electrico.add(cyl(CR, RUN_NS, condM, CE_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Pared Este', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
-  // N-S: Central — isla y zona sur
-  lg.electrico.add(cyl(CR, RUN_NS, condM, CI_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Central', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   // E-W: Norte + 4 travesaños + sur — longitud completa CW_X → CE_X
   crossZs.forEach((cz, cwi) => {
     lg.electrico.add(cyl(CR, RUN_EW, condM, EWcx, condHt, cz, 0, Math.PI / 2, {nombre:'Travesaño E-W '+(cwi+1), sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   });
   // Cajas de derivación en TODAS las intersecciones (3 × 6 = 18)
-  [CW_X, CI_X, CE_X].forEach(rx => {
+  [CW_X, CE_X].forEach(rx => {
     crossZs.forEach(cz => {
       lg.electrico.add(ejbox(rx, condHt, cz));
     });
@@ -1287,8 +1320,6 @@ function buildModel() {
     // Canaleta interior island hasta suelo
     lg.electrico.add(cyl(CR, CH * 0.84, condM, pX, CH * 0.42, pZ, undefined, undefined, {nombre:'Canaleta Pop-up Isla '+(ipi+1), sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
   });
-  // Troncal vertical isla: sube desde suelo hasta red de techo en CI_X
-  lg.electrico.add(cyl(CR, condHt, condM, CI_X, condHt / 2, ISL_Z, undefined, undefined, {nombre:'Troncal Vertical Isla', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
 
   // ── INTERRUPTORES — zona puerta (caja triple + regulador) ──
   const SW_Z = d2 - WT - 0.014;
@@ -1625,7 +1656,7 @@ renderer.domElement.addEventListener('click', e => {
   raycaster.setFromCamera(mouse2D, camera);
 
   const targets = [];
-  ['fontaneria', 'electrico'].forEach(name => {
+  ['fontaneria', 'electrico', 'muebles'].forEach(name => {
     if (layerState[name])
       layerGroups[name].traverse(o => { if (o.isMesh && o.userData._hasSpecs) targets.push(o); });
   });
@@ -1655,7 +1686,7 @@ function clearSel() {
 }
 
 function showTooltip(s, cx, cy) {
-  const sysColors = { 'Fontanería': '#60a5fa', 'Eléctrico': '#fbbf24' };
+  const sysColors = { 'Fontanería': '#60a5fa', 'Eléctrico': '#fbbf24', 'Muebles': '#34d399', 'Gas': '#f97316' };
   const col = sysColors[s.sistema] || '#9ca3af';
   document.getElementById('tt-sistema').textContent = s.sistema || '';
   document.getElementById('tt-sistema').style.color = col;
@@ -1666,6 +1697,7 @@ function showTooltip(s, cx, cy) {
   const notasRow = document.getElementById('tt-notas-row');
   if (s.notas) {
     document.getElementById('tt-notas').textContent = s.notas;
+    document.getElementById('tt-notas-key').textContent = s.sistema === 'Muebles' ? 'Dimensiones' : 'Nota';
     notasRow.style.display = '';
   } else { notasRow.style.display = 'none'; }
 
