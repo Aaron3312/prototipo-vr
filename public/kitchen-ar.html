@@ -48,6 +48,34 @@
     /* Wrappers de columna: invisibles en portrait */
     #pre-ar-left,#pre-ar-right{display:contents}
 
+    /* ── CAMERA BG (fase mock menu) ── */
+    #camera-bg{
+      position:fixed;inset:0;width:100%;height:100%;
+      object-fit:cover;z-index:0;display:none;
+    }
+    #camera-bg.active{display:block}
+
+    /* ── FINGER CURSOR ── */
+    #finger-cursor{
+      position:fixed;z-index:1000;pointer-events:none;
+      display:none;transform:translate(-50%,-50%);
+      width:48px;height:48px;
+    }
+    #finger-cursor.active{display:block}
+    .fc-ring{
+      position:absolute;inset:0;border-radius:50%;
+      border:2px solid rgba(96,165,250,.9);
+      box-shadow:0 0 14px rgba(96,165,250,.6),inset 0 0 8px rgba(96,165,250,.2);
+      animation:fcPulse 1.6s ease-in-out infinite;
+    }
+    .fc-dot{
+      position:absolute;width:8px;height:8px;border-radius:50%;
+      background:#60a5fa;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      box-shadow:0 0 10px rgba(96,165,250,.9);
+    }
+    @keyframes fcPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.7}}
+
     /* ── TOAST ── */
     #toast{
       position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -320,37 +348,41 @@
     }
     /* ── MOCK MENU ── */
     #mock-menu{
-      position:absolute;inset:0;
+      position:fixed;inset:0;
       display:none;flex-direction:column;
-      align-items:center;justify-content:center;
-      padding:16px 14px;gap:14px;
+      align-items:center;justify-content:flex-start;
+      padding:16px 14px 24px;gap:12px;
       background:transparent;
-      pointer-events:all;z-index:20;overflow:hidden;
+      pointer-events:all;z-index:100;overflow:hidden;
     }
     #mock-menu.active{display:flex}
 
-    /* HUD header */
+    /* HUD header — barra superior ancha */
     .mock-header{
-      display:flex;flex-direction:column;align-items:center;gap:4px;
-      flex-shrink:0;position:relative;z-index:1;text-align:center;
+      display:flex;flex-direction:row;align-items:center;
+      justify-content:space-between;
+      width:100%;max-width:520px;
+      flex-shrink:0;position:relative;z-index:1;
       background:rgba(2,4,20,.6);
       border:1px solid rgba(99,102,241,.2);
-      border-radius:16px;padding:10px 24px;
+      border-radius:14px;padding:10px 16px;
     }
-    .mock-hud-line{display:flex;align-items:center;gap:8px}
+    .mock-hud-line{display:flex;align-items:center;gap:6px}
     .mock-hud-dot{
       width:6px;height:6px;border-radius:50%;
       background:#22c55e;box-shadow:0 0 8px #22c55e;
-      animation:hudBlink 1.8s ease infinite;
+      animation:hudBlink 1.8s ease infinite;flex-shrink:0;
     }
     @keyframes hudBlink{0%,100%{opacity:1}50%{opacity:.15}}
-    .mock-hud-status{font-size:9px;font-weight:700;color:#22c55e;letter-spacing:2.5px;text-transform:uppercase}
+    .mock-hud-status{font-size:9px;font-weight:700;color:#22c55e;letter-spacing:2px;text-transform:uppercase}
+    .mock-header-right{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
     .mock-header h2{
-      font-size:21px;font-weight:900;color:#fff;
+      font-size:17px;font-weight:900;color:#fff;
       letter-spacing:2px;text-transform:uppercase;
-      text-shadow:0 0 24px rgba(99,102,241,.7),0 0 50px rgba(99,102,241,.3);
+      text-shadow:0 0 20px rgba(99,102,241,.7);
+      margin:0;
     }
-    .mock-header-sub{font-size:9px;color:rgba(255,255,255,.22);letter-spacing:3px;text-transform:uppercase}
+    .mock-header-sub{font-size:8px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase}
 
     /* Grid 2 columnas en portrait, 4 en landscape */
     .mock-grid{
@@ -426,7 +458,7 @@
     .cc-br{bottom:4px;right:4px;border-width:0 1.5px 1.5px 0}
 
     /* Iniciar: botón holográfico con anillos de pulso */
-    #mock-start-wrap{position:relative;flex-shrink:0;z-index:1}
+    #mock-start-wrap{position:relative;flex-shrink:0;z-index:1;margin-top:auto;width:100%;max-width:520px}
     .mock-pulse{
       position:absolute;inset:-14px;border-radius:26px;
       border:1.5px solid rgba(99,102,241,.4);
@@ -436,7 +468,7 @@
     .mock-pulse:nth-child(3){animation-delay:1.5s}
     @keyframes mockPulse{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.45);opacity:0}}
     #mock-start-btn{
-      padding:16px 52px;border-radius:18px;
+      padding:16px 52px;border-radius:18px;width:100%;
       border:1px solid rgba(99,102,241,.5);
       cursor:pointer;font-size:16px;font-weight:900;
       color:#fff;letter-spacing:3px;text-transform:uppercase;
@@ -447,24 +479,38 @@
       transition:box-shadow .2s,transform .15s;pointer-events:all;position:relative;
     }
     #mock-start-btn:active{transform:scale(.97)}
+    #mock-start-btn.dwelling{
+      background:rgba(99,102,241,.3);
+      box-shadow:0 0 60px rgba(99,102,241,.7),inset 0 1px 0 rgba(255,255,255,.2);
+    }
 
-    /* Landscape: header a la izquierda, grid en el centro, iniciar a la derecha */
+    /* Landscape: todo en columna pero compacto, header arriba, iniciar abajo */
     @media (orientation:landscape){
-      #mock-menu{flex-direction:row;gap:14px;padding:8px 16px;overflow-y:visible}
-      .mock-header{min-width:110px;gap:3px}
-      .mock-header h2{font-size:15px;letter-spacing:1.5px}
-      .mock-header-sub{font-size:8px;letter-spacing:2px}
-      .mock-grid{grid-template-columns:repeat(4,1fr);max-width:none;flex:1 1 auto;gap:6px}
-      .mock-card{padding:10px 6px 8px;border-radius:10px;gap:4px}
-      .mock-card-icon{font-size:20px}
-      .mock-card-label{font-size:8px;letter-spacing:.5px}
-      .dwell-ring{width:44px;height:44px}
-      #mock-start-wrap{min-width:100px}
-      #mock-start-btn{
-        padding:12px 20px;font-size:13px;letter-spacing:2px;
-        border-radius:14px;flex-direction:column;gap:5px;
+      #mock-menu{
+        flex-direction:column;gap:8px;
+        padding:8px 16px 12px;overflow-y:auto;
+        justify-content:flex-start;
       }
-      .mock-pulse{inset:-10px;border-radius:22px}
+      .mock-header{
+        flex-direction:row;padding:7px 14px;border-radius:10px;
+        max-width:none;
+      }
+      .mock-header h2{font-size:14px;letter-spacing:1.5px}
+      .mock-header-sub{font-size:7px;letter-spacing:1.5px}
+      .mock-hud-status{font-size:8px}
+      .mock-grid{
+        grid-template-columns:repeat(4,1fr);
+        max-width:none;width:100%;gap:6px;
+      }
+      .mock-card{padding:8px 6px 6px;border-radius:10px;gap:4px}
+      .mock-card-icon{font-size:18px}
+      .mock-card-label{font-size:8px;letter-spacing:.3px}
+      .dwell-ring{width:40px;height:40px}
+      #mock-start-wrap{max-width:none;margin-top:6px}
+      #mock-start-btn{
+        padding:10px 20px;font-size:13px;letter-spacing:2px;border-radius:12px;
+      }
+      .mock-pulse{inset:-8px;border-radius:18px}
     }
   </style>
 </head>
@@ -478,7 +524,7 @@
   </div>
   <div id="pre-ar-right">
     <p>Marca las 4 esquinas del piso y 1 punto en el techo para ajustar el modelo al tamano real de tu cocina</p>
-    <button id="start-btn" onclick="startAR()">
+    <button id="start-btn" onclick="showMockMenu()">
       <span style="font-size:20px">🚀</span>
       Iniciar — Tomar medidas
     </button>
@@ -496,19 +542,24 @@
   <p style="font-size:16px;font-weight:700">Iniciando AR...</p>
 </div>
 
-<!-- AR Overlay (dom-overlay) -->
-<div id="overlay">
+<!-- Camera background (fase mock menu, antes de WebXR) -->
+<video id="camera-bg" playsinline autoplay muted></video>
 
-  <!-- Mock menu — UI estilo VR/gafas, cámara de fondo -->
-  <div id="mock-menu">
+<!-- Finger cursor (MediaPipe) -->
+<div id="finger-cursor"><div class="fc-ring"></div><div class="fc-dot"></div></div>
+
+<!-- Mock menu — UI estilo VR/gafas, cámara de fondo -->
+<div id="mock-menu">
 
     <div class="mock-header">
       <div class="mock-hud-line">
         <div class="mock-hud-dot"></div>
         <span class="mock-hud-status">Sistema activo</span>
       </div>
-      <h2>AR Cocina 3D</h2>
-      <div class="mock-header-sub">Panel de gestión · Obra en curso</div>
+      <div class="mock-header-right">
+        <h2>AR Cocina 3D</h2>
+        <div class="mock-header-sub">Panel de gestión · Obra en curso</div>
+      </div>
     </div>
 
     <div class="mock-grid">
@@ -581,7 +632,10 @@
       </button>
     </div>
 
-  </div>
+</div>
+
+<!-- AR Overlay (dom-overlay) -->
+<div id="overlay">
 
   <div id="top-bar">
     <div class="badge">🍳 AR Cocina</div>
@@ -1722,16 +1776,13 @@ function toggleLayer(name) {
   document.getElementById('btn-' + name).classList.toggle('off', !layerState[name]);
 }
 
-// ── MOCK MENU: dwell interaction (simula selección con mano en VR) ──
+// ── MOCK MENU: touch dwell (fallback sin MediaPipe) ──
 function setupMockMenu() {
   document.querySelectorAll('.mock-card').forEach(card => {
     let dwellTimer = null;
-
     function startDwell(e) {
       e.preventDefault();
-      // Reiniciar animación para que funcione varias veces
-      card.classList.remove('dwelling');
-      void card.offsetWidth; // force reflow
+      card.classList.remove('dwelling'); void card.offsetWidth;
       card.classList.add('dwelling');
       dwellTimer = setTimeout(() => {
         showToast(card.dataset.action + ' — Próximamente');
@@ -1740,12 +1791,7 @@ function setupMockMenu() {
         setTimeout(() => card.classList.remove('activated'), 500);
       }, 700);
     }
-
-    function cancelDwell() {
-      clearTimeout(dwellTimer);
-      card.classList.remove('dwelling');
-    }
-
+    function cancelDwell() { clearTimeout(dwellTimer); card.classList.remove('dwelling'); }
     card.addEventListener('pointerdown', startDwell);
     card.addEventListener('pointerup', cancelDwell);
     card.addEventListener('pointercancel', cancelDwell);
@@ -1753,15 +1799,127 @@ function setupMockMenu() {
   });
 }
 
-// ── MOCK MENU → CALIBRATION ──
-function startCalibration() {
+// ── MEDIAPIPE HAND TRACKING ──
+let cameraStream = null;
+let mpHands = null;
+let handTrackingActive = false;
+let fingerHovering = null;
+let fingerDwellTimer = null;
+let startBtnHovering = false;
+let startBtnDwellTimer = null;
+
+function loadMediaPipe() {
+  const load = (src) => new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+  load('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js')
+    .then(() => initHandTracking())
+    .catch(() => console.warn('MediaPipe no disponible — usando solo touch'));
+}
+
+async function initHandTracking() {
+  if (!window.Hands) return;
+  const vb = document.getElementById('camera-bg');
+  mpHands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  mpHands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.7, minTrackingConfidence: 0.5 });
+  mpHands.onResults(onHandResults);
+  await mpHands.initialize();
+  handTrackingActive = true;
+  (async function loop() {
+    if (!handTrackingActive || !mpHands) return;
+    if (vb.readyState >= 2) await mpHands.send({ image: vb });
+    requestAnimationFrame(loop);
+  })();
+}
+
+function onHandResults(results) {
+  const cursor = document.getElementById('finger-cursor');
+  if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
+    cursor.classList.remove('active');
+    clearFingerDwell();
+    return;
+  }
+  cursor.classList.add('active');
+  const tip = results.multiHandLandmarks[0][8]; // punta del índice
+  const sx = tip.x * window.innerWidth;
+  const sy = tip.y * window.innerHeight;
+  cursor.style.left = sx + 'px';
+  cursor.style.top = sy + 'px';
+  checkFingerHover(sx, sy);
+}
+
+function checkFingerHover(x, y) {
+  // Detectar hover sobre cards
+  let found = null;
+  document.querySelectorAll('.mock-card').forEach(card => {
+    const r = card.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) found = card;
+  });
+  if (found !== fingerHovering) {
+    clearFingerDwell();
+    fingerHovering = found;
+    if (found) beginFingerDwell(found);
+  }
+  // Detectar hover sobre botón Iniciar
+  const btn = document.getElementById('mock-start-btn');
+  const br = btn.getBoundingClientRect();
+  const onBtn = x >= br.left && x <= br.right && y >= br.top && y <= br.bottom;
+  if (onBtn && !startBtnHovering) {
+    startBtnHovering = true;
+    btn.classList.add('dwelling');
+    startBtnDwellTimer = setTimeout(() => {
+      btn.classList.remove('dwelling');
+      startBtnHovering = false;
+      startCalibration();
+    }, 1000);
+  } else if (!onBtn && startBtnHovering) {
+    startBtnHovering = false;
+    clearTimeout(startBtnDwellTimer);
+    btn.classList.remove('dwelling');
+  }
+}
+
+function beginFingerDwell(card) {
+  card.classList.remove('dwelling'); void card.offsetWidth;
+  card.classList.add('dwelling');
+  fingerDwellTimer = setTimeout(() => {
+    showToast(card.dataset.action + ' — Próximamente');
+    card.classList.remove('dwelling');
+    card.classList.add('activated');
+    setTimeout(() => card.classList.remove('activated'), 500);
+    fingerHovering = null;
+  }, 700);
+}
+
+function clearFingerDwell() {
+  clearTimeout(fingerDwellTimer);
+  if (fingerHovering) { fingerHovering.classList.remove('dwelling'); fingerHovering = null; }
+}
+
+function stopHandTracking() {
+  handTrackingActive = false; mpHands = null;
+  document.getElementById('finger-cursor').classList.remove('active');
+  clearFingerDwell();
+  clearTimeout(startBtnDwellTimer); startBtnHovering = false;
+  document.getElementById('mock-start-btn').classList.remove('dwelling');
+}
+
+function stopMockCamera() {
+  stopHandTracking();
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const vb = document.getElementById('camera-bg');
+  vb.srcObject = null; vb.classList.remove('active');
+}
+
+// ── MOCK MENU → CALIBRACIÓN ──
+async function startCalibration() {
   document.getElementById('mock-menu').classList.remove('active');
-  // Mostrar controles AR ahora que empieza la calibración
-  ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
-    document.getElementById(id).style.display = ''
-  );
-  document.getElementById('corner-ui').classList.add('show');
-  document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
+  document.getElementById('loading').classList.add('show');
+  stopMockCamera();
+  await startAR();
 }
 
 // ── WEBXR ──
@@ -1770,40 +1928,57 @@ let hitTestRequested = false;
 let placed = false;
 let xrSession = null;
 
-async function startAR() {
-  if (!navigator.xr) { document.getElementById('no-xr').style.display = 'block'; return; }
+// ── SHOW MOCK MENU (antes de WebXR) ──
+async function showMockMenu() {
+  if (!navigator.xr) {
+    document.getElementById('no-xr').style.display = 'block'; return;
+  }
   const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
-  if (!supported) { document.getElementById('no-xr').style.display = 'block'; return; }
-
+  if (!supported) {
+    document.getElementById('no-xr').style.display = 'block';
+    document.getElementById('no-xr').textContent = 'Requiere Android + Chrome con ARCore instalado'; return;
+  }
   document.getElementById('loading').classList.add('show');
+  // Iniciar cámara trasera para fondo
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const vb = document.getElementById('camera-bg');
+    vb.srcObject = cameraStream;
+    await vb.play();
+    vb.classList.add('active');
+  } catch(e) { console.warn('Cámara no disponible:', e); }
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('pre-ar').style.display = 'none';
+  document.getElementById('mock-menu').classList.add('active');
+  // Cargar MediaPipe en segundo plano
+  loadMediaPipe();
+}
 
+// ── INICIAR WebXR (después del mock menu) ──
+async function startAR() {
   try {
     xrSession = await navigator.xr.requestSession('immersive-ar', {
       requiredFeatures: ['hit-test'],
       optionalFeatures: ['dom-overlay'],
       domOverlay: { root: document.getElementById('overlay') },
     });
-
     renderer.xr.setReferenceSpaceType('local');
     await renderer.xr.setSession(xrSession);
     xrSession.addEventListener('end', onSessionEnd);
     xrSession.addEventListener('select', onTap);
-
-    document.getElementById('pre-ar').style.display = 'none';
     document.getElementById('loading').classList.remove('show');
     document.getElementById('overlay').classList.add('active');
-    document.getElementById('mock-menu').classList.add('active');
-    // Ocultar controles AR hasta que el usuario presione Iniciar
-    ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
-      document.getElementById(id).style.display = 'none'
-    );
-
+    document.getElementById('corner-ui').classList.add('show');
+    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
     renderer.setAnimationLoop(render);
-  } catch (e) {
+  } catch(e) {
     console.error(e);
     document.getElementById('loading').classList.remove('show');
     document.getElementById('no-xr').textContent = 'Error: ' + e.message;
     document.getElementById('no-xr').style.display = 'block';
+    document.getElementById('pre-ar').style.display = 'flex';
   }
 }
 
@@ -1989,7 +2164,6 @@ function onSessionEnd() {
   model.scale.set(1, 1, 1);
   W = 2.0; D = 2.0; H = 1.0;
   document.getElementById('overlay').classList.remove('active');
-  document.getElementById('mock-menu').classList.remove('active');
   document.getElementById('corner-ui').classList.remove('show');
   document.getElementById('info-card').classList.remove('show');
   document.getElementById('ar-tools-drawer').classList.remove('open');
