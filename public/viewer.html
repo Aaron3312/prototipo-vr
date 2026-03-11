@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Viewer 3D — Construcción</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0d1117;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    canvas{display:block}
+
+    /* ── TOP BAR ── */
+    #top-bar{
+      position:fixed;top:0;left:0;right:0;height:54px;
+      background:rgba(13,17,23,.92);border-bottom:1px solid rgba(255,255,255,.08);
+      backdrop-filter:blur(16px);display:flex;align-items:center;
+      padding:0 16px;gap:12px;z-index:50;
+    }
+    #top-bar h1{font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
+    .badge-mode{
+      background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.5);
+      color:#818cf8;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;
+    }
+    .spacer{flex:1}
+    #back-btn{
+      padding:7px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.15);
+      background:transparent;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;
+      cursor:pointer;text-decoration:none;transition:all .2s;
+    }
+    #back-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+
+    /* ── SIDE PANEL ── */
+    #panel{
+      position:fixed;top:54px;right:0;bottom:0;width:220px;
+      background:rgba(13,17,23,.95);border-left:1px solid rgba(255,255,255,.08);
+      backdrop-filter:blur(16px);padding:16px;overflow-y:auto;z-index:40;
+      display:flex;flex-direction:column;gap:20px;
+    }
+
+    .section-title{
+      font-size:10px;font-weight:700;color:rgba(255,255,255,.35);
+      text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
+    }
+
+    /* Layers */
+    .layer-item{
+      display:flex;align-items:center;gap:10px;padding:9px 10px;
+      border-radius:12px;cursor:pointer;border:1px solid transparent;
+      transition:all .2s;margin-bottom:6px;
+    }
+    .layer-item:hover{background:rgba(255,255,255,.05)}
+    .layer-item.active{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+    .layer-item.off{opacity:.35}
+    .layer-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .layer-label{font-size:13px;font-weight:600;color:#fff;flex:1}
+    .layer-icon{font-size:18px}
+
+    /* Sliders */
+    .slider-row{margin-bottom:12px}
+    .slider-header{display:flex;justify-content:space-between;margin-bottom:5px}
+    .slider-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
+    .slider-val{font-size:12px;font-weight:700;color:#60a5fa;font-variant-numeric:tabular-nums}
+    input[type=range]{
+      width:100%;appearance:none;height:4px;border-radius:2px;
+      background:rgba(255,255,255,.12);outline:none;cursor:pointer;
+    }
+    input[type=range]::-webkit-slider-thumb{
+      appearance:none;width:14px;height:14px;border-radius:50%;
+      background:#6366f1;cursor:pointer;transition:transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+
+    /* Rebuild button */
+    #rebuild-btn{
+      width:100%;padding:11px;border-radius:12px;border:none;cursor:pointer;
+      font-size:13px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,#6366f1,#3b82f6);
+      transition:opacity .2s;
+    }
+    #rebuild-btn:hover{opacity:.85}
+
+    /* Camera presets */
+    .preset-btn{
+      flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;
+    }
+    .preset-btn:hover{background:rgba(255,255,255,.09);color:#fff}
+    .preset-row{display:flex;gap:6px}
+
+    /* ── HELP HINT ── */
+    #hint{
+      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
+      border-radius:99px;padding:8px 18px;font-size:12px;color:rgba(255,255,255,.5);
+      backdrop-filter:blur(12px);pointer-events:none;white-space:nowrap;
+      transition:opacity 1s;
+    }
+    #hint.hidden{opacity:0}
+
+    /* ── CROSSHAIR ── */
+    #crosshair{
+      position:fixed;top:50%;left:calc(50% - 110px);transform:translate(-50%,-50%);
+      width:20px;height:20px;pointer-events:none;opacity:.25;
+    }
+    #crosshair::before,#crosshair::after{
+      content:'';position:absolute;background:#fff;border-radius:1px;
+    }
+    #crosshair::before{width:1px;height:100%;left:50%;top:0}
+    #crosshair::after{height:1px;width:100%;top:50%;left:0}
+
+    /* ── DIMS BADGE ── */
+    #dims{
+      position:fixed;bottom:20px;left:20px;
+      background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.1);
+      border-radius:12px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.5);
+      backdrop-filter:blur(12px);line-height:1.8;
+    }
+    #dims strong{color:#fff;font-weight:700}
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <span style="font-size:20px">🏗️</span>
+  <h1>AR Construcción</h1>
+  <span class="badge-mode">Viewer 3D</span>
+  <div class="spacer"></div>
+  <a href="/" class="badge-mode" style="text-decoration:none;cursor:pointer">← Menú</a>
+</div>
+
+<!-- SIDE PANEL -->
+<div id="panel">
+
+  <!-- LAYERS -->
+  <div>
+    <div class="section-title">Capas</div>
+    <div class="layer-item active" id="li-estructura" onclick="toggleLayer('estructura')">
+      <span class="layer-icon">🧱</span>
+      <span class="layer-label">Estructura</span>
+      <span class="layer-dot" style="background:#9CA3AF"></span>
+    </div>
+    <div class="layer-item active" id="li-fontaneria" onclick="toggleLayer('fontaneria')">
+      <span class="layer-icon">💧</span>
+      <span class="layer-label">Fontanería</span>
+      <span class="layer-dot" style="background:#60A5FA"></span>
+    </div>
+    <div class="layer-item active" id="li-electrico" onclick="toggleLayer('electrico')">
+      <span class="layer-icon">⚡</span>
+      <span class="layer-label">Eléctrico</span>
+      <span class="layer-dot" style="background:#FBBF24"></span>
+    </div>
+    <div class="layer-item active" id="li-acabados" onclick="toggleLayer('acabados')">
+      <span class="layer-icon">🏠</span>
+      <span class="layer-label">Acabados</span>
+      <span class="layer-dot" style="background:#34D399"></span>
+    </div>
+    <div class="layer-item active" id="li-muebles" onclick="toggleLayer('muebles')">
+      <span class="layer-icon">🚿</span>
+      <span class="layer-label">Muebles</span>
+      <span class="layer-dot" style="background:#F472B6"></span>
+    </div>
+  </div>
+
+  <!-- DIMENSIONES -->
+  <div>
+    <div class="section-title">Dimensiones del cuarto</div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Ancho (X)</span>
+        <span class="slider-val" id="val-w">2.0 m</span>
+      </div>
+      <input type="range" id="sl-w" min="1.0" max="6.0" step="0.1" value="2.0"
+             oninput="updateDim('w',this.value)">
+    </div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Profundo (Z)</span>
+        <span class="slider-val" id="val-d">3.0 m</span>
+      </div>
+      <input type="range" id="sl-d" min="1.0" max="6.0" step="0.1" value="3.0"
+             oninput="updateDim('d',this.value)">
+    </div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Altura (Y)</span>
+        <span class="slider-val" id="val-h">2.4 m</span>
+      </div>
+      <input type="range" id="sl-h" min="1.5" max="4.0" step="0.05" value="2.4"
+             oninput="updateDim('h',this.value)">
+    </div>
+    <button id="rebuild-btn" onclick="rebuildModel()">↺ Reconstruir modelo</button>
+  </div>
+
+  <!-- CÁMARA -->
+  <div>
+    <div class="section-title">Vista rápida</div>
+    <div class="preset-row" style="margin-bottom:6px">
+      <button class="preset-btn" onclick="setView('top')">Planta</button>
+      <button class="preset-btn" onclick="setView('front')">Frente</button>
+      <button class="preset-btn" onclick="setView('side')">Lado</button>
+    </div>
+    <div class="preset-row">
+      <button class="preset-btn" onclick="setView('iso')">Iso</button>
+      <button class="preset-btn" onclick="setView('inside')">Interior</button>
+    </div>
+  </div>
+
+  <!-- OPCIONES -->
+  <div>
+    <div class="section-title">Opciones</div>
+    <div class="layer-item active" id="li-grid" onclick="toggleGrid()" style="margin-bottom:0">
+      <span class="layer-icon">⊞</span>
+      <span class="layer-label">Grilla</span>
+      <span class="layer-dot" style="background:#4B5563"></span>
+    </div>
+    <div class="layer-item active" id="li-axes" onclick="toggleAxes()" style="margin-bottom:0;margin-top:6px">
+      <span class="layer-icon">🎯</span>
+      <span class="layer-label">Ejes</span>
+      <span class="layer-dot" style="background:#EF4444"></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- HINT -->
+<div id="hint">🖱 Drag para rotar · Scroll para zoom · Click derecho para desplazar</div>
+
+<!-- CROSSHAIR -->
+<div id="crosshair"></div>
+
+<!-- DIMS -->
+<div id="dims">
+  <strong id="dims-text">2.0 × 3.0 × 2.4 m</strong><br>
+  <span id="dims-area">6.0 m²</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// THREE.JS SETUP
+// ════════════════════════════════════════════════
+const W_PANEL = 220;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth - W_PANEL, window.innerHeight - 54);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.domElement.style.position = 'fixed';
+renderer.domElement.style.top = '54px';
+renderer.domElement.style.left = '0';
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1117);
+scene.fog = new THREE.Fog(0x0d1117, 8, 22);
+
+const camera = new THREE.PerspectiveCamera(55,
+  (window.innerWidth - W_PANEL) / (window.innerHeight - 54), 0.01, 50);
+camera.position.set(3.5, 3.0, 4.0);
+camera.lookAt(0, 0.8, 0);
+
+// ── ORBIT CONTROLS ──
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.minDistance = 0.4;
+controls.maxDistance = 14;
+controls.target.set(0, 0.8, 0);
+controls.update();
+
+// ── LIGHTS ──
+const ambLight = new THREE.AmbientLight(0xffffff, 0.75);
+scene.add(ambLight);
+
+const sunLight = new THREE.DirectionalLight(0xffffff, 0.9);
+sunLight.position.set(4, 8, 5);
+sunLight.castShadow = true;
+sunLight.shadow.camera.near = 0.5;
+sunLight.shadow.camera.far = 25;
+sunLight.shadow.camera.left = -5;
+sunLight.shadow.camera.right = 5;
+sunLight.shadow.camera.top = 5;
+sunLight.shadow.camera.bottom = -5;
+sunLight.shadow.mapSize.set(1024, 1024);
+scene.add(sunLight);
+
+const fillLight = new THREE.DirectionalLight(0x8fb4ff, 0.4);
+fillLight.position.set(-3, 4, -4);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffd0a0, 0.25);
+rimLight.position.set(0, -3, 6);
+scene.add(rimLight);
+
+// ── GRID & AXES ──
+const gridHelper = new THREE.GridHelper(12, 24, 0x334155, 0x1e293b);
+gridHelper.position.y = -0.001;
+scene.add(gridHelper);
+
+const axesHelper = new THREE.AxesHelper(0.6);
+axesHelper.position.set(-4, 0.01, -4);
+scene.add(axesHelper);
+
+let showGrid = true;
+let showAxes = true;
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  gridHelper.visible = showGrid;
+  document.getElementById('li-grid').classList.toggle('off', !showGrid);
+}
+function toggleAxes() {
+  showAxes = !showAxes;
+  axesHelper.visible = showAxes;
+  document.getElementById('li-axes').classList.toggle('off', !showAxes);
+}
+
+// ════════════════════════════════════════════════
+// ROOM DIMENSIONS (editable via sliders)
+// ════════════════════════════════════════════════
+let W = 2.0;
+let D = 3.0;
+let H = 2.4;
+
+// ── LAYER SYSTEM ──
+const layerGroups = {
+  estructura: new THREE.Group(),
+  fontaneria: new THREE.Group(),
+  electrico:  new THREE.Group(),
+  acabados:   new THREE.Group(),
+  muebles:    new THREE.Group(),
+};
+const layerState = { estructura: true, fontaneria: true, electrico: true, acabados: true, muebles: true };
+
+const model = new THREE.Group();
+Object.values(layerGroups).forEach(g => model.add(g));
+scene.add(model);
+
+// ── MATERIAL & GEOMETRY HELPERS ──
+function mat(color, opacity = 1) {
+  return new THREE.MeshPhongMaterial({
+    color, transparent: opacity < 1, opacity, side: THREE.DoubleSide,
+    depthWrite: opacity >= 0.8,
+  });
+}
+function box(bw, bh, bd, material, px, py, pz) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+function cyl(r, h, material, px, py, pz, rx, rz) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  if (rx) m.rotation.x = rx;
+  if (rz) m.rotation.z = rz;
+  m.castShadow = true;
+  return m;
+}
+
+// ════════════════════════════════════════════════
+// FIXTURES
+// ════════════════════════════════════════════════
+
+function addToilet(group, px, pz, rotY) {
+  const g = new THREE.Group();
+  const white = mat(0xF0EDE8, 0.98);
+  const bright = mat(0xFAF8F5, 1);
+  const chrome = mat(0xC8C8C8, 1);
+  const dark = mat(0x222233, 0.9);
+
+  g.add(box(0.28, 0.04, 0.18, white, 0, 0.02, -0.10));
+  g.add(box(0.34, 0.26, 0.44, white, 0, 0.16, 0.02));
+  g.add(box(0.28, 0.20, 0.10, white, 0, 0.14, 0.26));
+  g.add(box(0.36, 0.02, 0.50, bright, 0, 0.30, 0.03));
+  const bowlInt = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.06, 16), dark);
+  bowlInt.position.set(0, 0.28, 0.06);
+  g.add(bowlInt);
+  const seat = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 20), bright);
+  seat.rotation.x = -Math.PI / 2; seat.position.set(0, 0.32, 0.06);
+  g.add(seat);
+  g.add(box(0.32, 0.34, 0.14, white, 0, 0.38, -0.24));
+  g.add(box(0.34, 0.02, 0.16, bright, 0, 0.56, -0.24));
+  const fbtn = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 10), chrome);
+  fbtn.position.set(0, 0.575, -0.24); g.add(fbtn);
+  g.add(cyl(0.007, 0.30, mat(0x3B82F6, 0.9), -0.16, 0.15, -0.30));
+  const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.025, 8), chrome);
+  valve.position.set(-0.16, 0.28, -0.30); g.add(valve);
+
+  g.position.set(px, 0, pz);
+  g.rotation.y = rotY || 0;
+  group.add(g);
+}
+
+function addSink(group, px, pz, rotY) {
+  const g = new THREE.Group();
+  const white = mat(0xF0EDE8, 0.98);
+  const bright = mat(0xFAF8F5, 1);
+  const chrome = mat(0xC8C8C8, 1);
+  const wood = mat(0x8B6F47, 0.95);
+  const dark = mat(0x2a2a3a, 0.85);
+
+  g.add(box(0.56, 0.55, 0.38, wood, 0, 0.275, 0));
+  g.add(box(0.005, 0.45, 0.36, mat(0x7A6040, 1), 0, 0.28, 0.01));
+  const knob1 = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), chrome);
+  knob1.position.set(-0.06, 0.30, 0.20); g.add(knob1);
+  const knob2 = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), chrome);
+  knob2.position.set(0.06, 0.30, 0.20); g.add(knob2);
+  g.add(box(0.60, 0.025, 0.42, mat(0xE8E0D4, 1), 0, 0.565, 0));
+  g.add(box(0.44, 0.12, 0.32, white, 0, 0.52, 0.02));
+  const basinInt = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.10, 0.08, 16), dark);
+  basinInt.position.set(0, 0.52, 0.02); g.add(basinInt);
+  const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.04, 10), chrome);
+  faucetBase.position.set(0, 0.60, -0.14); g.add(faucetBase);
+  g.add(cyl(0.006, 0.12, chrome, 0, 0.68, -0.12));
+  g.add(cyl(0.006, 0.08, chrome, 0, 0.73, -0.08, Math.PI / 2.5));
+  g.add(box(0.04, 0.006, 0.006, chrome, -0.04, 0.62, -0.14));
+  g.add(box(0.04, 0.006, 0.006, chrome, 0.04, 0.62, -0.14));
+  const mirrorM = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.60), mat(0xB0CCE0, 0.55));
+  mirrorM.position.set(0, H * 0.52, -0.20); g.add(mirrorM);
+  g.add(box(0.50, 0.62, 0.012, mat(0xA0A0A0, 0.9), 0, H * 0.52, -0.20));
+  g.add(cyl(0.008, 0.35, mat(0x3B82F6, 0.9), -0.14, 0.175, -0.14));
+  g.add(cyl(0.008, 0.35, mat(0xEF4444, 0.9), 0.14, 0.175, -0.14));
+  g.add(cyl(0.014, 0.30, mat(0x6B7280, 0.8), 0, 0.15, 0.02));
+  g.add(cyl(0.014, 0.08, mat(0x6B7280, 0.8), 0, 0.04, 0.06, Math.PI / 2));
+
+  g.position.set(px, 0, pz);
+  g.rotation.y = rotY || 0;
+  group.add(g);
+}
+
+function addShower(group, px, pz, sw, sd, rotY) {
+  const g = new THREE.Group();
+  const chrome = mat(0xC8C8C8, 1);
+  const trayM = mat(0xE8E0D4, 0.95);
+  const glassM = mat(0xBBDDEE, 0.15);
+  const rimM = mat(0xD4CFC4, 1);
+
+  g.add(box(sw, 0.045, sd, trayM, 0, 0.023, 0));
+  g.add(box(sw + 0.02, 0.07, 0.025, rimM, 0, 0.035, -sd / 2));
+  g.add(box(sw + 0.02, 0.07, 0.025, rimM, 0, 0.035, sd / 2));
+  g.add(box(0.025, 0.07, sd, rimM, -sw / 2, 0.035, 0));
+  g.add(box(0.025, 0.07, sd, rimM, sw / 2, 0.035, 0));
+  const drain = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.006, 14), mat(0x808080, 1));
+  drain.position.set(0, 0.048, 0); g.add(drain);
+
+  const glassH = H * 0.70;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(sw * 0.95, glassH), glassM);
+  glass.position.set(0, glassH / 2 + 0.07, -sd / 2 + 0.01); g.add(glass);
+  g.add(box(sw * 0.95, 0.012, 0.012, chrome, 0, glassH + 0.07, -sd / 2 + 0.01));
+  g.add(cyl(0.005, glassH, chrome, -sw * 0.475, glassH / 2 + 0.07, -sd / 2 + 0.01));
+  g.add(cyl(0.005, glassH, chrome, sw * 0.475, glassH / 2 + 0.07, -sd / 2 + 0.01));
+  g.add(box(0.018, 0.12, 0.022, chrome, sw * 0.25, H * 0.40, -sd / 2 + 0.025));
+  g.add(cyl(0.016, H * 0.55, chrome, 0, H * 0.40, sd / 2 - 0.04));
+  const shHead = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.012, 20), chrome);
+  shHead.position.set(0, H * 0.72, sd / 2 - 0.12); g.add(shHead);
+  g.add(cyl(0.009, 0.14, chrome, 0, H * 0.71, sd / 2 - 0.08, Math.PI / 3));
+  const mixer = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.025, 12), chrome);
+  mixer.position.set(0, H * 0.38, sd / 2 - 0.02); mixer.rotation.x = Math.PI / 2; g.add(mixer);
+  g.add(box(0.07, 0.012, 0.012, chrome, 0, H * 0.38, sd / 2 - 0.04));
+  g.add(cyl(0.008, H * 0.45, mat(0x3B82F6, 0.9), -0.05, H * 0.23, sd / 2 - 0.01));
+  g.add(cyl(0.008, H * 0.45, mat(0xEF4444, 0.9), 0.05, H * 0.23, sd / 2 - 0.01));
+  g.add(cyl(0.02, 0.10, mat(0x6B7280, 0.8), 0, -0.03, 0));
+
+  g.position.set(px, 0, pz);
+  g.rotation.y = rotY || 0;
+  group.add(g);
+}
+
+// ════════════════════════════════════════════════
+// BUILD MODEL
+// ════════════════════════════════════════════════
+function buildModel() {
+  const lg = layerGroups;
+  const w2 = W / 2, d2 = D / 2;
+  const WT = 0.12;
+
+  // ─── ESTRUCTURA ───
+  const wallM = mat(0x9CA3AF, 0.45);
+  const floorM = mat(0x374151, 0.90);
+  const ceilM = mat(0xE5E7EB, 0.12);
+  const frameM = mat(0x6B7280, 0.85);
+
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; floor.receiveShadow = true;
+  lg.estructura.add(floor);
+
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), ceilM);
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = H - 0.001;
+  lg.estructura.add(ceil);
+
+  lg.estructura.add(box(W, H, WT, wallM, 0, H / 2, -d2 + WT / 2));
+  lg.estructura.add(box(W, H, WT, wallM, 0, H / 2, d2 - WT / 2));
+
+  const winZ1 = -D * 0.29, winZ2 = D * 0.24;
+  const winY1 = H * 0.30, winY2 = H * 0.85;
+  lg.estructura.add(box(WT, winY1, D, wallM, w2 - WT / 2, winY1 / 2, 0));
+  lg.estructura.add(box(WT, H - winY2, D, wallM, w2 - WT / 2, (H + winY2) / 2, 0));
+  lg.estructura.add(box(WT, winY2 - winY1, d2 + winZ1, wallM, w2 - WT / 2, (winY1 + winY2) / 2, (-d2 + winZ1) / 2));
+  lg.estructura.add(box(WT, winY2 - winY1, d2 - winZ2, wallM, w2 - WT / 2, (winY1 + winY2) / 2, (d2 + winZ2) / 2));
+  lg.estructura.add(box(0.04, 0.025, winZ2 - winZ1, frameM, w2 - 0.02, winY1, (winZ1 + winZ2) / 2));
+  lg.estructura.add(box(0.04, 0.04, winZ2 - winZ1 + 0.10, frameM, w2 - 0.02, winY2 + 0.02, (winZ1 + winZ2) / 2));
+  const winGlass = new THREE.Mesh(new THREE.PlaneGeometry(winZ2 - winZ1, winY2 - winY1), mat(0x87CEEB, 0.22));
+  winGlass.position.set(w2 - WT / 2, (winY1 + winY2) / 2, (winZ1 + winZ2) / 2);
+  winGlass.rotation.y = Math.PI / 2; lg.estructura.add(winGlass);
+
+  const doorZ1 = -D * 0.24, doorZ2 = -D * 0.03;
+  const doorH = H * 0.82;
+  lg.estructura.add(box(WT, H - doorH, doorZ2 - doorZ1, wallM, -w2 + WT / 2, (H + doorH) / 2, (doorZ1 + doorZ2) / 2));
+  lg.estructura.add(box(WT, H, d2 + doorZ2, wallM, -w2 + WT / 2, H / 2, (doorZ2 + d2) / 2));
+  lg.estructura.add(box(WT, H, d2 + doorZ1, wallM, -w2 + WT / 2, H / 2, (-d2 + doorZ1) / 2 - 0.001));
+  lg.estructura.add(box(0.05, doorH, 0.03, frameM, -w2 + 0.025, doorH / 2, doorZ1));
+  lg.estructura.add(box(0.05, doorH, 0.03, frameM, -w2 + 0.025, doorH / 2, doorZ2));
+  lg.estructura.add(box(0.05, 0.03, doorZ2 - doorZ1 + 0.03, frameM, -w2 + 0.025, doorH, (doorZ1 + doorZ2) / 2));
+
+  // ─── FONTANERÍA ───
+  const pipeC = mat(0x3B82F6, 0.9);
+  const pipeH = mat(0xEF4444, 0.9);
+  const pipeD = mat(0x6B7280, 0.8);
+  const PR = 0.009;
+
+  const toiletX = -W * 0.30, toiletZ = D * 0.22;
+  const sinkX = W * 0.03, sinkZ = -d2 + 0.25;
+  const shW = Math.min(0.90, W * 0.50);
+  const shD = Math.min(0.90, D * 0.28);
+  const showerX = W * 0.14, showerZ = D * 0.17;
+
+  lg.fontaneria.add(cyl(0.014, H, pipeC, -w2 + 0.08, H / 2, -d2 + 0.08));
+  lg.fontaneria.add(cyl(PR, W * 0.65, pipeC, -w2 + W * 0.35, H * 0.25, -d2 + 0.10, 0, Math.PI / 2));
+  lg.fontaneria.add(cyl(0.012, H * 0.7, pipeH, -w2 + 0.14, H * 0.35, -d2 + 0.08));
+  lg.fontaneria.add(cyl(PR, W * 0.55, pipeH, -w2 + W * 0.30, H * 0.32, -d2 + 0.06, 0, Math.PI / 2));
+  lg.fontaneria.add(cyl(PR, D * 0.50, pipeC, toiletX - 0.16, H * 0.25, -d2 + D * 0.37, Math.PI / 2));
+  lg.fontaneria.add(cyl(PR, H * 0.25, pipeC, toiletX - 0.16, H * 0.125, toiletZ - 0.30));
+  lg.fontaneria.add(cyl(PR, H * 0.25, pipeC, sinkX - 0.14, H * 0.125, sinkZ - 0.14));
+  lg.fontaneria.add(cyl(PR, H * 0.25, pipeH, sinkX + 0.14, H * 0.125, sinkZ - 0.14));
+  lg.fontaneria.add(cyl(PR, D * 0.40, pipeC, showerX - 0.05, H * 0.25, sinkZ + D * 0.28, Math.PI / 2));
+  lg.fontaneria.add(cyl(PR, D * 0.40, pipeH, showerX + 0.05, H * 0.32, sinkZ + D * 0.28, Math.PI / 2));
+  lg.fontaneria.add(cyl(0.025, W * 0.6, pipeD, W * 0.05, -0.03, d2 - 0.15, 0, Math.PI / 2));
+  lg.fontaneria.add(cyl(0.020, 0.20, pipeD, toiletX, -0.03, toiletZ + 0.15));
+  lg.fontaneria.add(cyl(0.020, D * 0.20, pipeD, toiletX, -0.03, toiletZ + D * 0.18, Math.PI / 2));
+  lg.fontaneria.add(cyl(0.016, D * 0.35, pipeD, sinkX, -0.03, sinkZ + D * 0.25, Math.PI / 2));
+  lg.fontaneria.add(cyl(0.020, D * 0.15, pipeD, showerX, -0.03, showerZ + shD / 2 + D * 0.08, Math.PI / 2));
+  [[-w2+0.08,H*0.25,-d2+0.10],[-w2+0.14,H*0.32,-d2+0.08],[sinkX-0.14,H*0.25,sinkZ-0.14],[sinkX+0.14,H*0.32,sinkZ-0.14]]
+    .forEach(([x,y,z]) => {
+      const j = new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 8), pipeC);
+      j.position.set(x,y,z); lg.fontaneria.add(j);
+    });
+
+  // ─── MUEBLES ───
+  addToilet(lg.muebles, toiletX, toiletZ, -Math.PI / 2);
+  addSink(lg.muebles, sinkX, sinkZ, 0);
+  addShower(lg.muebles, showerX, showerZ, shW, shD, 0);
+
+  // ─── ELÉCTRICO ───
+  const condM = mat(0xFBBF24, 0.92);
+  const outM = mat(0xF59E0B, 1);
+  const lightEM = new THREE.MeshPhongMaterial({ color: 0xFDE68A, emissive: 0xFDE68A, emissiveIntensity: 0.6 });
+  const CR = 0.007;
+  const condHt = H * 0.92;
+
+  lg.electrico.add(cyl(CR, W * 0.80, condM, 0, condHt, -d2 + 0.06, 0, Math.PI / 2));
+  lg.electrico.add(cyl(CR, D * 0.70, condM, w2 - 0.06, condHt, 0, Math.PI / 2));
+  lg.electrico.add(cyl(CR, W * 0.40, condM, W * 0.10, condHt, D * 0.05, 0, Math.PI / 2));
+  const ceilLight = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.015, 20), lightEM);
+  ceilLight.position.set(0, H - 0.008, D * 0.05); lg.electrico.add(ceilLight);
+  lg.electrico.add(cyl(CR, 0.10, condM, 0, H - 0.05, D * 0.05));
+  const mirLight = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.025, 0.04), lightEM);
+  mirLight.position.set(sinkX, H * 0.78, sinkZ - 0.18); lg.electrico.add(mirLight);
+  lg.electrico.add(cyl(CR, H * 0.15, condM, sinkX, H * 0.85, sinkZ - 0.10));
+  lg.electrico.add(box(0.06, 0.04, 0.015, outM, sinkX + 0.35, H * 0.45, -d2 + WT + 0.01));
+  lg.electrico.add(cyl(CR, H * 0.50, condM, sinkX + 0.35, H * 0.70, -d2 + WT + 0.01));
+  lg.electrico.add(box(0.06, 0.04, 0.015, outM, -w2 + WT + 0.01, H * 0.18, toiletZ - 0.30));
+  lg.electrico.add(cyl(CR, H * 0.74, condM, -w2 + WT + 0.01, H * 0.55, toiletZ - 0.30));
+  lg.electrico.add(box(0.04, 0.06, 0.015, outM, -w2 + WT + 0.01, H * 0.42, doorZ2 + 0.10));
+  lg.electrico.add(cyl(CR, H * 0.50, condM, -w2 + WT + 0.01, H * 0.67, doorZ2 + 0.10));
+  const fan = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.03, 0.20), mat(0xE5E7EB, 0.9));
+  fan.position.set(showerX, H - 0.015, showerZ); lg.electrico.add(fan);
+
+  // ─── ACABADOS ───
+  const tileFloorM = mat(0xC8D6E5, 0.80);
+  const tileWallM = mat(0xD4E6F1, 0.45);
+  const tileAccent = mat(0xA8C5DA, 0.55);
+  const groutM = mat(0xB0B0B0, 0.30);
+  const tileH = H * 0.55;
+  const tileSize = 0.30;
+
+  const tf = new THREE.Mesh(new THREE.PlaneGeometry(W - WT * 2, D - WT * 2), tileFloorM);
+  tf.rotation.x = -Math.PI / 2; tf.position.y = 0.003; tf.receiveShadow = true;
+  lg.acabados.add(tf);
+  for (let gx = -w2 + WT + tileSize; gx < w2 - WT; gx += tileSize)
+    lg.acabados.add(box(0.004, 0.002, D - WT * 2, groutM, gx, 0.004, 0));
+  for (let gz = -d2 + WT + tileSize; gz < d2 - WT; gz += tileSize)
+    lg.acabados.add(box(W - WT * 2, 0.002, 0.004, groutM, 0, 0.004, gz));
+
+  // Wall tiles
+  [[0, tileH/2, -d2+WT+0.005, 0],
+   [0, tileH/2, d2-WT-0.005, Math.PI],
+   [0, tileH/2, 0, -Math.PI/2, true],
+   [0, tileH/2, 0, Math.PI/2, true, true]]
+  .forEach(([,, , ry, eastWest, west]) => {
+    const tw = eastWest ? (D - WT * 2) : (W - WT * 2);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(tw, tileH), tileWallM);
+    if (!eastWest) {
+      m.position.set(0, tileH/2, ry === 0 ? -d2+WT+0.005 : d2-WT-0.005);
+      if (ry !== 0) m.rotation.y = Math.PI;
+    } else {
+      m.position.set(west ? -w2+WT+0.005 : w2-WT-0.005, tileH/2, 0);
+      m.rotation.y = west ? Math.PI/2 : -Math.PI/2;
+    }
+    lg.acabados.add(m);
+  });
+
+  // Accent band
+  const bandH = 0.06;
+  [-d2+WT+0.006, d2-WT-0.006].forEach((z, i) => {
+    const ab = new THREE.Mesh(new THREE.PlaneGeometry(W - WT * 2, bandH), tileAccent);
+    ab.position.set(0, H * 0.40, z);
+    if (i === 1) ab.rotation.y = Math.PI;
+    lg.acabados.add(ab);
+  });
+
+  // Baseboard
+  const baseM = mat(0x9CA3AF, 0.7);
+  lg.acabados.add(box(W-WT*2, 0.06, 0.008, baseM, 0, 0.03, -d2+WT+0.004));
+  lg.acabados.add(box(W-WT*2, 0.06, 0.008, baseM, 0, 0.03, d2-WT-0.004));
+  lg.acabados.add(box(0.008, 0.06, D-WT*2, baseM, w2-WT-0.004, 0.03, 0));
+  lg.acabados.add(box(0.008, 0.06, D-WT*2, baseM, -w2+WT+0.004, 0.03, 0));
+}
+
+buildModel();
+
+// ════════════════════════════════════════════════
+// LAYER TOGGLE
+// ════════════════════════════════════════════════
+function toggleLayer(name) {
+  layerState[name] = !layerState[name];
+  layerGroups[name].visible = layerState[name];
+  const el = document.getElementById('li-' + name);
+  el.classList.toggle('off', !layerState[name]);
+}
+
+// ════════════════════════════════════════════════
+// DIMENSION SLIDERS
+// ════════════════════════════════════════════════
+let pendingRebuild = false;
+function updateDim(axis, val) {
+  val = parseFloat(val);
+  if (axis === 'w') { W = val; document.getElementById('val-w').textContent = val.toFixed(1) + ' m'; }
+  if (axis === 'd') { D = val; document.getElementById('val-d').textContent = val.toFixed(1) + ' m'; }
+  if (axis === 'h') { H = val; document.getElementById('val-h').textContent = val.toFixed(2) + ' m'; }
+  updateDimsDisplay();
+}
+
+function updateDimsDisplay() {
+  document.getElementById('dims-text').textContent = `${W.toFixed(1)} × ${D.toFixed(1)} × ${H.toFixed(1)} m`;
+  document.getElementById('dims-area').textContent = `${(W * D).toFixed(1)} m²`;
+}
+
+function rebuildModel() {
+  Object.values(layerGroups).forEach(g => {
+    while (g.children.length > 0) g.remove(g.children[0]);
+  });
+  buildModel();
+  // Apply current visibility
+  Object.entries(layerState).forEach(([name, visible]) => {
+    layerGroups[name].visible = visible;
+  });
+  updateDimsDisplay();
+  // Soft re-center camera target
+  controls.target.set(0, H / 2, 0);
+  controls.update();
+}
+
+updateDimsDisplay();
+
+// ════════════════════════════════════════════════
+// CAMERA PRESETS
+// ════════════════════════════════════════════════
+function setView(preset) {
+  const cy = H / 2;
+  const dist = Math.max(W, D, H) * 1.6;
+  let pos, target;
+
+  switch (preset) {
+    case 'top':
+      pos = new THREE.Vector3(0, dist * 1.8, 0.001);
+      target = new THREE.Vector3(0, 0, 0);
+      break;
+    case 'front':
+      pos = new THREE.Vector3(0, cy, D / 2 + dist);
+      target = new THREE.Vector3(0, cy, 0);
+      break;
+    case 'side':
+      pos = new THREE.Vector3(W / 2 + dist, cy, 0);
+      target = new THREE.Vector3(0, cy, 0);
+      break;
+    case 'iso':
+      pos = new THREE.Vector3(dist * 1.2, dist * 1.1, dist * 1.2);
+      target = new THREE.Vector3(0, cy, 0);
+      break;
+    case 'inside':
+      pos = new THREE.Vector3(0, cy * 0.7, 0);
+      target = new THREE.Vector3(W * 0.3, cy * 0.8, -D * 0.3);
+      break;
+  }
+
+  // Smooth transition
+  animateCamera(camera.position.clone(), controls.target.clone(), pos, target, 600);
+}
+
+function animateCamera(fromPos, fromTarget, toPos, toTarget, duration) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // ease-in-out quad
+    camera.position.lerpVectors(fromPos, toPos, ease);
+    controls.target.lerpVectors(fromTarget, toTarget, ease);
+    controls.update();
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ════════════════════════════════════════════════
+// RESIZE
+// ════════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  const w = window.innerWidth - W_PANEL;
+  const h = window.innerHeight - 54;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+// ════════════════════════════════════════════════
+// HINT AUTO-HIDE
+// ════════════════════════════════════════════════
+setTimeout(() => document.getElementById('hint').classList.add('hidden'), 4000);
+
+// ════════════════════════════════════════════════
+// RENDER LOOP
+// ════════════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
