@@ -3,328 +3,247 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Cocina 3D — Construcción</title>
+  <title>AR Cocina 3D</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#0d1117;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    body{background:#000;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
     canvas{display:block}
 
-    /* ── TOP BAR ── */
+    /* ── PRE-AR SCREEN ── */
+    #pre-ar{
+      position:fixed;inset:0;background:#0a0a0a;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:16px;padding:32px;z-index:100;
+    }
+    #pre-ar h1{font-size:28px;font-weight:900;color:#fff;text-align:center}
+    #pre-ar p{font-size:14px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;max-width:280px}
+    #start-btn{
+      margin-top:12px;padding:16px 40px;border-radius:999px;border:none;cursor:pointer;
+      font-size:16px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,#3b82f6,#6366f1);
+      box-shadow:0 8px 32px rgba(99,102,241,.4);
+      transition:transform .15s;
+    }
+    #start-btn:active{transform:scale(.96)}
+    #no-xr{color:#ef4444;font-size:13px;display:none;text-align:center}
+    #back-link{
+      font-size:13px;color:rgba(255,255,255,.4);text-decoration:none;
+      border:1px solid rgba(255,255,255,.15);border-radius:999px;
+      padding:8px 20px;transition:all .2s;
+    }
+    #back-link:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+
+    /* ── AR OVERLAY (dom-overlay) ── */
+    #overlay{
+      position:fixed;inset:0;pointer-events:none;z-index:10;
+      display:none;
+    }
+    #overlay.active{display:block}
+
     #top-bar{
-      position:fixed;top:0;left:0;right:0;height:54px;
-      background:rgba(13,17,23,.92);border-bottom:1px solid rgba(255,255,255,.08);
-      backdrop-filter:blur(16px);display:flex;align-items:center;
-      padding:0 16px;gap:12px;z-index:50;
+      position:absolute;top:16px;left:16px;right:16px;
+      display:flex;justify-content:space-between;align-items:center;
     }
-    #top-bar h1{font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
-    .badge-mode{
-      background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.5);
-      color:#818cf8;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;
+    .badge{
+      background:rgba(0,0,0,.7);color:#fff;
+      padding:7px 15px;border-radius:999px;font-size:13px;font-weight:700;
+      backdrop-filter:blur(12px);
     }
-    .spacer{flex:1}
-    #back-btn{
-      padding:7px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.15);
-      background:transparent;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;
-      cursor:pointer;text-decoration:none;transition:all .2s;
+    #hint-badge{
+      background:rgba(251,191,36,.85);color:#fff;
+      padding:7px 15px;border-radius:999px;font-size:13px;font-weight:700;
+      backdrop-filter:blur(12px);animation:pulse 2s infinite;
     }
-    #back-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+    #hint-badge.placed{background:rgba(34,197,94,.85);animation:none}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 
-    /* ── SIDE PANEL ── */
-    #panel{
-      position:fixed;top:54px;right:0;bottom:0;width:220px;
-      background:rgba(13,17,23,.95);border-left:1px solid rgba(255,255,255,.08);
-      backdrop-filter:blur(16px);padding:16px;overflow-y:auto;z-index:40;
-      display:flex;flex-direction:column;gap:20px;
+    /* ── LAYERS ── */
+    #layers{
+      position:absolute;bottom:28px;left:0;right:0;
+      display:flex;justify-content:center;gap:10px;padding:0 16px;
+      pointer-events:all;
+    }
+    .layer-btn{
+      display:flex;flex-direction:column;align-items:center;gap:3px;
+      padding:8px 10px;border-radius:16px;border:2px solid transparent;
+      font-size:10px;font-weight:800;color:#fff;cursor:pointer;
+      backdrop-filter:blur(12px);transition:all .2s;min-width:58px;
+      background:rgba(0,0,0,.55);
+    }
+    .layer-btn .icon{font-size:20px}
+    .layer-btn.off{opacity:.4;transform:scale(.93)}
+
+    /* Exit button */
+    #exit-btn{
+      position:absolute;top:16px;right:16px;
+      padding:8px 16px;border-radius:999px;border:none;
+      background:rgba(239,68,68,.8);color:#fff;font-size:13px;font-weight:700;
+      cursor:pointer;backdrop-filter:blur(12px);pointer-events:all;
     }
 
-    .section-title{
-      font-size:10px;font-weight:700;color:rgba(255,255,255,.35);
-      text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
+    /* ── INFO CARD ── */
+    #info-card{
+      position:absolute;bottom:110px;left:16px;
+      background:rgba(0,0,0,.75);border-radius:16px;padding:14px;
+      backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);
+      max-width:220px;display:none;
+    }
+    #info-card.show{display:block}
+    #info-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:6px}
+    #info-dims{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px}
+    .prog-bg{background:rgba(255,255,255,.15);border-radius:99px;height:6px;overflow:hidden;margin-bottom:4px}
+    .prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#86efac);transition:width .4s}
+    #info-prog-label{font-size:11px;color:rgba(255,255,255,.5)}
+
+    /* ── CORNER CALIBRATION ── */
+    #corner-ui{
+      position:absolute;bottom:110px;left:16px;right:16px;
+      background:rgba(0,0,0,.75);border-radius:16px;padding:16px;
+      backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);
+      display:none;text-align:center;
+    }
+    #corner-ui.show{display:block}
+    #corner-step{font-size:15px;font-weight:800;color:#fff;margin-bottom:4px}
+    #corner-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px}
+    .corner-row-label{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+    .corner-dots{display:flex;justify-content:center;gap:8px;margin-bottom:8px}
+    .corner-dot{
+      width:14px;height:14px;border-radius:50%;
+      border:2px solid rgba(255,255,255,.3);background:transparent;
+      transition:all .3s;
+    }
+    .corner-dot.done{background:#22c55e;border-color:#22c55e}
+    .corner-dot.active{border-color:#60A5FA;box-shadow:0 0 8px rgba(96,165,250,.6)}
+    #reset-corners-btn{
+      margin-top:4px;padding:8px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:700;
+      cursor:pointer;pointer-events:all;display:none;
     }
 
-    /* Layers */
-    .layer-item{
-      display:flex;align-items:center;gap:10px;padding:9px 10px;
-      border-radius:12px;cursor:pointer;border:1px solid transparent;
-      transition:all .2s;margin-bottom:6px;
+    /* ── LOADING ── */
+    #loading{
+      position:fixed;inset:0;background:rgba(0,0,0,.8);
+      display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+      z-index:200;color:#fff;
     }
-    .layer-item:hover{background:rgba(255,255,255,.05)}
-    .layer-item.active{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
-    .layer-item.off{opacity:.35}
-    .layer-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-    .layer-label{font-size:13px;font-weight:600;color:#fff;flex:1}
-    .layer-icon{font-size:18px}
-
-    /* Sliders */
-    .slider-row{margin-bottom:12px}
-    .slider-header{display:flex;justify-content:space-between;margin-bottom:5px}
-    .slider-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
-    .slider-val{font-size:12px;font-weight:700;color:#60a5fa;font-variant-numeric:tabular-nums}
-    input[type=range]{
-      width:100%;appearance:none;height:4px;border-radius:2px;
-      background:rgba(255,255,255,.12);outline:none;cursor:pointer;
-    }
-    input[type=range]::-webkit-slider-thumb{
-      appearance:none;width:14px;height:14px;border-radius:50%;
-      background:#6366f1;cursor:pointer;transition:transform .15s;
-    }
-    input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
-
-    /* Rebuild button */
-    #rebuild-btn{
-      width:100%;padding:11px;border-radius:12px;border:none;cursor:pointer;
-      font-size:13px;font-weight:800;color:#fff;
-      background:linear-gradient(135deg,#6366f1,#3b82f6);
-      transition:opacity .2s;
-    }
-    #rebuild-btn:hover{opacity:.85}
-
-    /* Camera presets */
-    .preset-btn{
-      flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,.1);
-      background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);
-      font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;
-    }
-    .preset-btn:hover{background:rgba(255,255,255,.09);color:#fff}
-    .preset-row{display:flex;gap:6px}
-
-    /* ── HELP HINT ── */
-    #hint{
-      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-      background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
-      border-radius:99px;padding:8px 18px;font-size:12px;color:rgba(255,255,255,.5);
-      backdrop-filter:blur(12px);pointer-events:none;white-space:nowrap;
-      transition:opacity 1s;
-    }
-    #hint.hidden{opacity:0}
-
-    /* ── CROSSHAIR ── */
-    #crosshair{
-      position:fixed;top:50%;left:calc(50% - 110px);transform:translate(-50%,-50%);
-      width:20px;height:20px;pointer-events:none;opacity:.25;
-    }
-    #crosshair::before,#crosshair::after{
-      content:'';position:absolute;background:#fff;border-radius:1px;
-    }
-    #crosshair::before{width:1px;height:100%;left:50%;top:0}
-    #crosshair::after{height:1px;width:100%;top:50%;left:0}
-
-    /* ── DIMS BADGE ── */
-    #dims{
-      position:fixed;bottom:20px;left:20px;
-      background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.1);
-      border-radius:12px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.5);
-      backdrop-filter:blur(12px);line-height:1.8;
-    }
-    #dims strong{color:#fff;font-weight:700}
+    #loading.show{display:flex}
+    .spin{font-size:44px;animation:spin 1.2s linear infinite}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
-<div id="top-bar">
-  <span style="font-size:20px">🍳</span>
-  <h1>AR Construcción</h1>
-  <span class="badge-mode">Cocina 3D</span>
-  <div class="spacer"></div>
-  <a href="/" class="badge-mode" style="text-decoration:none;cursor:pointer">← Menú</a>
+<!-- Pre-AR screen -->
+<div id="pre-ar">
+  <div style="font-size:56px">🍳</div>
+  <h1>AR Cocina 3D</h1>
+  <p>Marca las 4 esquinas del piso y 1 punto en el techo para ajustar el modelo al tamaño real de tu cocina</p>
+  <button id="start-btn" onclick="startAR()">Iniciar AR</button>
+  <a href="/" id="back-link">← Menú</a>
+  <div id="no-xr">Tu dispositivo no soporta WebXR AR.<br>Requiere Android + Chrome.</div>
 </div>
 
-<!-- SIDE PANEL -->
-<div id="panel">
-
-  <!-- LAYERS -->
-  <div>
-    <div class="section-title">Capas</div>
-    <div class="layer-item active" id="li-estructura" onclick="toggleLayer('estructura')">
-      <span class="layer-icon">🧱</span>
-      <span class="layer-label">Estructura</span>
-      <span class="layer-dot" style="background:#9CA3AF"></span>
-    </div>
-    <div class="layer-item active" id="li-fontaneria" onclick="toggleLayer('fontaneria')">
-      <span class="layer-icon">💧</span>
-      <span class="layer-label">Fontanería</span>
-      <span class="layer-dot" style="background:#60A5FA"></span>
-    </div>
-    <div class="layer-item active" id="li-electrico" onclick="toggleLayer('electrico')">
-      <span class="layer-icon">⚡</span>
-      <span class="layer-label">Eléctrico</span>
-      <span class="layer-dot" style="background:#FBBF24"></span>
-    </div>
-    <div class="layer-item active" id="li-acabados" onclick="toggleLayer('acabados')">
-      <span class="layer-icon">🏠</span>
-      <span class="layer-label">Acabados</span>
-      <span class="layer-dot" style="background:#34D399"></span>
-    </div>
-    <div class="layer-item active" id="li-muebles" onclick="toggleLayer('muebles')">
-      <span class="layer-icon">🪑</span>
-      <span class="layer-label">Muebles</span>
-      <span class="layer-dot" style="background:#F472B6"></span>
-    </div>
-  </div>
-
-  <!-- DIMENSIONES -->
-  <div>
-    <div class="section-title">Dimensiones de la cocina</div>
-    <div class="slider-row">
-      <div class="slider-header">
-        <span class="slider-name">Ancho (X)</span>
-        <span class="slider-val" id="val-w">10.0 m</span>
-      </div>
-      <input type="range" id="sl-w" min="2.5" max="15.0" step="0.1" value="10.0"
-             oninput="updateDim('w',this.value)">
-    </div>
-    <div class="slider-row">
-      <div class="slider-header">
-        <span class="slider-name">Profundo (Z)</span>
-        <span class="slider-val" id="val-d">11.0 m</span>
-      </div>
-      <input type="range" id="sl-d" min="2.0" max="15.0" step="0.1" value="11.0"
-             oninput="updateDim('d',this.value)">
-    </div>
-    <div class="slider-row">
-      <div class="slider-header">
-        <span class="slider-name">Altura (Y)</span>
-        <span class="slider-val" id="val-h">2.60 m</span>
-      </div>
-      <input type="range" id="sl-h" min="2.0" max="4.0" step="0.05" value="2.60"
-             oninput="updateDim('h',this.value)">
-    </div>
-    <button id="rebuild-btn" onclick="rebuildModel()">↺ Reconstruir modelo</button>
-  </div>
-
-  <!-- CÁMARA -->
-  <div>
-    <div class="section-title">Vista rápida</div>
-    <div class="preset-row" style="margin-bottom:6px">
-      <button class="preset-btn" onclick="setView('top')">Planta</button>
-      <button class="preset-btn" onclick="setView('front')">Frente</button>
-      <button class="preset-btn" onclick="setView('side')">Lado</button>
-    </div>
-    <div class="preset-row">
-      <button class="preset-btn" onclick="setView('iso')">Iso</button>
-      <button class="preset-btn" onclick="setView('inside')">Interior</button>
-    </div>
-  </div>
-
-  <!-- OPCIONES -->
-  <div>
-    <div class="section-title">Opciones</div>
-    <div class="layer-item active" id="li-grid" onclick="toggleGrid()" style="margin-bottom:0">
-      <span class="layer-icon">⊞</span>
-      <span class="layer-label">Grilla</span>
-      <span class="layer-dot" style="background:#4B5563"></span>
-    </div>
-    <div class="layer-item active" id="li-axes" onclick="toggleAxes()" style="margin-bottom:0;margin-top:6px">
-      <span class="layer-icon">🎯</span>
-      <span class="layer-label">Ejes</span>
-      <span class="layer-dot" style="background:#EF4444"></span>
-    </div>
-  </div>
-
+<!-- Loading -->
+<div id="loading">
+  <div class="spin">⚙️</div>
+  <p style="font-size:16px;font-weight:700">Iniciando AR...</p>
 </div>
 
-<!-- HINT -->
-<div id="hint">🖱 Drag para rotar · Scroll para zoom · Click derecho para desplazar</div>
+<!-- AR Overlay (dom-overlay) -->
+<div id="overlay">
+  <div id="top-bar">
+    <div class="badge">🍳 AR Cocina</div>
+    <div id="hint-badge">Apunta al suelo → toca las esquinas</div>
+  </div>
 
-<!-- CROSSHAIR -->
-<div id="crosshair"></div>
+  <div id="corner-ui">
+    <div id="corner-step">Esquina 1 de 4 — Piso</div>
+    <div id="corner-sub">Apunta a una esquina del piso y toca</div>
+    <div class="corner-row-label">Piso</div>
+    <div class="corner-dots">
+      <div class="corner-dot active" id="cdot-0"></div>
+      <div class="corner-dot" id="cdot-1"></div>
+      <div class="corner-dot" id="cdot-2"></div>
+      <div class="corner-dot" id="cdot-3"></div>
+    </div>
+    <div class="corner-row-label">Techo</div>
+    <div class="corner-dots">
+      <div class="corner-dot" id="cdot-4"></div>
+    </div>
+    <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
+  </div>
 
-<!-- DIMS -->
-<div id="dims">
-  <strong id="dims-text">10.0 × 11.0 × 2.6 m</strong><br>
-  <span id="dims-area">110.0 m²</span>
+  <div id="info-card">
+    <div id="info-title">Cocina ajustada</div>
+    <div id="info-dims"></div>
+    <div class="prog-bg"><div class="prog-fill" id="overall-prog" style="width:27%"></div></div>
+    <div id="info-prog-label">27% completado</div>
+  </div>
+
+  <div id="layers">
+    <button class="layer-btn" id="btn-estructura" style="border-color:#9CA3AF" onclick="toggleLayer('estructura')">
+      <span class="icon">🧱</span><span>Estructura</span>
+    </button>
+    <button class="layer-btn" id="btn-fontaneria" style="border-color:#60A5FA" onclick="toggleLayer('fontaneria')">
+      <span class="icon">💧</span><span>Fontanería</span>
+    </button>
+    <button class="layer-btn" id="btn-electrico" style="border-color:#FBBF24" onclick="toggleLayer('electrico')">
+      <span class="icon">⚡</span><span>Eléctrico</span>
+    </button>
+    <button class="layer-btn" id="btn-acabados" style="border-color:#34D399" onclick="toggleLayer('acabados')">
+      <span class="icon">🏠</span><span>Acabados</span>
+    </button>
+    <button class="layer-btn" id="btn-muebles" style="border-color:#F472B6" onclick="toggleLayer('muebles')">
+      <span class="icon">🚿</span><span>Muebles</span>
+    </button>
+  </div>
+
+  <button id="exit-btn" onclick="exitAR()">✕ Salir</button>
 </div>
 
 <script>
-// ════════════════════════════════════════════════
-// THREE.JS SETUP
-// ════════════════════════════════════════════════
-const W_PANEL = 220;
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth - W_PANEL, window.innerHeight - 54);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.domElement.style.position = 'fixed';
-renderer.domElement.style.top = '54px';
-renderer.domElement.style.left = '0';
+// ── THREE.JS SETUP ──
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0d1117);
-scene.fog = new THREE.Fog(0x0d1117, 20, 55);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-const camera = new THREE.PerspectiveCamera(55,
-  (window.innerWidth - W_PANEL) / (window.innerHeight - 54), 0.01, 60);
-camera.position.set(10.0, 9.0, 13.0);
-camera.lookAt(0, 0.9, 0);
-
-// ── ORBIT CONTROLS ──
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.07;
-controls.minDistance = 0.4;
-controls.maxDistance = 40;
-controls.target.set(0, 0.90, 0);
-controls.update();
-
-// ── LIGHTS ──
-const ambLight = new THREE.AmbientLight(0xffffff, 0.70);
-scene.add(ambLight);
-
-const sunLight = new THREE.DirectionalLight(0xffffff, 0.85);
-sunLight.position.set(5, 9, 6);
-sunLight.castShadow = true;
-sunLight.shadow.camera.near = 0.5;
-sunLight.shadow.camera.far = 30;
-sunLight.shadow.camera.left = -7;
-sunLight.shadow.camera.right = 7;
-sunLight.shadow.camera.top = 7;
-sunLight.shadow.camera.bottom = -7;
-sunLight.shadow.mapSize.set(1024, 1024);
-scene.add(sunLight);
-
-const fillLight = new THREE.DirectionalLight(0x8fb4ff, 0.35);
-fillLight.position.set(-4, 5, -5);
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(2, 5, 3);
+scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+fillLight.position.set(-2, 3, -2);
 scene.add(fillLight);
 
-const rimLight = new THREE.DirectionalLight(0xffd0a0, 0.22);
-rimLight.position.set(0, -3, 7);
-scene.add(rimLight);
+// ── RETICLE ──
+const reticleGeo = new THREE.RingGeometry(0.06, 0.08, 32).applyMatrix4(
+  new THREE.Matrix4().makeRotationX(-Math.PI / 2)
+);
+const reticle = new THREE.Mesh(reticleGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+reticle.matrixAutoUpdate = false;
+reticle.visible = false;
+scene.add(reticle);
+const dotGeo = new THREE.CircleGeometry(0.02, 32);
+dotGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+reticle.add(new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA })));
 
-// ── GRID & AXES ──
-const gridHelper = new THREE.GridHelper(30, 60, 0x334155, 0x1e293b);
-gridHelper.position.y = -0.001;
-scene.add(gridHelper);
+// ── CORNER CALIBRATION STATE ──
+const allPoints = [];
+const cornerMarkers = [];
+let calibrated = false;
+const TOTAL_POINTS = 5; // 4 floor corners + 1 ceiling point
 
-const axesHelper = new THREE.AxesHelper(0.6);
-axesHelper.position.set(-5, 0.01, -5);
-scene.add(axesHelper);
-
-let showGrid = true;
-let showAxes = true;
-
-function toggleGrid() {
-  showGrid = !showGrid;
-  gridHelper.visible = showGrid;
-  document.getElementById('li-grid').classList.toggle('off', !showGrid);
-}
-function toggleAxes() {
-  showAxes = !showAxes;
-  axesHelper.visible = showAxes;
-  document.getElementById('li-axes').classList.toggle('off', !showAxes);
-}
-
-// ════════════════════════════════════════════════
-// KITCHEN DIMENSIONS (editable via sliders)
-// ════════════════════════════════════════════════
-let W = 10.0;
-let D = 11.0;
-let H = 2.60;
+// Kitchen dimensions (set by calibration, small placeholder defaults)
+let W = 2.0;
+let D = 2.0;
+let H = 1.0;
 
 // Kitchen constants
 const CH = 0.90;   // counter height
@@ -335,7 +254,7 @@ const UB = 1.45;   // upper cabinet bottom from floor
 const UD = 0.33;   // upper cabinet depth
 const TK = 0.10;   // toe kick height
 
-// ── LAYER SYSTEM ──
+// ── MODEL GROUPS ──
 const layerGroups = {
   estructura: new THREE.Group(),
   fontaneria: new THREE.Group(),
@@ -347,6 +266,7 @@ const layerState = { estructura: true, fontaneria: true, electrico: true, acabad
 
 const model = new THREE.Group();
 Object.values(layerGroups).forEach(g => model.add(g));
+model.visible = false;
 scene.add(model);
 
 // ── MATERIAL & GEOMETRY HELPERS ──
@@ -365,7 +285,6 @@ function mat(color, opacity = 1, emissive = 0, emissiveIntensity = 0) {
 function box(bw, bh, bd, material, px, py, pz) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
   m.position.set(px || 0, py || 0, pz || 0);
-  m.castShadow = true; m.receiveShadow = true;
   return m;
 }
 
@@ -374,12 +293,11 @@ function cyl(r, h, material, px, py, pz, rx, rz) {
   m.position.set(px || 0, py || 0, pz || 0);
   if (rx !== undefined) m.rotation.x = rx;
   if (rz !== undefined) m.rotation.z = rz;
-  m.castShadow = true;
   return m;
 }
 
 // ════════════════════════════════════════════════
-// BUILD MODEL
+// BUILD MODEL — Kitchen based on kitchen.html
 // ════════════════════════════════════════════════
 function buildModel() {
   const lg = layerGroups;
@@ -461,7 +379,7 @@ function buildModel() {
 
   // Floor
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
-  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; floor.receiveShadow = true;
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001;
   lg.estructura.add(floor);
 
   // Ceiling
@@ -824,7 +742,6 @@ function buildModel() {
   // ════════════════════════════════════════════════
   // FONTANERIA LAYER — Sistema hidráulico detallado
   // ════════════════════════════════════════════════
-  // Materiales por tipo de tubería
   const pipeC  = mat(0x3B82F6, 0.90); // agua fría (azul)
   const pipeH  = mat(0xEF4444, 0.90); // agua caliente (rojo)
   const pipeD  = mat(0x6B7280, 0.82); // desagüe (gris)
@@ -1010,7 +927,6 @@ function buildModel() {
   // ════════════════════════════════════════════════
   // ELECTRICO LAYER — Sistema eléctrico detallado
   // ════════════════════════════════════════════════
-  // Materiales por circuito
   const condM   = mat(0xFBBF24, 0.92); // canaleta 120V (amarillo)
   const cond240 = mat(0xFF8C00, 0.94); // canaleta 240V (naranja)
   const condLV  = mat(0x60A5FA, 0.82); // baja tensión (azul)
@@ -1038,7 +954,7 @@ function buildModel() {
   // Filas de magnetotérmicos (izquierda + derecha)
   for (let bi = 0; bi < 9; bi++) {
     const by = H * 0.48 + 0.24 - bi * 0.056;
-    const cL = mat(bi < 3 ? 0x1E3A5F : 0x1A1A1A, 1); // azul = circuitos 240V
+    const cL = mat(bi < 3 ? 0x1E3A5F : 0x1A1A1A, 1);
     const cR = mat(0x1A2A1A, 1);
     lg.electrico.add(box(0.018, 0.044, 0.074, cL, PANEL_X + 0.022, by, PANEL_Z - 0.058));
     lg.electrico.add(box(0.018, 0.044, 0.074, cR, PANEL_X + 0.022, by, PANEL_Z + 0.058));
@@ -1083,9 +999,8 @@ function buildModel() {
   });
 
   // ── ENCHUFES PARED NORTE — cada 1.1m sobre salpicadero ──
-  // (GFCI a menos de 1.8m del fregadero, estándar el resto)
   for (let ox = -w2 + WT + 0.60; ox < w2 - WT - 0.18; ox += 1.10) {
-    if (Math.abs(ox - ST_X) < 0.38) continue; // sin enchufe encima del fogón
+    if (Math.abs(ox - ST_X) < 0.38) continue;
     const nearSink = Math.abs(ox - SK_X) < 1.85;
     const om = nearSink ? gfciM : outM;
     lg.electrico.add(box(0.065, 0.043, 0.016, om, ox, CH + 0.28, NWI + 0.013));
@@ -1239,7 +1154,7 @@ function buildModel() {
 
   // Wood floor planks
   const wf = new THREE.Mesh(new THREE.PlaneGeometry(W - WT*2, D - WT*2), woodFloorM);
-  wf.rotation.x = -Math.PI / 2; wf.position.y = 0.003; wf.receiveShadow = true;
+  wf.rotation.x = -Math.PI / 2; wf.position.y = 0.003;
   lg.acabados.add(wf);
   // Plank lines (east-west planks running north-south)
   const plankW = 0.12;
@@ -1317,119 +1232,270 @@ function buildModel() {
 
 buildModel();
 
-// ════════════════════════════════════════════════
-// LAYER TOGGLE
-// ════════════════════════════════════════════════
+// ── LAYER TOGGLE ──
 function toggleLayer(name) {
   layerState[name] = !layerState[name];
   layerGroups[name].visible = layerState[name];
-  const el = document.getElementById('li-' + name);
-  el.classList.toggle('off', !layerState[name]);
+  document.getElementById('btn-' + name).classList.toggle('off', !layerState[name]);
 }
 
-// ════════════════════════════════════════════════
-// DIMENSION SLIDERS
-// ════════════════════════════════════════════════
-function updateDim(axis, val) {
-  val = parseFloat(val);
-  if (axis === 'w') { W = val; document.getElementById('val-w').textContent = val.toFixed(1) + ' m'; }
-  if (axis === 'd') { D = val; document.getElementById('val-d').textContent = val.toFixed(1) + ' m'; }
-  if (axis === 'h') { H = val; document.getElementById('val-h').textContent = val.toFixed(2) + ' m'; }
-  updateDimsDisplay();
+// ── WEBXR ──
+let hitTestSource = null;
+let hitTestRequested = false;
+let placed = false;
+let xrSession = null;
+
+async function startAR() {
+  if (!navigator.xr) { document.getElementById('no-xr').style.display = 'block'; return; }
+  const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+  if (!supported) { document.getElementById('no-xr').style.display = 'block'; return; }
+
+  document.getElementById('loading').classList.add('show');
+
+  try {
+    xrSession = await navigator.xr.requestSession('immersive-ar', {
+      requiredFeatures: ['hit-test'],
+      optionalFeatures: ['dom-overlay'],
+      domOverlay: { root: document.getElementById('overlay') },
+    });
+
+    renderer.xr.setReferenceSpaceType('local');
+    await renderer.xr.setSession(xrSession);
+    xrSession.addEventListener('end', onSessionEnd);
+    xrSession.addEventListener('select', onTap);
+
+    document.getElementById('pre-ar').style.display = 'none';
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('corner-ui').classList.add('show');
+    document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
+
+    renderer.setAnimationLoop(render);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('no-xr').textContent = 'Error: ' + e.message;
+    document.getElementById('no-xr').style.display = 'block';
+  }
 }
 
-function updateDimsDisplay() {
-  document.getElementById('dims-text').textContent = `${W.toFixed(1)} × ${D.toFixed(1)} × ${H.toFixed(1)} m`;
-  document.getElementById('dims-area').textContent = `${(W * D).toFixed(2)} m²`;
+function onTap() {
+  if (!reticle.visible) return;
+
+  if (!calibrated) {
+    const pos = new THREE.Vector3();
+    pos.setFromMatrixPosition(reticle.matrix);
+
+    const n = allPoints.length;
+    const isFloor = n < 4;
+
+    const floorColors = [0xEF4444, 0xFBBF24, 0x22C55E, 0x8B5CF6];
+    const markerColor = isFloor ? floorColors[n] : 0x60A5FA;
+    const markerH = isFloor ? 0.12 : 0.08;
+
+    const marker = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, markerH, 16),
+      new THREE.MeshPhongMaterial({ color: markerColor, emissive: markerColor, emissiveIntensity: 0.4 })
+    );
+    marker.position.copy(pos);
+    marker.position.y += markerH / 2;
+    scene.add(marker);
+    cornerMarkers.push(marker);
+
+    const label = new THREE.Mesh(
+      new THREE.SphereGeometry(isFloor ? 0.025 : 0.022, 12, 12),
+      new THREE.MeshPhongMaterial({
+        color: isFloor ? 0xffffff : 0xFBBF24,
+        emissive: isFloor ? 0xffffff : 0xFBBF24, emissiveIntensity: 0.5
+      })
+    );
+    label.position.copy(pos);
+    label.position.y += markerH + 0.03;
+    scene.add(label);
+    cornerMarkers.push(label);
+
+    allPoints.push(pos.clone());
+
+    // Floor corner lines (blue polygon)
+    if (isFloor && n > 0) addLine(allPoints[n - 1], pos, 0x60A5FA);
+    if (n === 3) addLine(allPoints[3], allPoints[0], 0x60A5FA);
+
+    // Ceiling point: draw vertical line from floor center to ceiling point
+    if (!isFloor) {
+      const floorCenter = new THREE.Vector3(
+        (allPoints[0].x + allPoints[1].x + allPoints[2].x + allPoints[3].x) / 4,
+        (allPoints[0].y + allPoints[1].y + allPoints[2].y + allPoints[3].y) / 4,
+        (allPoints[0].z + allPoints[1].z + allPoints[2].z + allPoints[3].z) / 4
+      );
+      addLine(floorCenter, pos, 0xFBBF24);
+    }
+
+    updateCornerUI();
+    if (allPoints.length === TOTAL_POINTS) setTimeout(() => calibrateFromPoints(), 600);
+    return;
+  }
+
+  // Post-calibration: model is locked, ignore taps
 }
 
-function rebuildModel() {
+function addLine(a, b, color) {
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(a.x, a.y + 0.005, a.z),
+    new THREE.Vector3(b.x, b.y + 0.005, b.z)
+  ]);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color }));
+  scene.add(line);
+  cornerMarkers.push(line);
+}
+
+function updateCornerUI() {
+  const n = allPoints.length;
+  if (n < 4) {
+    document.getElementById('corner-step').textContent = `Esquina ${n + 1} de 4 — Piso`;
+    document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
+  } else if (n === 4) {
+    document.getElementById('corner-step').textContent = 'Punto de techo';
+    document.getElementById('corner-sub').textContent = 'Apunta al techo y toca para medir la altura';
+    document.getElementById('hint-badge').textContent = 'Apunta al techo → toca 1 punto';
+  } else {
+    document.getElementById('corner-step').textContent = 'Calibrando...';
+    document.getElementById('corner-sub').textContent = 'Ajustando cocina al espacio';
+  }
+  for (let i = 0; i < TOTAL_POINTS; i++) {
+    const dot = document.getElementById('cdot-' + i);
+    if (dot) {
+      dot.classList.toggle('done', i < n);
+      dot.classList.toggle('active', i === n);
+    }
+  }
+  if (n > 0) document.getElementById('reset-corners-btn').style.display = 'inline-block';
+}
+
+function calibrateFromPoints() {
+  const floorPts = allPoints.slice(0, 4);
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, floorY = 0;
+  floorPts.forEach(c => {
+    minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
+    minZ = Math.min(minZ, c.z); maxZ = Math.max(maxZ, c.z);
+    floorY += c.y;
+  });
+  floorY /= 4;
+
+  const ceilY = allPoints[4].y;
+
+  W = Math.max(maxX - minX, 0.5);
+  D = Math.max(maxZ - minZ, 0.5);
+  H = Math.max(Math.abs(ceilY - floorY), 0.5);
+
   Object.values(layerGroups).forEach(g => {
     while (g.children.length > 0) g.remove(g.children[0]);
   });
   buildModel();
+
+  // Apply current layer visibility state
   Object.entries(layerState).forEach(([name, visible]) => {
     layerGroups[name].visible = visible;
   });
-  updateDimsDisplay();
-  controls.target.set(0, CH, 0);
-  controls.update();
-}
 
-updateDimsDisplay();
+  model.position.set((minX + maxX) / 2, floorY, (minZ + maxZ) / 2);
 
-// ════════════════════════════════════════════════
-// CAMERA PRESETS
-// ════════════════════════════════════════════════
-function setView(preset) {
-  const cy = CH;
-  const dist = Math.max(W, D, H) * 1.7;
-  let pos, target;
-
-  switch (preset) {
-    case 'top':
-      pos    = new THREE.Vector3(0, dist * 1.9, 0.001);
-      target = new THREE.Vector3(0, 0, 0);
-      break;
-    case 'front':
-      pos    = new THREE.Vector3(0, cy, D / 2 + dist);
-      target = new THREE.Vector3(0, cy, 0);
-      break;
-    case 'side':
-      pos    = new THREE.Vector3(W / 2 + dist, cy, 0);
-      target = new THREE.Vector3(0, cy, 0);
-      break;
-    case 'iso':
-      pos    = new THREE.Vector3(dist * 1.2, dist * 1.1, dist * 1.2);
-      target = new THREE.Vector3(0, cy, 0);
-      break;
-    case 'inside':
-      pos    = new THREE.Vector3(0, 1.6, D * 0.3);
-      target = new THREE.Vector3(0, 1.2, -D * 0.35);
-      break;
+  let bestAngle = 0, bestLen = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = floorPts[i], b = floorPts[(i + 1) % 4];
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    if (len > bestLen) { bestLen = len; bestAngle = Math.atan2(dx, dz); }
   }
+  model.rotation.y = bestAngle;
+  model.scale.set(1, 1, 1);
+  model.visible = true;
+  calibrated = true;
+  placed = true;
 
-  animateCamera(camera.position.clone(), controls.target.clone(), pos, target, 650);
+  // Hide reticle — model is now locked in place
+  reticle.visible = false;
+
+  document.getElementById('corner-ui').classList.remove('show');
+  document.getElementById('hint-badge').textContent = 'Cocina fija — camina alrededor para explorar';
+  document.getElementById('hint-badge').classList.add('placed');
+  document.getElementById('info-card').classList.add('show');
+  document.getElementById('info-dims').textContent =
+    `${W.toFixed(1)}m × ${D.toFixed(1)}m × ${H.toFixed(1)}m`;
+  setTimeout(() => document.getElementById('hint-badge').style.display = 'none', 5000);
 }
 
-function animateCamera(fromPos, fromTarget, toPos, toTarget, duration) {
-  const start = performance.now();
-  function tick(now) {
-    const t = Math.min((now - start) / duration, 1);
-    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-    camera.position.lerpVectors(fromPos, toPos, ease);
-    controls.target.lerpVectors(fromTarget, toTarget, ease);
-    controls.update();
-    if (t < 1) requestAnimationFrame(tick);
+function resetCorners() {
+  cornerMarkers.forEach(m => scene.remove(m));
+  cornerMarkers.length = 0;
+  allPoints.length = 0;
+  calibrated = false;
+  placed = false;
+  model.visible = false;
+
+  document.getElementById('reset-corners-btn').style.display = 'none';
+  document.getElementById('corner-step').textContent = 'Esquina 1 de 4 — Piso';
+  document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
+  document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas de la cocina';
+  document.getElementById('hint-badge').classList.remove('placed');
+  document.getElementById('hint-badge').style.display = '';
+  for (let i = 0; i < TOTAL_POINTS; i++) {
+    const dot = document.getElementById('cdot-' + i);
+    dot.classList.remove('done');
+    dot.classList.toggle('active', i === 0);
   }
-  requestAnimationFrame(tick);
 }
 
-// ════════════════════════════════════════════════
-// RESIZE
-// ════════════════════════════════════════════════
-window.addEventListener('resize', () => {
-  const w = window.innerWidth - W_PANEL;
-  const h = window.innerHeight - 54;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-});
+function exitAR() { if (xrSession) xrSession.end(); }
 
-// ════════════════════════════════════════════════
-// HINT AUTO-HIDE
-// ════════════════════════════════════════════════
-setTimeout(() => document.getElementById('hint').classList.add('hidden'), 4000);
+function onSessionEnd() {
+  xrSession = null;
+  placed = false;
+  calibrated = false;
+  model.visible = false;
+  reticle.visible = false;
+  hitTestSource = null;
+  hitTestRequested = false;
+  cornerMarkers.forEach(m => scene.remove(m));
+  cornerMarkers.length = 0;
+  allPoints.length = 0;
+  model.scale.set(1, 1, 1);
+  W = 2.0; D = 2.0; H = 1.0;
+  document.getElementById('overlay').classList.remove('active');
+  document.getElementById('corner-ui').classList.remove('show');
+  document.getElementById('info-card').classList.remove('show');
+  document.getElementById('pre-ar').style.display = 'flex';
+  renderer.setAnimationLoop(null);
+}
 
-// ════════════════════════════════════════════════
-// RENDER LOOP
-// ════════════════════════════════════════════════
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
+function render(timestamp, frame) {
+  if (frame) {
+    const refSpace = renderer.xr.getReferenceSpace();
+    const session = renderer.xr.getSession();
+    if (!hitTestRequested) {
+      session.requestReferenceSpace('viewer').then(vs => {
+        session.requestHitTestSource({ space: vs }).then(src => { hitTestSource = src; });
+      });
+      hitTestRequested = true;
+    }
+    // Only show reticle during calibration phase
+    if (hitTestSource && !calibrated) {
+      const results = frame.getHitTestResults(hitTestSource);
+      if (results.length > 0) {
+        reticle.visible = true;
+        reticle.matrix.fromArray(results[0].getPose(refSpace).transform.matrix);
+      } else { reticle.visible = false; }
+    }
+  }
   renderer.render(scene, camera);
 }
-animate();
+
+window.addEventListener('load', async () => {
+  if (!navigator.xr || !await navigator.xr.isSessionSupported('immersive-ar').catch(() => false)) {
+    document.getElementById('start-btn').style.opacity = '0.5';
+    document.getElementById('no-xr').style.display = 'block';
+    document.getElementById('no-xr').textContent = 'Requiere Android + Chrome con ARCore instalado';
+  }
+});
 </script>
 </body>
 </html>
