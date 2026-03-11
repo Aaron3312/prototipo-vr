@@ -1,0 +1,1051 @@
+// kitchen-model.js — shared kitchen 3D model
+// Requires: THREE loaded before this script
+// Page must declare globals: W, D, H, layerGroups, layerState
+// Page must call: scene.add(model) after including this script
+
+// Kitchen constants
+const CH = 0.90;   // counter height
+const CD = 0.62;   // counter depth (north wall cabinets)
+const CT = 0.04;   // countertop slab thickness
+const UH = 0.68;   // upper cabinet height
+const UB = 1.45;   // upper cabinet bottom from floor
+const UD = 0.33;   // upper cabinet depth
+const TK = 0.10;   // toe kick height
+
+// ── MATERIAL & GEOMETRY HELPERS ──
+function mat(color, opacity = 1, emissive = 0, emissiveIntensity = 0) {
+  const m = new THREE.MeshPhongMaterial({
+    color,
+    transparent: opacity < 1,
+    opacity,
+    side: THREE.DoubleSide,
+    depthWrite: opacity >= 0.75,
+  });
+  if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = emissiveIntensity; }
+  return m;
+}
+
+function box(bw, bh, bd, material, px, py, pz, specs) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  m.castShadow = true; m.receiveShadow = true;
+  if (specs) m.userData = { _hasSpecs: true, ...specs };
+  return m;
+}
+
+function cyl(r, h, material, px, py, pz, rx, rz, specs) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), material);
+  m.position.set(px || 0, py || 0, pz || 0);
+  if (rx !== undefined) m.rotation.x = rx;
+  if (rz !== undefined) m.rotation.z = rz;
+  m.castShadow = true;
+  if (specs) m.userData = {
+    _hasSpecs: true,
+    longitud: Math.round(Math.abs(h) * 1000) / 1000,
+    diametro: Math.round(r * 2 * 1000),
+    ...specs
+  };
+  return m;
+}
+
+// ════════════════════════════════════════════════
+// BUILD MODEL
+// ════════════════════════════════════════════════
+function buildModel() {
+  const lg = layerGroups;
+  const w2 = W / 2;
+  const d2 = D / 2;
+  const WT = 0.12;
+
+  // ── Derived kitchen layout constants ──
+  const NWI = -d2 + WT;          // north wall interior face Z
+  const CAB_ZF = NWI + CD;       // front face of north-wall lower cabinets
+  const CAB_ZC = NWI + CD / 2;   // center Z of north-wall cabinets
+
+  // Appliance fixed widths
+  const FRW = 0.76, FRD = 0.70, FRH = 1.92;   // fridge
+  const STW = 0.62, STD = 0.62;                 // stove
+  const DWW = 0.60;                              // dishwasher
+  const SKW = 0.86;                              // sink zone
+
+  const totalFixed = FRW + STW + DWW + SKW;
+  const extra = Math.max(0, W - 2 * WT - totalFixed);
+  const C1 = Math.max(0.18, extra * 0.30);
+  const C2 = Math.max(0.18, extra * 0.30);
+
+  // West-to-east positions along north wall (x coords, left edges)
+  const SK_LEFT  = -w2 + WT;
+  const FR_L  = SK_LEFT;
+  const FR_R  = FR_L + FRW;
+  const C1_L  = FR_R;
+  const C1_R  = C1_L + C1;
+  const ST_L  = C1_R;
+  const ST_R  = ST_L + STW;
+  const DW_L  = ST_R;
+  const DW_R  = DW_L + DWW;
+  const C2_L  = DW_R;
+  const C2_R  = C2_L + C2;
+  const SK_L  = C2_R;
+  const SK_R  = SK_L + SKW;
+  const C3_L  = SK_R;
+  const C3_R  = w2 - WT;
+  const C3    = Math.max(0, C3_R - C3_L);
+
+  // Center X of each zone
+  const FR_X  = (FR_L + FR_R) / 2;
+  const ST_X  = (ST_L + ST_R) / 2;
+  const DW_X  = (DW_L + DW_R) / 2;
+  const SK_X  = (SK_L + SK_R) / 2;
+
+  // Window above sink
+  const WIN_X1 = SK_L - 0.04;
+  const WIN_X2 = SK_R + 0.04;
+  const WIN_Y1 = CH + 0.15;
+  const WIN_Y2 = H * 0.90;
+
+  // South wall door
+  const DOOR_X1 = -0.50;
+  const DOOR_X2 = +0.40;
+  const DOOR_H  = H * 0.84;
+
+  // East wall L-cabinets
+  const EW_Z1 = -d2 + WT;
+  const EW_Z2 = EW_Z1 + Math.min(1.40, D * 0.37);
+  const EW_CABW = CD;
+  const EW_CAB_X = w2 - WT - EW_CABW / 2;
+
+  // Island
+  const ISL_W = Math.min(1.80, W * 0.42);
+  const ISL_D = 0.80;
+  const ISL_X = 0;
+  const ISL_Z = d2 * 0.20;
+
+  // ════════════════════════════════════════════════
+  // ESTRUCTURA LAYER
+  // ════════════════════════════════════════════════
+  const wallM  = mat(0x9CA3AF, 0.40);
+  const floorM = mat(0x3B2E24, 0.92);
+  const ceilM  = mat(0xE5E7EB, 0.10);
+  const frameM = mat(0x6B7280, 0.88);
+  const glassM = mat(0x87CEEB, 0.20);
+
+  // Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; floor.receiveShadow = true;
+  lg.estructura.add(floor);
+
+  // Ceiling
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), ceilM);
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = H - 0.001;
+  lg.estructura.add(ceil);
+
+  // North wall — broken by window above sink
+  // Left of window
+  if (WIN_X1 > -w2) {
+    const segW = WIN_X1 - (-w2);
+    lg.estructura.add(box(segW, H, WT, wallM, -w2 + segW/2, H/2, NWI + WT/2));
+  }
+  // Right of window
+  if (WIN_X2 < w2) {
+    const segW = w2 - WIN_X2;
+    lg.estructura.add(box(segW, H, WT, wallM, WIN_X2 + segW/2, H/2, NWI + WT/2));
+  }
+  // Above window
+  {
+    const segW = WIN_X2 - WIN_X1;
+    const segH = H - WIN_Y2;
+    lg.estructura.add(box(segW, segH, WT, wallM, (WIN_X1+WIN_X2)/2, WIN_Y2 + segH/2, NWI + WT/2));
+  }
+  // Below window (behind counter - only above floor to WIN_Y1)
+  {
+    const segW = WIN_X2 - WIN_X1;
+    lg.estructura.add(box(segW, WIN_Y1, WT, wallM, (WIN_X1+WIN_X2)/2, WIN_Y1/2, NWI + WT/2));
+  }
+
+  // Window glass
+  const winGlass = new THREE.Mesh(
+    new THREE.PlaneGeometry(WIN_X2 - WIN_X1, WIN_Y2 - WIN_Y1), glassM);
+  winGlass.position.set((WIN_X1+WIN_X2)/2, (WIN_Y1+WIN_Y2)/2, NWI + WT/2 + 0.001);
+  lg.estructura.add(winGlass);
+
+  // Window frame (4 bars)
+  const wfM = frameM;
+  const WFT = 0.04;
+  const winCX = (WIN_X1+WIN_X2)/2, winCY = (WIN_Y1+WIN_Y2)/2;
+  const winW = WIN_X2 - WIN_X1, winH2 = WIN_Y2 - WIN_Y1;
+  lg.estructura.add(box(winW + WFT*2, WFT, WT*0.5, wfM, winCX, WIN_Y1 - WFT/2, NWI + WT/2 + 0.012));
+  lg.estructura.add(box(winW + WFT*2, WFT, WT*0.5, wfM, winCX, WIN_Y2 + WFT/2, NWI + WT/2 + 0.012));
+  lg.estructura.add(box(WFT, winH2 + WFT*2, WT*0.5, wfM, WIN_X1 - WFT/2, winCY, NWI + WT/2 + 0.012));
+  lg.estructura.add(box(WFT, winH2 + WFT*2, WT*0.5, wfM, WIN_X2 + WFT/2, winCY, NWI + WT/2 + 0.012));
+  // Window sill
+  lg.estructura.add(box(winW + WFT*2 + 0.06, 0.04, 0.12, mat(0xC8C0B0, 1), winCX, WIN_Y1 - 0.02, NWI + WT/2 + 0.06));
+
+  // South wall — broken by door
+  const swZ = d2 - WT/2;
+  // Left of door
+  if (DOOR_X1 > -w2) {
+    const segW = DOOR_X1 - (-w2);
+    lg.estructura.add(box(segW, H, WT, wallM, -w2 + segW/2, H/2, swZ));
+  }
+  // Right of door
+  if (DOOR_X2 < w2) {
+    const segW = w2 - DOOR_X2;
+    lg.estructura.add(box(segW, H, WT, wallM, DOOR_X2 + segW/2, H/2, swZ));
+  }
+  // Above door
+  {
+    const segW = DOOR_X2 - DOOR_X1;
+    const segH = H - DOOR_H;
+    lg.estructura.add(box(segW, segH, WT, wallM, (DOOR_X1+DOOR_X2)/2, DOOR_H + segH/2, swZ));
+  }
+  // Door frame
+  lg.estructura.add(box(0.05, DOOR_H, 0.04, frameM, DOOR_X1 - 0.025, DOOR_H/2, swZ));
+  lg.estructura.add(box(0.05, DOOR_H, 0.04, frameM, DOOR_X2 + 0.025, DOOR_H/2, swZ));
+  lg.estructura.add(box(DOOR_X2-DOOR_X1 + 0.10, 0.05, 0.04, frameM, (DOOR_X1+DOOR_X2)/2, DOOR_H + 0.025, swZ));
+
+  // East wall (solid)
+  lg.estructura.add(box(WT, H, D, wallM, w2 - WT/2, H/2, 0));
+
+  // West wall (solid)
+  lg.estructura.add(box(WT, H, D, wallM, -w2 + WT/2, H/2, 0));
+
+  // ════════════════════════════════════════════════
+  // MUEBLES LAYER
+  // ════════════════════════════════════════════════
+  const cabM    = mat(0xF5F1EC, 1);
+  const cabFaceM= mat(0xEDE8DF, 1);
+  const toeKickM= mat(0x222222, 1);
+  const handleM = mat(0xB5B5B5, 1);
+  const drawerM = mat(0xE8E4DA, 1);
+  const graniteM= mat(0x252020, 1);
+  const stainM  = mat(0xD5D5D5, 1);
+  const blackM  = mat(0x111111, 1);
+  const darkGrayM = mat(0x333333, 1);
+  const chromM  = mat(0xC8C8C8, 1);
+  const woodDoorM = mat(0x8B7355, 1);
+
+  // Helper: build a lower cabinet section
+  function lowerCabinet(grp, xL, xR, zFront, zBack, nombre) {
+    const cw = xR - xL;
+    if (cw < 0.05) return;
+    const cx = (xL + xR) / 2;
+    const cz = (zFront + zBack) / 2;
+    const cd2 = zFront - zBack;
+    const bodyH = CH - CT - TK;
+
+    // Body
+    grp.add(box(cw, bodyH, cd2, cabM, cx, TK + bodyH/2, cz,
+      nombre ? {nombre, sistema:'Muebles', material:'MDF Lacado', notas:`${cw.toFixed(2)} × ${bodyH.toFixed(2)} × ${cd2.toFixed(2)} m`} : undefined
+    ));
+    // Toe kick (recessed)
+    grp.add(box(cw - 0.02, TK, cd2 * 0.5, toeKickM, cx, TK/2, zFront - cd2*0.25));
+    // Door panel on front face
+    const dpH = bodyH * 0.88;
+    const dpW = cw - 0.04;
+    grp.add(box(dpW, dpH, 0.015, cabFaceM, cx, TK + bodyH*0.06 + dpH/2, zFront + 0.008));
+    // Drawer panel (top 12%)
+    const drH = bodyH * 0.20;
+    grp.add(box(dpW, drH, 0.015, drawerM, cx, TK + bodyH - drH/2 - 0.005, zFront + 0.008));
+    // Handle on door
+    const hW = Math.min(dpW * 0.5, 0.20);
+    grp.add(box(hW, 0.012, 0.012, handleM, cx, TK + bodyH * 0.50, zFront + 0.022));
+    // Handle on drawer
+    grp.add(box(hW, 0.012, 0.012, handleM, cx, TK + bodyH * 0.91, zFront + 0.022));
+  }
+
+  // Helper: build an upper cabinet section
+  function upperCabinet(grp, xL, xR, zFront, zBack, nombre) {
+    const cw = xR - xL;
+    if (cw < 0.05) return;
+    const cx = (xL + xR) / 2;
+    const cz = (zFront + zBack) / 2;
+    const cd2 = zFront - zBack;
+
+    grp.add(box(cw, UH, cd2, cabM, cx, UB + UH/2, cz,
+      nombre ? {nombre, sistema:'Muebles', material:'MDF Lacado', notas:`${cw.toFixed(2)} × ${UH.toFixed(2)} × ${cd2.toFixed(2)} m`} : undefined
+    ));
+    const dpH = UH * 0.90;
+    const dpW = cw - 0.04;
+    grp.add(box(dpW, dpH, 0.015, cabFaceM, cx, UB + UH*0.05 + dpH/2, zFront + 0.008));
+    const hW = Math.min(dpW * 0.5, 0.18);
+    grp.add(box(hW, 0.012, 0.012, handleM, cx, UB + UH * 0.40, zFront + 0.022));
+    // LED strip under cabinet
+    const ledM = mat(0xFFF8E7, 0.9, 0xFDE68A, 0.55);
+    grp.add(box(cw * 0.90, 0.018, 0.020, ledM, cx, UB - 0.009, zFront - 0.010));
+  }
+
+  // ── North wall lower cabinets ──
+  const NW_ZF = NWI + CD;   // front face
+  const NW_ZB = NWI;        // back face (at wall)
+
+  // C1
+  lowerCabinet(lg.muebles, C1_L, C1_R, NW_ZF, NW_ZB, 'Armario Bajo Norte Izq');
+  // C2
+  lowerCabinet(lg.muebles, C2_L, C2_R, NW_ZF, NW_ZB, 'Armario Bajo Norte Centro');
+  // C3
+  if (C3 > 0.05) lowerCabinet(lg.muebles, C3_L, C3_R, NW_ZF, NW_ZB, 'Armario Bajo Norte Der');
+
+  // Countertop — continuous slab from right of fridge to east wall (minus fridge zone)
+  // Slab from C1_L to C3_R (over C1, stove, dishwasher, C2, sink, C3)
+  // Encimera norte en dos tramos: deja hueco para el fregadero (SK_L → SK_R)
+  const CTW = C3_R - C1_L;   // ancho total tramo norte (usado tb por el carril de spots)
+  const CTX = (C1_L + C3_R) / 2;
+  const ctZ = NW_ZB + (CD + 0.04) / 2;
+  const ctLeftW  = SK_L - C1_L - 0.01;
+  const ctRightW = C3_R - SK_R - 0.01;
+  if (ctLeftW  > 0.05) lg.muebles.add(box(ctLeftW,  CT, CD + 0.04, graniteM, C1_L  + ctLeftW/2,  CH - CT/2, ctZ,
+    {nombre:'Encimera Norte Izq', sistema:'Muebles', material:'Granito', notas:`${ctLeftW.toFixed(2)} × ${CT.toFixed(2)} × ${(CD+0.04).toFixed(2)} m`}));
+  if (ctRightW > 0.05) lg.muebles.add(box(ctRightW, CT, CD + 0.04, graniteM, SK_R  + ctRightW/2, CH - CT/2, ctZ,
+    {nombre:'Encimera Norte Der', sistema:'Muebles', material:'Granito', notas:`${ctRightW.toFixed(2)} × ${CT.toFixed(2)} × ${(CD+0.04).toFixed(2)} m`}));
+
+  // ── North wall upper cabinets ──
+  const UCF = NWI + UD;
+  const UCB = NWI;
+  // Left section: from FR_R to ST_L
+  upperCabinet(lg.muebles, FR_R, ST_L, UCF, UCB, 'Armario Alto Norte Izq');
+  // Middle section: from ST_R+0.04 to WIN_X1
+  if (ST_R + 0.04 < WIN_X1 - 0.05)
+    upperCabinet(lg.muebles, ST_R + 0.04, WIN_X1, UCF, UCB, 'Armario Alto Norte Centro');
+  // Right section: from WIN_X2 to C3_R
+  if (WIN_X2 + 0.06 < C3_R)
+    upperCabinet(lg.muebles, WIN_X2 + 0.06, C3_R, UCF, UCB, 'Armario Alto Norte Der');
+
+  // ── East wall L-section lower cabinets ──
+  const EW_CD = EW_Z2 - EW_Z1;
+  const EW_FRONT_X = w2 - WT - EW_CABW;
+  const EW_BACK_X  = w2 - WT;
+  const EW_CZ = (EW_Z1 + EW_Z2) / 2;
+  const ewBodyH = CH - CT - TK;
+
+  lg.muebles.add(box(EW_CABW, ewBodyH, EW_CD, cabM, EW_CAB_X, TK + ewBodyH/2, EW_CZ,
+    {nombre:'Armario Bajo Este', sistema:'Muebles', material:'MDF Lacado', notas:`${EW_CABW.toFixed(2)} × ${ewBodyH.toFixed(2)} × ${EW_CD.toFixed(2)} m`}));
+  lg.muebles.add(box(EW_CABW - 0.02, TK, EW_CD*0.5, toeKickM, EW_CAB_X, TK/2, EW_Z1 + EW_CD*0.25));
+  lg.muebles.add(box(EW_CABW - 0.04, ewBodyH * 0.85, 0.015, cabFaceM, EW_CAB_X - 0.006, TK + ewBodyH*0.10, EW_Z1 + 0.01));
+  // East wall upper cabinets
+  upperCabinet(lg.muebles, EW_FRONT_X, EW_BACK_X - 0.01, EW_Z2 - 0.01, EW_Z1, 'Armario Alto Este');
+  // East wall countertop
+  lg.muebles.add(box(EW_CABW + 0.04, CT, EW_CD + 0.02, graniteM, EW_CAB_X, CH - CT/2, EW_CZ,
+    {nombre:'Encimera Este', sistema:'Muebles', material:'Granito', notas:`${(EW_CABW+0.04).toFixed(2)} × ${CT.toFixed(2)} × ${(EW_CD+0.02).toFixed(2)} m`}));
+
+  // ── REFRIGERATOR ──
+  const fridgeG = new THREE.Group();
+  // Main body
+  fridgeG.add(box(FRW, FRH, FRD, stainM, 0, FRH/2, 0,
+    {nombre:'Nevera', sistema:'Muebles', material:'Acero inoxidable', notas:`${FRW.toFixed(2)} × ${FRH.toFixed(2)} × ${FRD.toFixed(2)} m`}));
+  // Two fridge doors (top 63%)
+  const fdH = FRH * 0.63;
+  const fdY = FRH - fdH/2;
+  fridgeG.add(box(FRW/2 - 0.01, fdH, 0.04, mat(0xC0C0C0, 1), -FRW/4, fdY, FRD/2 + 0.02));
+  fridgeG.add(box(FRW/2 - 0.01, fdH, 0.04, mat(0xC0C0C0, 1), FRW/4, fdY, FRD/2 + 0.02));
+  // Freezer drawer (bottom 30%)
+  const fzH = FRH * 0.30;
+  fridgeG.add(box(FRW - 0.02, fzH, 0.04, mat(0xB8B8B8, 1), 0, fzH/2 + 0.04, FRD/2 + 0.02));
+  // Handles on fridge doors
+  fridgeG.add(box(0.014, fdH * 0.55, 0.014, chromM, -0.04, fdY, FRD/2 + 0.055));
+  fridgeG.add(box(0.014, fdH * 0.55, 0.014, chromM,  0.04 + FRW/2 - 0.04, fdY, FRD/2 + 0.055));
+  // Gap line between fridge and freezer
+  fridgeG.add(box(FRW, 0.012, 0.045, darkGrayM, 0, fzH + 0.04, FRD/2 + 0.02));
+  // Water dispenser panel
+  fridgeG.add(box(0.12, 0.18, 0.015, mat(0xA0A0A0, 1), -FRW/4, fdY * 0.65, FRD/2 + 0.045));
+
+  fridgeG.position.set(FR_X, 0, NW_ZB + FRD/2);
+  lg.muebles.add(fridgeG);
+
+  // ── STOVE / RANGE ──
+  const stoveG = new THREE.Group();
+  // Main body
+  stoveG.add(box(STW, CH, STD, mat(0xC8CACA, 1), 0, CH/2, 0,
+    {nombre:'Fogón / Horno', sistema:'Muebles', material:'Acero esmaltado', notas:`${STW.toFixed(2)} × ${CH.toFixed(2)} × ${STD.toFixed(2)} m`}));
+  // Black ceramic top
+  stoveG.add(box(STW, 0.025, STD, blackM, 0, CH + 0.012, 0));
+  // 4 burner rings
+  const burnerPos = [[-0.14, -0.12],[0.14,-0.12],[-0.14,0.12],[0.14,0.12]];
+  burnerPos.forEach(([bx, bz]) => {
+    stoveG.add(cyl(0.075, 0.012, mat(0x222222, 1), bx, CH + 0.027, bz));
+    stoveG.add(cyl(0.045, 0.014, mat(0x555555, 1), bx, CH + 0.032, bz));
+  });
+  // Control knob row (5 knobs)
+  for (let k = 0; k < 5; k++) {
+    const kx = -STW/2 + 0.055 + k * (STW - 0.11) / 4;
+    stoveG.add(cyl(0.022, 0.022, mat(0x888888, 1), kx, CH * 0.92, STD/2 + 0.012, 0, 0));
+  }
+  // Oven door (lower 42%)
+  const ovenH = CH * 0.42;
+  const ovenDoor = box(STW - 0.02, ovenH, 0.035, mat(0x444444, 1), 0, ovenH/2 + 0.06, STD/2 + 0.018);
+  stoveG.add(ovenDoor);
+  // Oven door glass
+  stoveG.add(box(STW * 0.72, ovenH * 0.50, 0.015, mat(0x333344, 0.7), 0, ovenH/2 + 0.06, STD/2 + 0.038));
+  // Oven handle
+  stoveG.add(box(STW * 0.70, 0.016, 0.016, chromM, 0, ovenH * 0.85 + 0.06, STD/2 + 0.042));
+  // Bottom storage drawer
+  stoveG.add(box(STW - 0.02, 0.055, 0.035, mat(0x555555, 1), 0, 0.03, STD/2 + 0.018));
+
+  stoveG.position.set(ST_X, 0, NW_ZB + STD/2);
+  lg.muebles.add(stoveG);
+
+  // ── RANGE HOOD ──
+  const hoodG = new THREE.Group();
+  const hoodW = STW + 0.12;
+  const hoodFlangeY = H * 0.635;
+  const hoodTopY = H * 0.730;
+  const hoodX = ST_X;
+  const hoodZ = NWI + 0.34;
+
+  // Flange (wide lower)
+  hoodG.add(box(hoodW, 0.10, 0.68, mat(0xC8C8C8, 1), 0, 0, 0));
+  // Grease filter grate
+  hoodG.add(box(hoodW * 0.88, 0.012, 0.55, mat(0xAAAAAA, 0.9), 0, -0.06, 0));
+  // Emissive light under hood
+  const hoodLightM = mat(0xFFF5CC, 0.9, 0xFDE68A, 0.8);
+  hoodG.add(box(hoodW * 0.70, 0.015, 0.28, hoodLightM, 0, -0.052, 0.06));
+  // Tapered hood body
+  hoodG.add(box(hoodW * 0.75, H*0.095, 0.55, mat(0xC0C0C0, 1), 0, H*0.048, 0));
+  // Chimney column
+  const chimneyH = H - hoodTopY - 0.05;
+  hoodG.add(box(0.28, chimneyH, 0.22, mat(0xC8C8C8, 1), 0, H*0.095 + chimneyH/2, 0));
+  // Fan motor top
+  hoodG.add(cyl(0.07, 0.08, mat(0x888888, 1), 0, H*0.095 + chimneyH, 0));
+
+  hoodG.position.set(hoodX, hoodFlangeY, hoodZ);
+  lg.muebles.add(hoodG);
+
+  // ── KITCHEN SINK ──
+  const sinkG = new THREE.Group();
+  // Basin housing (counter level)
+  sinkG.add(box(SKW - 0.04, 0.012, CD - 0.06, graniteM, 0, 0, 0,
+    {nombre:'Fregadero Doble', sistema:'Muebles', material:'Granito / Inox', notas:`${(SKW-0.04).toFixed(2)} × 0.012 × ${(CD-0.06).toFixed(2)} m`}));
+  // Left basin (dark stainless inset)
+  sinkG.add(box((SKW - 0.12)/2, 0.16, CD * 0.55, mat(0x888888, 0.95), -(SKW*0.24), -0.09, -0.02));
+  // Right basin
+  sinkG.add(box((SKW - 0.12)/2, 0.16, CD * 0.55, mat(0x888888, 0.95),  (SKW*0.24), -0.09, -0.02));
+  // Basin rims chrome
+  sinkG.add(box((SKW-0.12)/2 + 0.02, 0.012, CD*0.55 + 0.02, chromM, -(SKW*0.24), -0.006, -0.02));
+  sinkG.add(box((SKW-0.12)/2 + 0.02, 0.012, CD*0.55 + 0.02, chromM,  (SKW*0.24), -0.006, -0.02));
+  // Faucet base
+  sinkG.add(cyl(0.016, 0.04, chromM, 0, 0.025, -CD*0.25));
+  // Faucet neck (vertical)
+  sinkG.add(cyl(0.009, 0.20, chromM, 0, 0.13, -CD*0.25));
+  // Faucet arc (angled)
+  sinkG.add(cyl(0.009, 0.18, chromM, 0, 0.20, -CD*0.10, Math.PI/2.8));
+  // Spout end
+  sinkG.add(cyl(0.014, 0.025, chromM, 0, 0.225, CD*0.04));
+  // Hot handle
+  sinkG.add(box(0.10, 0.014, 0.014, chromM, -SKW*0.28, 0.040, -CD*0.30));
+  // Cold handle
+  sinkG.add(box(0.10, 0.014, 0.014, chromM,  SKW*0.28, 0.040, -CD*0.30));
+  // Sprayer
+  sinkG.add(cyl(0.016, 0.10, chromM, SKW*0.38, 0.055, -CD*0.22));
+
+  sinkG.position.set(SK_X, CH, NW_ZF - CD/2 - 0.01);
+  lg.muebles.add(sinkG);
+
+  // ── DISHWASHER ──
+  const dwG = new THREE.Group();
+  const dwBodyH = CH;
+  // Body
+  dwG.add(box(DWW, dwBodyH, STD, mat(0xF0EEE8, 1), 0, dwBodyH/2, 0,
+    {nombre:'Lavavajillas', sistema:'Muebles', material:'Acero inoxidable', notas:`${DWW.toFixed(2)} × ${dwBodyH.toFixed(2)} × ${STD.toFixed(2)} m`}));
+  // Front panel
+  dwG.add(box(DWW - 0.02, dwBodyH - 0.04, 0.025, mat(0xEDE9E1, 1), 0, dwBodyH/2, STD/2 + 0.013));
+  // Top vent strip (stainless)
+  dwG.add(box(DWW - 0.02, 0.04, 0.025, chromM, 0, dwBodyH - 0.022, STD/2 + 0.013));
+  // Control panel strip
+  dwG.add(box(DWW - 0.04, 0.055, 0.020, mat(0x444455, 1), 0, dwBodyH - 0.085, STD/2 + 0.016));
+  // Handle bar
+  dwG.add(box(DWW * 0.65, 0.014, 0.014, handleM, 0, dwBodyH * 0.88, STD/2 + 0.030));
+
+  dwG.position.set(DW_X, 0, NW_ZB + STD/2);
+  lg.muebles.add(dwG);
+
+  // ── ISLAND ──
+  const islG = new THREE.Group();
+  // Cabinet body
+  islG.add(box(ISL_W, CH - CT, ISL_D, cabM, 0, (CH-CT)/2, 0,
+    {nombre:'Isla — Cuerpo', sistema:'Muebles', material:'MDF Lacado', notas:`${ISL_W.toFixed(2)} × ${(CH-CT).toFixed(2)} × ${ISL_D.toFixed(2)} m`}));
+  // Cabinet doors on south and north faces
+  const islDoorH = (CH - CT) * 0.85;
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM, -ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, ISL_D/2 + 0.008));
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM,  ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, ISL_D/2 + 0.008));
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM, -ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, -ISL_D/2 - 0.008));
+  islG.add(box(ISL_W*0.45, islDoorH, 0.015, cabFaceM,  ISL_W*0.25, (CH-CT)*0.10 + islDoorH/2, -ISL_D/2 - 0.008));
+  // Handles
+  islG.add(box(0.14, 0.012, 0.012, handleM, -ISL_W*0.25, (CH-CT)*0.52, ISL_D/2 + 0.022));
+  islG.add(box(0.14, 0.012, 0.012, handleM,  ISL_W*0.25, (CH-CT)*0.52, ISL_D/2 + 0.022));
+  // Marble countertop (overhangs south for seating)
+  const marbleM = mat(0xEBE5DC, 1);
+  islG.add(box(ISL_W + 0.04, CT, ISL_D + 0.24, marbleM, 0, CH - CT/2, 0.12,
+    {nombre:'Isla — Encimera', sistema:'Muebles', material:'Mármol', notas:`${(ISL_W+0.04).toFixed(2)} × ${CT.toFixed(2)} × ${(ISL_D+0.24).toFixed(2)} m`}));
+  // Toe kicks
+  islG.add(box(ISL_W - 0.02, TK, ISL_D * 0.5, toeKickM, 0, TK/2,  ISL_D/2 - ISL_D*0.25));
+  islG.add(box(ISL_W - 0.02, TK, ISL_D * 0.5, toeKickM, 0, TK/2, -ISL_D/2 + ISL_D*0.25));
+
+  // 3 bar stools on south side
+  const stoolOffsets = [-ISL_W*0.38, 0, ISL_W*0.38];
+  stoolOffsets.forEach(sx => {
+    // Seat
+    islG.add(cyl(0.19, 0.04, mat(0x4A3728, 1), sx, CH + 0.28, ISL_D/2 + 0.40));
+    // Legs (4)
+    [[-0.12,-0.12],[0.12,-0.12],[-0.12,0.12],[0.12,0.12]].forEach(([lx,lz]) => {
+      islG.add(cyl(0.015, CH + 0.25, chromM, sx + lx, (CH+0.25)/2, ISL_D/2 + 0.40 + lz));
+    });
+    // Footrest ring
+    islG.add(cyl(0.17, 0.018, chromM, sx, 0.35, ISL_D/2 + 0.40));
+  });
+
+  islG.position.set(ISL_X, 0, ISL_Z);
+  lg.muebles.add(islG);
+
+  // ── DOOR (south wall) ──
+  const doorG = new THREE.Group();
+  const doorW = DOOR_X2 - DOOR_X1;
+  doorG.add(box(doorW - 0.04, DOOR_H - 0.04, 0.042, woodDoorM, 0, DOOR_H/2, 0));
+  // Door panel insets
+  doorG.add(box(doorW * 0.70, DOOR_H * 0.35, 0.015, mat(0x7A6340, 1), 0, DOOR_H * 0.68, 0.025));
+  doorG.add(box(doorW * 0.70, DOOR_H * 0.35, 0.015, mat(0x7A6340, 1), 0, DOOR_H * 0.26, 0.025));
+  // Knob
+  const knobM2 = mat(0xD4C090, 1);
+  doorG.add(new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), knobM2));
+  doorG.children[doorG.children.length-1].position.set(doorW*0.40, DOOR_H*0.50, 0.045);
+
+  doorG.position.set((DOOR_X1+DOOR_X2)/2, 0, d2 - WT - 0.022);
+  lg.muebles.add(doorG);
+
+  // ════════════════════════════════════════════════
+  // FONTANERIA LAYER — Sistema hidráulico detallado
+  // ════════════════════════════════════════════════
+  // Materiales por tipo de tubería
+  const pipeC  = mat(0x3B82F6, 0.90); // agua fría (azul)
+  const pipeH  = mat(0xEF4444, 0.90); // agua caliente (rojo)
+  const pipeD  = mat(0x6B7280, 0.82); // desagüe (gris)
+  const pipeG  = mat(0x111111, 0.96); // gas (negro)
+  const pipeV  = mat(0x86EFAC, 0.80); // ventilación (verde)
+  const fittM  = mat(0xE0E0E0, 0.95); // racores / uniones
+  const bvM    = mat(0xB0B0B0, 1.00); // válvulas
+
+  // Diámetros reales (metros)
+  const PR_M  = 0.019; // tubería principal 3/4"
+  const PR_B  = 0.012; // ramal 1/2"
+  const PR_DR = 0.028; // desagüe 1.5"
+  const PR_DM = 0.038; // desagüe principal 2"
+  const PR_VT = 0.018; // ventilación 1.25"
+  const PR_GS = 0.016; // gas 1/2"
+  const PR_IC = 0.006; // línea máquina de hielo 1/4"
+
+  // ── ENTRADA DE AGUA — pared oeste, zona sur ──
+  const WE_X = -w2 + WT + 0.08;
+  const WE_Z =  d2 * 0.35;
+  // Montante desde suelo hasta llave general
+  lg.fontaneria.add(cyl(PR_M, 0.55, pipeC, WE_X, 0.275, WE_Z));
+  // Llave de paso general (cuerpo + palanca roja)
+  lg.fontaneria.add(cyl(0.030, 0.044, bvM, WE_X, 0.60, WE_Z));
+  lg.fontaneria.add(box(0.096, 0.012, 0.012, mat(0xEE3333, 1), WE_X, 0.60, WE_Z + 0.026));
+  // Válvula reductora de presión
+  const prv = new THREE.Mesh(new THREE.SphereGeometry(0.040, 10, 10), bvM);
+  prv.position.set(WE_X, 0.74, WE_Z); lg.fontaneria.add(prv);
+  // Tramo vertical hasta nivel de distribución
+  lg.fontaneria.add(cyl(PR_M, 0.22, pipeC, WE_X, 0.85, WE_Z));
+
+  // ── TUBERÍA PRINCIPAL FRÍA — E-O a lo largo de pared norte (y=0.52) ──
+  const ColdY = 0.52;
+  const HotY  = 0.58;
+  // Tramo N-S: conecta pared oeste con pared norte
+  const nsZ = Math.abs(NWI + 0.14 - WE_Z) - 0.06;
+  lg.fontaneria.add(cyl(PR_M, nsZ, pipeC, WE_X, ColdY, WE_Z - nsZ/2, Math.PI/2));
+  // Codo en esquina NO
+  const elbC = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), fittM);
+  elbC.position.set(WE_X, ColdY, NWI + 0.14); lg.fontaneria.add(elbC);
+  // Tramo E-O hasta el fregadero
+  const ColdRunLen = SK_X + 0.25 - WE_X;
+  lg.fontaneria.add(cyl(PR_M, ColdRunLen, pipeC, WE_X + ColdRunLen/2, ColdY, NWI + 0.14, 0, Math.PI/2));
+
+  // ── TUBERÍA PRINCIPAL CALIENTE — paralela, offset ──
+  const nsZh = Math.abs(NWI + 0.10 - WE_Z) - 0.06;
+  lg.fontaneria.add(cyl(PR_M, nsZh, pipeH, WE_X + 0.05, HotY, WE_Z - nsZh/2, Math.PI/2));
+  const elbH = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), fittM);
+  elbH.position.set(WE_X + 0.05, HotY, NWI + 0.10); lg.fontaneria.add(elbH);
+  const HotRunLen = SK_X + 0.15 - (WE_X + 0.05);
+  lg.fontaneria.add(cyl(PR_M, HotRunLen, pipeH, (WE_X + 0.05) + HotRunLen/2, HotY, NWI + 0.10, 0, Math.PI/2));
+
+  // ── GRIFO MURAL (POT FILLER) sobre vitrocerámica ──
+  // Tee en tubería fría a la altura del fogón
+  const teePF = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), fittM);
+  teePF.position.set(ST_X, ColdY, NWI + 0.14); lg.fontaneria.add(teePF);
+  // Montante hasta grifo (y=1.52)
+  const PFH = 1.52;
+  lg.fontaneria.add(cyl(PR_B, PFH - ColdY, pipeC, ST_X, ColdY + (PFH - ColdY)/2, NWI + 0.10));
+  // Placa mural del grifo
+  lg.fontaneria.add(box(0.06, 0.12, 0.06, bvM, ST_X, PFH, NWI + 0.065));
+  // Brazo articulado 1er tramo
+  lg.fontaneria.add(cyl(PR_B, 0.38, pipeC, ST_X + 0.19, PFH, NWI + 0.07, 0, Math.PI/2));
+  const pfElbow = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), fittM);
+  pfElbow.position.set(ST_X + 0.38, PFH, NWI + 0.07); lg.fontaneria.add(pfElbow);
+  // Brazo articulado 2º tramo (sale hacia el centro del fogón)
+  lg.fontaneria.add(cyl(PR_B, 0.32, pipeC, ST_X + 0.38 + 0.16, PFH - 0.04, NWI + 0.07, 0, Math.PI/2));
+  // Cabezal doble válvula
+  lg.fontaneria.add(cyl(0.024, 0.045, bvM, ST_X + 0.70, PFH, NWI + 0.07));
+
+  // ── LAVAVAJILLAS — suministro + desagüe ──
+  const teeDW = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), fittM);
+  teeDW.position.set(DW_X, ColdY, NWI + 0.14); lg.fontaneria.add(teeDW);
+  // Ramal frío → llave angular
+  lg.fontaneria.add(cyl(PR_B, ColdY - 0.27, pipeC, DW_X, (ColdY + 0.27)/2, NWI + 0.14));
+  lg.fontaneria.add(cyl(0.020, 0.036, bvM, DW_X, 0.27, NWI + 0.14));
+  // Flexible de alimentación
+  lg.fontaneria.add(cyl(PR_B, 0.26, mat(0x9CA3AF, 0.88), DW_X, 0.14, NWI + 0.14));
+  // Desagüe LV: loop alto → air gap → fregadero
+  lg.fontaneria.add(cyl(PR_B, 0.52, pipeD, DW_X + 0.16, 0.60, NWI + 0.14));
+  const airGap = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.06, 10), bvM);
+  airGap.position.set(DW_X + 0.16, 0.66, NWI + 0.08); lg.fontaneria.add(airGap);
+  const dwDrainLen = Math.abs(SK_X - (DW_X + 0.16)) + 0.06;
+  lg.fontaneria.add(cyl(PR_B, dwDrainLen, pipeD, (SK_X + DW_X + 0.16)/2, 0.56, NWI + 0.14, 0, Math.PI/2));
+
+  // ── FREGADERO — suministro frío + caliente ──
+  const teeSC = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), fittM);
+  teeSC.position.set(SK_X - 0.14, ColdY, NWI + 0.14); lg.fontaneria.add(teeSC);
+  const teeSH = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), fittM);
+  teeSH.position.set(SK_X + 0.14, HotY, NWI + 0.10); lg.fontaneria.add(teeSH);
+  // Bajante frío con llave angular
+  lg.fontaneria.add(cyl(PR_B, ColdY - 0.22, pipeC, SK_X - 0.14, (ColdY + 0.22)/2, NWI + 0.14));
+  lg.fontaneria.add(cyl(0.020, 0.036, bvM, SK_X - 0.14, 0.22, NWI + 0.14));
+  // Bajante caliente con llave angular
+  lg.fontaneria.add(cyl(PR_B, HotY - 0.22, pipeH, SK_X + 0.14, (HotY + 0.22)/2, NWI + 0.10));
+  lg.fontaneria.add(cyl(0.020, 0.036, bvM, SK_X + 0.14, 0.22, NWI + 0.10));
+
+  // ── FILTRO DE AGUA BAJO ENCIMERA ──
+  const filterX = C2_L + 0.18;
+  lg.fontaneria.add(cyl(0.068, 0.33, mat(0xA8C8E0, 0.82), filterX, 0.43, NWI + 0.19));
+  lg.fontaneria.add(cyl(PR_B, 0.22, pipeC, filterX, 0.14, NWI + 0.19));
+  lg.fontaneria.add(cyl(PR_B, 0.18, pipeC, filterX + 0.10, 0.14, NWI + 0.19));
+  // Grifo de agua filtrada (fino, sube hasta encimera)
+  lg.fontaneria.add(cyl(PR_IC, CH - ColdY, pipeC, filterX, (ColdY + CH)/2, NWI + 0.15));
+
+  // ── ZONA BAJO FREGADERO — triturador + sifón ──
+  const dispX = SK_X - SKW * 0.24;
+  // Triturador (cuerpo + motor)
+  lg.fontaneria.add(cyl(0.098, 0.24, mat(0x666666, 0.92), dispX, 0.20, NWI + 0.14));
+  lg.fontaneria.add(cyl(0.058, 0.065, mat(0x444444, 1), dispX, 0.08, NWI + 0.14));
+  // Cuello fregadero → triturador
+  lg.fontaneria.add(cyl(0.030, 0.30, pipeD, dispX, 0.35, NWI + 0.14));
+  // Salida horizontal del triturador
+  lg.fontaneria.add(cyl(PR_DR, 0.12, pipeD, dispX, 0.08, NWI + 0.14));
+  // Sifón en P (tramo horizontal)
+  lg.fontaneria.add(cyl(PR_DR, 0.34, pipeD, dispX + 0.17, 0.19, NWI + 0.14, 0, Math.PI/2));
+  // Cestillo fregadero 2º seno
+  lg.fontaneria.add(cyl(0.024, 0.18, pipeD, SK_X + SKW * 0.24, 0.28, NWI + 0.14));
+  // Empalme hacia pared
+  lg.fontaneria.add(cyl(PR_DR, 0.22, pipeD, dispX + 0.34 + 0.11, 0.19, NWI + 0.14, 0, Math.PI/2));
+  // Manguito pared
+  lg.fontaneria.add(cyl(PR_DR, 0.20, pipeD, dispX + 0.56, 0.19, NWI + 0.07, Math.PI/2));
+
+  // ── COLECTOR PRINCIPAL DE DESAGÜE — E-O bajo pared norte ──
+  const drainLen = SK_X + 0.30 - (WE_X + 0.15);
+  lg.fontaneria.add(cyl(PR_DM, drainLen, pipeD, WE_X + 0.15 + drainLen/2, -0.04, NWI + 0.19, 0, Math.PI/2));
+  // Bajante S-N hasta colector
+  lg.fontaneria.add(cyl(PR_DM, D * 0.44, pipeD, WE_X + 0.18, -0.04, -d2 * 0.13, Math.PI/2));
+  // Tapón de registro
+  lg.fontaneria.add(cyl(0.045, 0.042, bvM, WE_X + 0.18, -0.04, -d2 * 0.13));
+
+  // ── COLUMNA DE VENTILACIÓN — sube por pared norte hasta techo ──
+  lg.fontaneria.add(cyl(PR_VT, H + 0.28, pipeV, SK_X + 0.09, (H + 0.28)/2 - 0.14, NWI + 0.12));
+  const ventCap = new THREE.Mesh(new THREE.CylinderGeometry(PR_VT * 1.6, PR_VT, 0.06, 10), bvM);
+  ventCap.position.set(SK_X + 0.09, H + 0.11, NWI + 0.12); lg.fontaneria.add(ventCap);
+
+  // ── COLUMNA DE DESAGÜE (pared este, interior del tabique) ──
+  lg.fontaneria.add(cyl(0.038, H * 0.82, pipeD, w2 - WT * 0.55, H * 0.41, EW_Z1 + 0.30));
+
+  // ── LÍNEA MÁQUINA DE HIELO (nevera) — cobre 1/4" ──
+  const iceLen = FR_X - WE_X - 0.12;
+  lg.fontaneria.add(cyl(PR_IC, iceLen, pipeC, WE_X + 0.07 + iceLen/2, ColdY - 0.06, NWI + 0.12, 0, Math.PI/2));
+  lg.fontaneria.add(cyl(PR_IC, ColdY - 0.08, pipeC, FR_X - FRD * 0.40, (ColdY - 0.06 + 0.10)/2, NWI + 0.12));
+
+  // ── GAS — entrada pared sur, distribución hasta fogón ──
+  const GAS_EX = -w2 + WT + 0.38;
+  const GAS_EZ =  d2 - WT - 0.10;
+  // Montante en pared sur
+  lg.fontaneria.add(cyl(PR_GS, 0.46, pipeG, GAS_EX, 0.23, GAS_EZ));
+  // Llave de gas (cuerpo + palanca naranja)
+  lg.fontaneria.add(cyl(0.022, 0.036, bvM, GAS_EX, 0.48, GAS_EZ));
+  lg.fontaneria.add(box(0.09, 0.010, 0.010, mat(0xFF6B00, 1), GAS_EX, 0.48, GAS_EZ + 0.022));
+  // Tramo E-O a lo largo de pared sur hasta pared oeste
+  const gasEW1Len = Math.abs(GAS_EX - (-w2 + WT + 0.08));
+  lg.fontaneria.add(cyl(PR_GS, gasEW1Len, pipeG, (-w2 + WT + 0.08 + GAS_EX)/2, 0.40, GAS_EZ, 0, Math.PI/2));
+  // Tramo S-N por pared oeste hasta pared norte
+  const gasNSLen = Math.abs(GAS_EZ - (NWI + 0.22));
+  lg.fontaneria.add(cyl(PR_GS, gasNSLen, pipeG, -w2 + WT + 0.08, 0.40, GAS_EZ - gasNSLen/2, Math.PI/2));
+  // Tramo E-O a lo largo de pared norte hasta fogón
+  const gasEW2Len = ST_X - (-w2 + WT + 0.08) + 0.12;
+  lg.fontaneria.add(cyl(PR_GS, gasEW2Len, pipeG, (-w2 + WT + 0.08) + gasEW2Len/2, 0.40, NWI + 0.22, 0, Math.PI/2));
+  // Llave de corte junto al fogón
+  lg.fontaneria.add(cyl(0.024, 0.038, bvM, ST_X - 0.24, 0.40, NWI + 0.22));
+  lg.fontaneria.add(box(0.092, 0.012, 0.012, mat(0xFF6B00, 1), ST_X - 0.24, 0.40, NWI + 0.26));
+  // Flexible de conexión al fogón
+  lg.fontaneria.add(cyl(PR_GS, 0.28, mat(0xC0C0C0, 0.88), ST_X - 0.10, 0.40, NWI + 0.22));
+  // Codos / Tes en puntos de cambio de dirección
+  [
+    [WE_X,       ColdY, NWI + 0.14],
+    [WE_X+0.05,  HotY,  NWI + 0.10],
+    [ST_X,       ColdY, NWI + 0.14],
+    [DW_X,       ColdY, NWI + 0.14],
+    [SK_X-0.14,  ColdY, NWI + 0.14],
+    [SK_X+0.14,  HotY,  NWI + 0.10],
+    [filterX,    ColdY, NWI + 0.14],
+    [-w2+WT+0.08, 0.40, GAS_EZ],
+    [-w2+WT+0.08, 0.40, NWI + 0.22],
+  ].forEach(([x, y, z]) => {
+    const j = new THREE.Mesh(new THREE.SphereGeometry(0.023, 10, 10), fittM);
+    j.position.set(x, y, z); lg.fontaneria.add(j);
+  });
+
+  // ── AUTO-TAG FONTANERÍA ──
+  { const hx = {'3b82f6':'CPVC agua fría','ef4444':'PEX agua caliente','6b7280':'PVC desagüe','111111':'Gas acero negro','86efac':'PVC ventilación','9ca3af':'Flexible armado'};
+    const sz = r => r<=.007?'Ø6mm (1/4")':r<=.013?'Ø12mm (1/2")':r<=.017?'Ø16mm':r<=.020?'Ø19mm (3/4")':r<=.030?'Ø28mm (1.5")':'Ø38mm (2")';
+    lg.fontaneria.traverse(o => {
+      if (!o.isMesh || o.userData._hasSpecs) return;
+      const p = o.geometry && o.geometry.parameters;
+      if (!p || p.radiusTop === undefined) return;
+      const r = p.radiusTop; if (r < .004 || r > .055) return;
+      const h = o.material.color.getHexString();
+      const mn = hx[h] || 'Tubería';
+      const sistema = h === '111111' ? 'Gas' : 'Fontanería';
+      o.userData = { _hasSpecs:true, nombre:mn+' '+sz(r), sistema, material:mn, longitud:Math.round(Math.abs(p.height)*1000)/1000, diametro:Math.round(r*2*1000) };
+    });
+  }
+
+  // ════════════════════════════════════════════════
+  // ELECTRICO LAYER — Sistema eléctrico detallado
+  // ════════════════════════════════════════════════
+  // Materiales por circuito
+  const condM   = mat(0xFBBF24, 0.92); // canaleta 120V (amarillo)
+  const cond240 = mat(0xFF8C00, 0.94); // canaleta 240V (naranja)
+  const condLV  = mat(0x60A5FA, 0.82); // baja tensión (azul)
+  const outM    = mat(0xFBBF24, 1.00); // enchufe estándar
+  const gfciM   = mat(0x22C55E, 1.00); // enchufe GFCI (verde)
+  const switchM = mat(0xFDE68A, 1.00); // interruptor
+  const dimmerM = mat(0xA78BFA, 1.00); // regulador de luz
+  const panelM  = mat(0x4B5563, 1.00); // caja eléctrica
+  const panFM   = mat(0x6B7280, 1.00); // tapa de panel
+  const lightWarm = new THREE.MeshPhongMaterial({ color: 0xFFF5CC, emissive: 0xFDE68A, emissiveIntensity: 0.75 });
+
+  const CR    = 0.007;  // radio canaleta 120V
+  const CR2   = 0.012;  // radio canaleta 240V (mayor)
+  const condHt = H * 0.94; // altura de canaletas en techo
+
+  // ── SUBCUADRO ELÉCTRICO — pared oeste ──
+  const PANEL_X = -w2 + WT + 0.02;
+  const PANEL_Z =  d2 * 0.45;
+  // Caja principal
+  lg.electrico.add(box(0.07, 0.62, 0.44, panelM, PANEL_X, H * 0.48, PANEL_Z));
+  // Puerta
+  lg.electrico.add(box(0.026, 0.58, 0.40, panFM, PANEL_X + 0.046, H * 0.48, PANEL_Z));
+  // Etiqueta de circuitos (franja blanca)
+  lg.electrico.add(box(0.008, 0.55, 0.13, mat(0xF9FAFB, 0.9), PANEL_X + 0.056, H * 0.48, PANEL_Z));
+  // Filas de magnetotérmicos (izquierda + derecha)
+  for (let bi = 0; bi < 9; bi++) {
+    const by = H * 0.48 + 0.24 - bi * 0.056;
+    const cL = mat(bi < 3 ? 0x1E3A5F : 0x1A1A1A, 1); // azul = circuitos 240V
+    const cR = mat(0x1A2A1A, 1);
+    lg.electrico.add(box(0.018, 0.044, 0.074, cL, PANEL_X + 0.022, by, PANEL_Z - 0.058));
+    lg.electrico.add(box(0.018, 0.044, 0.074, cR, PANEL_X + 0.022, by, PANEL_Z + 0.058));
+  }
+  // Interruptor general
+  lg.electrico.add(box(0.018, 0.058, 0.145, mat(0x111111, 1), PANEL_X + 0.022, H * 0.48 + 0.28, PANEL_Z));
+
+  // ── BACKBONE ANCHOR POSITIONS (usados por todos los drops/circuitos) ──
+  const CW_X  = -w2 + WT + 0.08;   // pared oeste conduit X
+  const CE_X  =  w2 - WT - 0.08;   // pared este conduit X
+  const CI_X  = ISL_X;              // conduit central X (= 0)
+  const CN_Z  = NWI + 0.06;        // pared norte conduit Z
+  const CS_Z  =  d2 - WT - 0.06;   // pared sur conduit Z
+  const RUN_EW = CE_X - CW_X;      // longitud E-O completa
+  const RUN_NS = CS_Z - CN_Z;      // longitud N-S completa
+  const EWcx   = (CW_X + CE_X) / 2;
+  const NScz   = (CN_Z + CS_Z) / 2;
+  // Posiciones E-W de travesaños (norte → sur)
+  const crossZs = [CN_Z, ISL_Z, CS_Z];  // solo donde hay dispositivos
+
+  function ejbox(px, py, pz) {
+    const j = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.052, 0.072), panelM);
+    j.position.set(px, py, pz); return j;
+  }
+
+  // ── CIRCUITO 240V — subcuadro → troncal norte → fogón ──
+  const panTop = H * 0.48 - 0.31;
+  // Bajante panel → techo (junto a pared oeste, al nivel del troncal)
+  lg.electrico.add(cyl(CR2, condHt - panTop, cond240, CW_X, (condHt + panTop) / 2, PANEL_Z, undefined, undefined, {nombre:'Bajante 240V Panel', sistema:'Eléctrico', material:'Conduit EMT Ø9mm'}));
+  lg.electrico.add(ejbox(CW_X, condHt, PANEL_Z));
+  // Tramo norte 240V: de pared oeste al fogón (ligeramente delante del troncal 120V)
+  const z240 = CN_Z - 0.025;
+  const run240NW = ST_X - CW_X;
+  lg.electrico.add(cyl(CR2, run240NW, cond240, CW_X + run240NW / 2, condHt, z240, 0, Math.PI / 2, {nombre:'Troncal Norte 240V', sistema:'Eléctrico', material:'Conduit EMT Ø9mm'}));
+  // Bajante 240V hasta placa de conexión del fogón
+  lg.electrico.add(cyl(CR2, condHt, cond240, ST_X, condHt / 2, z240, undefined, undefined, {nombre:'Bajante Fogón 240V', sistema:'Eléctrico', material:'Conduit EMT Ø9mm'}));
+  lg.electrico.add(box(0.10, 0.06, 0.06, panelM, ST_X, 0.08, NWI + 0.04));
+
+  // ── TRONCAL 120V — red completamente conectada en techo ──
+  // N-S: Pared oeste — longitud completa CN_Z → CS_Z
+  lg.electrico.add(cyl(CR, RUN_NS, condM, CW_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Pared Oeste', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // N-S: Pared este — longitud completa
+  lg.electrico.add(cyl(CR, RUN_NS, condM, CE_X, condHt, NScz, Math.PI / 2, undefined, {nombre:'Troncal N-S Pared Este', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // E-W: Norte + 4 travesaños + sur — longitud completa CW_X → CE_X
+  crossZs.forEach((cz, cwi) => {
+    lg.electrico.add(cyl(CR, RUN_EW, condM, EWcx, condHt, cz, 0, Math.PI / 2, {nombre:'Travesaño E-W '+(cwi+1), sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  });
+  // Cajas de derivación en TODAS las intersecciones (3 × 6 = 18)
+  [CW_X, CE_X].forEach(rx => {
+    crossZs.forEach(cz => {
+      lg.electrico.add(ejbox(rx, condHt, cz));
+    });
+  });
+
+  // ── ENCHUFES PARED NORTE — cada 1.1m sobre salpicadero ──
+  // (GFCI a menos de 1.8m del fregadero, estándar el resto)
+  { let _nwi = 0;
+    for (let ox = -w2 + WT + 0.60; ox < w2 - WT - 0.18; ox += 1.10) {
+      if (Math.abs(ox - ST_X) < 0.38) continue; // sin enchufe encima del fogón
+      const nearSink = Math.abs(ox - SK_X) < 1.85;
+      const om = nearSink ? gfciM : outM;
+      _nwi++;
+      lg.electrico.add(box(0.065, 0.043, 0.016, om, ox, CH + 0.28, NWI + 0.013));
+      lg.electrico.add(cyl(CR, condHt - CH - 0.28, condM, ox, CH + 0.28 + (condHt - CH - 0.28)/2, CN_Z, undefined, undefined, {nombre:'Bajante Enchufe Norte '+_nwi, sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+    }
+  }
+
+  // ── CIRCUITOS DEDICADOS ──
+  // Nevera (15A, detrás de la nevera)
+  lg.electrico.add(box(0.065, 0.043, 0.016, outM, FR_X, H * 0.34, NWI + 0.013));
+  lg.electrico.add(cyl(CR, condHt - H * 0.34, condM, FR_X, (condHt + H * 0.34)/2, CN_Z, undefined, undefined, {nombre:'Bajante Nevera 15A', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // Lavavajillas (20A, bajo encimera)
+  lg.electrico.add(box(0.065, 0.043, 0.016, outM, DW_X, H * 0.22, NWI + 0.013));
+  lg.electrico.add(cyl(CR, condHt - H * 0.22, condM, DW_X, (condHt + H * 0.22)/2, CN_Z, undefined, undefined, {nombre:'Bajante Lavavajillas 20A', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // Triturador (enchufe con interruptor bajo fregadero)
+  lg.electrico.add(box(0.065, 0.043, 0.016, gfciM, SK_X - 0.20, H * 0.28, NWI + 0.013));
+  // Microondas (20A, en zona armario alto)
+  const micX = C1_L + (C1_R - C1_L) * 0.55;
+  lg.electrico.add(box(0.065, 0.043, 0.016, outM, micX, UB + UH * 0.52, NWI + 0.013));
+  lg.electrico.add(cyl(CR, condHt - UB - UH * 0.52, condM, micX, (condHt + UB + UH * 0.52)/2, CN_Z, undefined, undefined, {nombre:'Bajante Microondas 20A', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // Control BT campana extractora
+  lg.electrico.add(box(0.055, 0.036, 0.016, condLV, ST_X + STW * 0.32, UB + 0.06, NWI + 0.013));
+
+  // ── ENCHUFES PARED ESTE — sobre encimera en L ──
+  { let _ewi = 0;
+    for (let oz = EW_Z1 + 0.55; oz < EW_Z2 - 0.10; oz += 1.00) {
+      const ewXf = w2 - WT - EW_CABW - 0.014;
+      _ewi++;
+      lg.electrico.add(box(0.016, 0.043, 0.065, outM, ewXf, CH + 0.28, oz));
+      lg.electrico.add(cyl(CR, condHt - CH - 0.28, condM, CE_X, (condHt + CH + 0.28)/2, oz, undefined, undefined, {nombre:'Bajante Enchufe Este '+_ewi, sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+    }
+  }
+
+  // ── ENCHUFES POP-UP EN ISLAND ──
+  [-ISL_W * 0.24, ISL_W * 0.24].forEach((ipx, ipi) => {
+    const pX = ISL_X + ipx;
+    const pZ = ISL_Z - ISL_D * 0.15;
+    // Cápsula flush en encimera
+    lg.electrico.add(cyl(0.044, 0.058, panFM, pX, CH + 0.029, pZ));
+    lg.electrico.add(box(0.060, 0.054, 0.060, outM, pX, CH + 0.065, pZ));
+    // Canaleta interior island hasta suelo
+    lg.electrico.add(cyl(CR, CH * 0.84, condM, pX, CH * 0.42, pZ, undefined, undefined, {nombre:'Canaleta Pop-up Isla '+(ipi+1), sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  });
+
+  // ── INTERRUPTORES — zona puerta (caja triple + regulador) ──
+  const SW_Z = d2 - WT - 0.014;
+  const SW_X = DOOR_X1 - 0.14;
+  // Caja triple
+  lg.electrico.add(box(0.044, 0.135, 0.017, panelM, SW_X, H * 0.43, SW_Z));
+  [0, 1, 2].forEach(si => {
+    lg.electrico.add(box(0.030, 0.040, 0.013, switchM, SW_X, H * 0.43 + 0.044 - si * 0.044, SW_Z + 0.005));
+  });
+  // Regulador de intensidad (island)
+  lg.electrico.add(box(0.040, 0.070, 0.017, dimmerM, SW_X - 0.065, H * 0.43, SW_Z));
+  // Canaleta bajante al switch
+  lg.electrico.add(cyl(CR, condHt - H * 0.43 - 0.068, condM, SW_X, (condHt + H * 0.43 + 0.068)/2, SW_Z - 0.008, undefined, undefined, {nombre:'Bajante Interruptores Puerta', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  // Interruptor conmutado en pared oeste (2ª entrada)
+  const SW2_X = -w2 + WT + 0.015;
+  const SW2_Z =  d2 * 0.34;
+  lg.electrico.add(box(0.016, 0.070, 0.042, panelM, SW2_X, H * 0.43, SW2_Z));
+  lg.electrico.add(box(0.012, 0.034, 0.028, switchM, SW2_X + 0.005, H * 0.43, SW2_Z));
+  lg.electrico.add(cyl(CR, condHt - H * 0.43 - 0.035, condM, SW2_X + 0.008, (condHt + H * 0.43)/2, SW2_Z, undefined, undefined, {nombre:'Bajante Interruptor Oeste', sistema:'Eléctrico', material:'Conduit EMT Ø7mm'}));
+  lg.electrico.add(ejbox(CW_X, condHt, SW2_Z));
+
+  // ── LUMINARIAS DE TECHO — 9 downlights en cuadrícula 3×3 ──
+  const litColX = [-w2 * 0.40, 0, w2 * 0.40];
+  const litRowZ = [NWI + D * 0.20, ISL_Z, d2 * 0.38];
+  litColX.forEach(lx => {
+    litRowZ.forEach(lz => {
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(0.070, 0.070, 0.024, 20), lightWarm);
+      can.position.set(lx, H - 0.012, lz); lg.electrico.add(can);
+      const trim = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.009, 8, 20), mat(0xC8C8C8, 1));
+      trim.rotation.x = Math.PI / 2;
+      trim.position.set(lx, H - 0.005, lz); lg.electrico.add(trim);
+      lg.electrico.add(cyl(CR, 0.10, condM, lx, H - 0.052, lz));
+    });
+  });
+  // 2 downlights extra sobre encimera de trabajo
+  [(C1_L + C1_R) / 2, SK_X].forEach(lx => {
+    const can = new THREE.Mesh(new THREE.CylinderGeometry(0.070, 0.070, 0.024, 20), lightWarm);
+    can.position.set(lx, H - 0.012, NWI + D * 0.14); lg.electrico.add(can);
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.009, 8, 20), mat(0xC8C8C8, 1));
+    trim.rotation.x = Math.PI / 2;
+    trim.position.set(lx, H - 0.005, NWI + D * 0.14); lg.electrico.add(trim);
+    lg.electrico.add(cyl(CR, 0.10, condM, lx, H - 0.052, NWI + D * 0.14));
+  });
+
+  // ── COLGANTES SOBRE ISLAND — 3 pendants ──
+  [-ISL_W * 0.33, 0, ISL_W * 0.33].forEach(pix => {
+    const pX = ISL_X + pix;
+    const cordLen = 0.52;
+    // Cable pendiente
+    lg.electrico.add(cyl(0.006, cordLen, condM, pX, H - cordLen/2, ISL_Z));
+    // Rosetón en techo
+    const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.024, 12), mat(0xC0C0C0, 1));
+    canopy.position.set(pX, H - 0.012, ISL_Z); lg.electrico.add(canopy);
+    // Pantalla (cono invertido)
+    const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.18, 0.18, 16), mat(0x787878, 0.90));
+    shade.position.set(pX, H - cordLen - 0.09, ISL_Z); lg.electrico.add(shade);
+    // Bombilla emissive
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.050, 10, 10), lightWarm);
+    bulb.position.set(pX, H - cordLen - 0.01, ISL_Z); lg.electrico.add(bulb);
+  });
+
+  // ── CARRIL DE FOCOS — sobre encimera pared norte ──
+  const trackZ = NWI + D * 0.17;
+  // Carril
+  lg.electrico.add(box(CTW + 0.08, 0.024, 0.040, mat(0xD0D0D0, 1), CTX, H - 0.012, trackZ));
+  // Tapa final + alimentador
+  lg.electrico.add(box(0.042, 0.052, 0.040, panelM, CTX - CTW/2 - 0.042, H - 0.012, trackZ));
+  // Focos (6, o proporcional al ancho)
+  const nHeads = Math.max(3, Math.round(CTW / 0.55));
+  for (let ti = 0; ti < nHeads; ti++) {
+    const tx = (CTX - CTW/2 + 0.16) + ti * (CTW - 0.32) / Math.max(1, nHeads - 1);
+    const ang = (ti % 2 === 0 ? 0.26 : -0.26);
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.037, 0.037, 0.068, 12), mat(0xAAAAAA, 1));
+    head.position.set(tx, H - 0.042, trackZ); head.rotation.z = ang; lg.electrico.add(head);
+    const spot = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, 0.012, 10), lightWarm);
+    spot.position.set(tx + Math.sin(ang) * 0.030, H - 0.082, trackZ); lg.electrico.add(spot);
+  }
+
+  // ── CONDUCTO EXTRACCIÓN CAMPANA — sube por pared norte hasta techo ──
+  const ductH = H - hoodTopY - 0.004;
+  lg.electrico.add(box(0.32, ductH, 0.26, mat(0x9CA3AF, 0.76), ST_X, hoodTopY + ductH/2, NWI + 0.12));
+  // Brida de techo (sombrero de cubierta)
+  lg.electrico.add(box(0.36, 0.036, 0.30, mat(0x808080, 0.92), ST_X, H - 0.018, NWI + 0.12));
+  // Motor centrífugo dentro del conducto
+  const fanMot = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.082, 14), mat(0x555555, 0.90));
+  fanMot.position.set(ST_X, hoodFlangeY + 0.14, NWI + 0.10); lg.electrico.add(fanMot);
+  // Canaleta BT de control de campana
+  lg.electrico.add(cyl(CR * 0.8, 0.84, condLV, ST_X + STW/2 + 0.02, hoodFlangeY + 0.42, NWI + 0.06));
+
+  // ── DETECTORES DE HUMO / CO ──
+  [[-w2*0.30, 0], [w2*0.30, 0], [0, ISL_Z]].forEach(([dx, dz]) => {
+    const det = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.066, 0.025, 16), mat(0xF0F0F0, 1));
+    det.position.set(dx, H - 0.013, dz); lg.electrico.add(det);
+    const led = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.027, 8), mat(0xFF2222, 1));
+    led.position.set(dx + 0.040, H - 0.013, dz); lg.electrico.add(led);
+  });
+
+  // ── TRANSFORMADOR LED (tiras bajo armarios) ──
+  lg.electrico.add(box(0.10, 0.052, 0.072, mat(0x333333, 0.92), ST_X + STW/2 + 0.24, UB + UH + 0.032, NWI + 0.07));
+  // Canaleta BT del transformador a tiras
+  lg.electrico.add(cyl(CR * 0.8, UH + 0.032, condLV, ST_X + STW/2 + 0.24, UB + UH/2 + 0.016, NWI + 0.06));
+
+  // ════════════════════════════════════════════════
+  // ACABADOS LAYER
+  // ════════════════════════════════════════════════
+  const woodFloorM = mat(0x5C4033, 0.85);
+  const plankGroutM = mat(0x3A2820, 0.55);
+  const subwayM = mat(0xE8EAED, 0.55);
+  const groutM2 = mat(0xC0BEB8, 0.25);
+  const wallPaintM = mat(0xF5F0E8, 0.18);
+  const baseM = mat(0x9CA3AF, 0.70);
+  const crownM = mat(0xD4CFC4, 0.60);
+
+  // Wood floor planks
+  const wf = new THREE.Mesh(new THREE.PlaneGeometry(W - WT*2, D - WT*2), woodFloorM);
+  wf.rotation.x = -Math.PI / 2; wf.position.y = 0.003; wf.receiveShadow = true;
+  lg.acabados.add(wf);
+  // Plank lines (east-west planks running north-south)
+  const plankW = 0.12;
+  for (let px = -w2 + WT + plankW; px < w2 - WT; px += plankW) {
+    lg.acabados.add(box(0.006, 0.003, D - WT*2, plankGroutM, px, 0.004, 0));
+  }
+  // Plank end lines (occasional)
+  for (let pz = -d2 + WT + 0.60; pz < d2 - WT; pz += 0.60) {
+    lg.acabados.add(box(plankW, 0.003, 0.006, plankGroutM, -w2 + WT + plankW/2, 0.004, pz));
+  }
+
+  // Backsplash north wall (between counter and upper cabinets)
+  const bsH = UB - CH;
+  const bsZF = NWI + 0.008;
+  // Left of window
+  if (WIN_X1 > -w2 + WT) {
+    const bsW2 = WIN_X1 - (-w2 + WT);
+    const bs = new THREE.Mesh(new THREE.PlaneGeometry(bsW2, bsH), subwayM);
+    bs.position.set(-w2 + WT + bsW2/2, CH + bsH/2, bsZF);
+    lg.acabados.add(bs);
+  }
+  // Right of window
+  if (WIN_X2 < w2 - WT) {
+    const bsW2 = (w2 - WT) - WIN_X2;
+    const bs = new THREE.Mesh(new THREE.PlaneGeometry(bsW2, bsH), subwayM);
+    bs.position.set(WIN_X2 + bsW2/2, CH + bsH/2, bsZF);
+    lg.acabados.add(bs);
+  }
+
+  // Tile grout lines on backsplash (horizontal rows)
+  const tileH2 = 0.075, tileSpan = W - WT*2;
+  for (let ty = CH + tileH2; ty < UB; ty += tileH2) {
+    lg.acabados.add(box(tileSpan, 0.005, 0.006, groutM2, 0, ty, bsZF + 0.003));
+  }
+  // Vertical grout lines on backsplash
+  const tileWid = 0.150;
+  for (let tx = -w2 + WT + tileWid; tx < w2 - WT; tx += tileWid) {
+    lg.acabados.add(box(0.005, bsH, 0.006, groutM2, tx, CH + bsH/2, bsZF + 0.003));
+  }
+
+  // East wall backsplash (above L-cabinet countertop to UB)
+  {
+    const ebsW = EW_CD;
+    const ebsH = UB - CH;
+    const ebs = new THREE.Mesh(new THREE.PlaneGeometry(ebsW, ebsH), subwayM);
+    ebs.rotation.y = -Math.PI/2;
+    ebs.position.set(w2 - WT - 0.008, CH + ebsH/2, (EW_Z1 + EW_Z2)/2);
+    lg.acabados.add(ebs);
+  }
+
+  // Wall paint above upper cabinets (north wall)
+  {
+    const wpH = H - (UB + UH);
+    if (wpH > 0.02) {
+      const wp = new THREE.Mesh(new THREE.PlaneGeometry(W - WT*2, wpH), wallPaintM);
+      wp.position.set(0, UB + UH + wpH/2, NWI + 0.010);
+      lg.acabados.add(wp);
+    }
+  }
+
+  // Baseboard along all 4 walls
+  const baseH = 0.06, baseT = 0.008;
+  lg.acabados.add(box(W - WT*2, baseH, baseT, baseM, 0, baseH/2, NWI + baseT/2 + 0.001));
+  lg.acabados.add(box(W - WT*2, baseH, baseT, baseM, 0, baseH/2, d2 - WT - baseT/2 - 0.001));
+  lg.acabados.add(box(baseT, baseH, D - WT*2, baseM, w2 - WT - baseT/2 - 0.001, baseH/2, 0));
+  lg.acabados.add(box(baseT, baseH, D - WT*2, baseM, -w2 + WT + baseT/2 + 0.001, baseH/2, 0));
+
+  // Crown molding at ceiling perimeter
+  const crowH = 0.08, crowT = 0.06;
+  lg.acabados.add(box(W - WT*2, crowH, crowT, crownM, 0, H - crowH/2, NWI + crowT/2));
+  lg.acabados.add(box(W - WT*2, crowH, crowT, crownM, 0, H - crowH/2, d2 - WT - crowT/2));
+  lg.acabados.add(box(crowT, crowH, D - WT*2, crownM, w2 - WT - crowT/2, H - crowH/2, 0));
+  lg.acabados.add(box(crowT, crowH, D - WT*2, crownM, -w2 + WT + crowT/2, H - crowH/2, 0));
+}
+
+function rebuildModel() {
+  Object.values(layerGroups).forEach(g => {
+    while (g.children.length > 0) g.remove(g.children[0]);
+  });
+  buildModel();
+  Object.entries(layerState).forEach(([name, visible]) => {
+    layerGroups[name].visible = visible;
+  });
+  updateDimsDisplay();
+  controls.target.set(0, CH, 0);
+  controls.update();
+}
