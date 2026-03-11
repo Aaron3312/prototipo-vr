@@ -93,6 +93,37 @@
     }
     #tap-hint.show{display:block}
 
+    /* ── FINGER CURSOR ── */
+    #finger-cursor{
+      position:fixed;z-index:1000;pointer-events:none;
+      display:none;transform:translate(-50%,-50%);
+      width:48px;height:48px;
+    }
+    #finger-cursor.active{display:block}
+    .fc-ring{
+      position:absolute;inset:0;border-radius:50%;
+      border:2px solid rgba(96,165,250,.9);
+      box-shadow:0 0 14px rgba(96,165,250,.6),inset 0 0 8px rgba(96,165,250,.2);
+      animation:fcPulse 1.6s ease-in-out infinite;
+    }
+    .fc-dot{
+      position:absolute;width:8px;height:8px;border-radius:50%;
+      background:#60a5fa;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      box-shadow:0 0 10px rgba(96,165,250,.9);
+    }
+    @keyframes fcPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.7}}
+    #finger-cursor.hit .fc-ring{
+      border-color:#22c55e;
+      box-shadow:0 0 18px rgba(34,197,94,.8),inset 0 0 10px rgba(34,197,94,.3);
+      animation:fcDwell 0.8s ease-out forwards;
+    }
+    #finger-cursor.hit .fc-dot{background:#22c55e;box-shadow:0 0 12px rgba(34,197,94,.9)}
+    @keyframes fcDwell{
+      0%{transform:scale(1)}
+      100%{transform:scale(0.6);border-color:#22c55e}
+    }
+
     #top-bar{
       position:absolute;top:16px;left:16px;right:16px;
       display:flex;justify-content:space-between;align-items:center;
@@ -321,6 +352,9 @@
   <button id="exit-btn" onclick="exitAR()">✕ Salir</button>
 </div>
 
+<!-- Cursor de dedo (fuera del overlay para estar sobre todo) -->
+<div id="finger-cursor"><div class="fc-ring"></div><div class="fc-dot"></div></div>
+
 <script src="/bathroom-model.js"></script>
 <script>
 // ── THREE.JS SETUP ──
@@ -443,6 +477,9 @@ async function startAR() {
     document.getElementById('hint-badge').textContent = 'Apunta al suelo → toca las 4 esquinas del piso';
 
     renderer.setAnimationLoop(render);
+
+    // Intentar activar hand tracking en AR
+    setTimeout(() => loadMediaPipeAR(), 1500);
   } catch (e) {
     console.error(e);
     document.getElementById('loading').classList.remove('show');
@@ -452,7 +489,8 @@ async function startAR() {
 }
 
 function onTap() {
-  if (!reticle.visible) return;
+  // Durante calibración necesitamos el reticle; post-calibración siempre procesamos
+  if (!calibrated && !reticle.visible) return;
 
   if (!calibrated) {
     const pos = new THREE.Vector3();
@@ -510,7 +548,9 @@ function onTap() {
   }
 
   // Post-calibration: raycast para inspeccionar elementos
+  console.log('[AR-inspect] tap NDC:', lastTouchNDC.x.toFixed(2), lastTouchNDC.y.toFixed(2), '| model visible:', model.visible, '| children:', model.children.length);
   const hit = raycastModel(lastTouchNDC);
+  console.log('[AR-inspect] hit:', hit ? hit.object.userData.nombre : 'ninguno');
   if (hit) {
     showSpecPanel(hit.object.userData);
   } else {
@@ -658,6 +698,7 @@ function onSessionEnd() {
   document.getElementById('ar-crosshair').classList.remove('show', 'hit');
   document.getElementById('tap-hint').classList.remove('show');
   hideSpecPanel();
+  stopArHandTracking();
   document.getElementById('pre-ar').style.display = 'flex';
   renderer.setAnimationLoop(null);
 }
@@ -666,15 +707,25 @@ function onSessionEnd() {
 const _raycaster = new THREE.Raycaster();
 let lastTouchNDC = new THREE.Vector2(0, 0);
 
-document.getElementById('overlay').addEventListener('touchstart', (e) => {
+// Escuchar en document (no en overlay que tiene pointer-events:none)
+document.addEventListener('touchstart', (e) => {
   if (!calibrated) return;
   const t = e.touches[0];
   lastTouchNDC.x = (t.clientX / window.innerWidth) * 2 - 1;
   lastTouchNDC.y = -(t.clientY / window.innerHeight) * 2 + 1;
 }, { passive: true });
 
+function getActiveCamera() {
+  // En XR, el camera real es el XR camera; cameras[0] en mono AR (teléfono)
+  if (renderer.xr.isPresenting) {
+    const xrCam = renderer.xr.getCamera(camera);
+    return (xrCam.cameras && xrCam.cameras.length > 0) ? xrCam.cameras[0] : xrCam;
+  }
+  return camera;
+}
+
 function raycastModel(ndc) {
-  _raycaster.setFromCamera(ndc, camera);
+  _raycaster.setFromCamera(ndc, getActiveCamera());
   const hits = _raycaster.intersectObjects(model.children, true);
   return hits.find(h => h.object.userData._hasSpecs) || null;
 }
@@ -707,10 +758,114 @@ function hideSpecPanel() {
 }
 
 function updateCrosshair() {
-  if (!calibrated) return;
+  if (!calibrated || arHandTracking) return; // si hay hand tracking, el cursor ya hace esto
   const hit = raycastModel(new THREE.Vector2(0, 0));
   const ch = document.getElementById('ar-crosshair');
   ch.classList.toggle('hit', !!hit);
+}
+
+// ── AR HAND TRACKING ──
+let arHandTracking = false;
+let arCameraStream = null;
+let arHandVideo = null;
+let arMpHands = null;
+let arFingerNDC = new THREE.Vector2(0, 0);
+let arDwellTimer = null;
+let arDwellMesh = null;
+
+function loadMediaPipeAR() {
+  const src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
+  if (window.Hands) { tryArHandTracking(); return; }
+  const s = document.createElement('script');
+  s.src = src;
+  s.onload = () => tryArHandTracking();
+  s.onerror = () => console.warn('MediaPipe no disponible');
+  document.head.appendChild(s);
+}
+
+async function tryArHandTracking() {
+  if (!window.Hands) return;
+  try {
+    arCameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    arHandVideo = document.createElement('video');
+    arHandVideo.playsInline = true;
+    arHandVideo.muted = true;
+    arHandVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;pointer-events:none';
+    arHandVideo.srcObject = arCameraStream;
+    document.body.appendChild(arHandVideo);
+    await arHandVideo.play();
+
+    arMpHands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+    arMpHands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.65, minTrackingConfidence: 0.5 });
+    arMpHands.onResults(onArHandResults);
+    await arMpHands.initialize();
+    arHandTracking = true;
+
+    document.getElementById('finger-cursor').classList.add('active');
+    document.getElementById('ar-crosshair').classList.remove('show'); // el cursor reemplaza al crosshair
+
+    (async function arHandLoop() {
+      if (!arHandTracking || !arMpHands) return;
+      if (arHandVideo && arHandVideo.readyState >= 2 && !arHandVideo.paused) {
+        await arMpHands.send({ image: arHandVideo }).catch(() => {});
+      }
+      requestAnimationFrame(arHandLoop);
+    })();
+
+  } catch (e) {
+    console.warn('AR hand tracking no disponible:', e.message);
+    // El tap-based y crosshair ya funcionan como fallback
+  }
+}
+
+function onArHandResults(results) {
+  const cursor = document.getElementById('finger-cursor');
+  if (!calibrated || !results.multiHandLandmarks || !results.multiHandLandmarks.length) {
+    cursor.classList.remove('active');
+    clearArDwell();
+    return;
+  }
+  cursor.classList.add('active');
+  const tip = results.multiHandLandmarks[0][8];
+  const sx = tip.x * window.innerWidth;
+  const sy = tip.y * window.innerHeight;
+  cursor.style.left = sx + 'px';
+  cursor.style.top = sy + 'px';
+
+  arFingerNDC.x = (sx / window.innerWidth) * 2 - 1;
+  arFingerNDC.y = -(sy / window.innerHeight) * 2 + 1;
+  const hit = raycastModel(arFingerNDC);
+
+  if (hit) {
+    if (arDwellMesh !== hit.object) {
+      clearArDwell();
+      arDwellMesh = hit.object;
+      cursor.classList.add('hit');
+      arDwellTimer = setTimeout(() => {
+        showSpecPanel(hit.object.userData);
+      }, 800);
+    }
+  } else {
+    clearArDwell();
+    cursor.classList.remove('hit');
+  }
+}
+
+function clearArDwell() {
+  clearTimeout(arDwellTimer);
+  arDwellTimer = null;
+  arDwellMesh = null;
+}
+
+function stopArHandTracking() {
+  arHandTracking = false;
+  clearArDwell();
+  if (arCameraStream) { arCameraStream.getTracks().forEach(t => t.stop()); arCameraStream = null; }
+  if (arHandVideo) { arHandVideo.remove(); arHandVideo = null; }
+  arMpHands = null;
+  document.getElementById('finger-cursor').classList.remove('active', 'hit');
 }
 
 function render(timestamp, frame) {
