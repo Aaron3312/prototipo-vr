@@ -120,6 +120,87 @@
     }
     #dims strong{color:#fff;font-weight:700}
 
+    /* ── SPEC TOOLTIP ── */
+    #spec-tooltip{
+      position:fixed;z-index:120;min-width:210px;
+      background:rgba(13,17,23,.97);border:1px solid rgba(251,191,36,.45);
+      border-radius:14px;padding:14px 16px;pointer-events:auto;
+      backdrop-filter:blur(18px);box-shadow:0 8px 32px rgba(0,0,0,.5);
+      display:none;
+    }
+    #spec-tooltip.show{display:block}
+    .tt-sistema{
+      font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+      margin-bottom:4px;
+    }
+    .tt-nombre{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.4}
+    .tt-row{display:flex;justify-content:space-between;align-items:center;
+      padding:4px 0;border-top:1px solid rgba(255,255,255,.05);gap:12px}
+    .tt-key{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap}
+    .tt-val{font-size:12px;font-weight:700;color:#fff;text-align:right}
+    #tt-close{
+      position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:99px;
+      border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);
+      font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    #tt-close:hover{background:rgba(255,255,255,.18);color:#fff}
+
+    /* ── SUMMARY MODAL ── */
+    #summary-overlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.72);z-index:200;
+      align-items:center;justify-content:center;
+    }
+    #summary-overlay.show{display:flex}
+    #summary-modal{
+      background:#0d1117;border:1px solid rgba(255,255,255,.1);
+      border-radius:20px;padding:28px 24px;
+      max-width:660px;width:92vw;max-height:82vh;
+      overflow-y:auto;position:relative;
+      box-shadow:0 24px 64px rgba(0,0,0,.6);
+    }
+    #summary-modal h2{font-size:16px;font-weight:800;color:#fff;margin-bottom:18px}
+    .sum-group{margin-bottom:22px}
+    .sum-group-title{
+      font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+      color:rgba(255,255,255,.35);margin-bottom:8px;
+    }
+    .sum-table{width:100%;border-collapse:collapse;font-size:12px}
+    .sum-table th{
+      text-align:left;padding:6px 8px;font-size:10px;font-weight:700;
+      text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);
+      border-bottom:1px solid rgba(255,255,255,.07);
+    }
+    .sum-table td{
+      padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);
+      color:rgba(255,255,255,.85);vertical-align:middle;
+    }
+    .sum-table tr:hover td{background:rgba(255,255,255,.03)}
+    .sum-table td.num{font-variant-numeric:tabular-nums;font-weight:700;
+      color:#60a5fa;text-align:right}
+    .sum-table td.diam{color:#34d399;text-align:right;font-weight:700}
+    .sum-total{
+      margin-top:8px;padding:8px 10px;border-radius:8px;
+      background:rgba(255,255,255,.04);font-size:12px;
+      color:rgba(255,255,255,.6);text-align:right;
+    }
+    .sum-total strong{color:#fff}
+    #sum-close{
+      position:absolute;top:16px;right:16px;width:32px;height:32px;
+      border-radius:99px;border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);
+      font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    #sum-close:hover{background:rgba(255,255,255,.12);color:#fff}
+    .click-hint{
+      position:fixed;bottom:56px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
+      border-radius:99px;padding:6px 16px;font-size:11px;color:rgba(255,255,255,.45);
+      backdrop-filter:blur(12px);pointer-events:none;white-space:nowrap;
+      transition:opacity .6s;z-index:30;
+    }
+    .click-hint.hidden{opacity:0}
+
     /* ── HAMBURGER TOGGLE (mobile) ── */
     #menu-toggle{
       display:none;position:fixed;top:62px;right:12px;z-index:60;
@@ -246,6 +327,19 @@
     </div>
   </div>
 
+  <!-- MEDIDAS -->
+  <div>
+    <div class="section-title">Medidas</div>
+    <div class="layer-item active" onclick="openSummary()" style="margin-bottom:0">
+      <span class="layer-icon">📐</span>
+      <span class="layer-label">Tabla de materiales</span>
+      <span class="layer-dot" style="background:#60A5FA"></span>
+    </div>
+    <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:8px;line-height:1.5">
+      Click en tuberías o conduits para ver sus medidas
+    </div>
+  </div>
+
   <!-- OPCIONES -->
   <div>
     <div class="section-title">Opciones</div>
@@ -262,6 +356,30 @@
   </div>
 
 </div>
+
+<!-- SPEC TOOLTIP -->
+<div id="spec-tooltip">
+  <button id="tt-close" onclick="closeTooltip()">✕</button>
+  <div class="tt-sistema" id="tt-sistema"></div>
+  <div class="tt-nombre" id="tt-nombre"></div>
+  <div class="tt-row"><span class="tt-key">Longitud</span><span class="tt-val" id="tt-long"></span></div>
+  <div class="tt-row"><span class="tt-key">Diámetro</span><span class="tt-val" id="tt-diam"></span></div>
+  <div class="tt-row"><span class="tt-key">Material</span><span class="tt-val" id="tt-mat"></span></div>
+  <div class="tt-row" id="tt-notas-row" style="display:none">
+    <span class="tt-key">Nota</span><span class="tt-val" id="tt-notas"></span></div>
+</div>
+
+<!-- SUMMARY MODAL -->
+<div id="summary-overlay" onclick="if(event.target===this)closeSummary()">
+  <div id="summary-modal">
+    <button id="sum-close" onclick="closeSummary()">✕</button>
+    <h2>📐 Tabla de materiales</h2>
+    <div id="summary-content"></div>
+  </div>
+</div>
+
+<!-- CLICK HINT -->
+<div class="click-hint" id="click-hint">Click en una tubería o conduit para ver medidas</div>
 
 <!-- HINT -->
 <div id="hint">🖱 Drag para rotar · Scroll para zoom · Click derecho para desplazar</div>
@@ -405,12 +523,18 @@ function box(bw, bh, bd, material, px, py, pz) {
   m.castShadow = true; m.receiveShadow = true;
   return m;
 }
-function cyl(r, h, material, px, py, pz, rx, rz) {
+function cyl(r, h, material, px, py, pz, rx, rz, specs) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), material);
   m.position.set(px || 0, py || 0, pz || 0);
   if (rx) m.rotation.x = rx;
   if (rz) m.rotation.z = rz;
   m.castShadow = true;
+  if (specs) m.userData = {
+    _hasSpecs: true,
+    longitud: Math.round(Math.abs(h) * 1000) / 1000,
+    diametro: Math.round(r * 2 * 1000),
+    ...specs
+  };
   return m;
 }
 
@@ -629,59 +753,73 @@ function buildModel() {
   const RX = w2 - 0.12;   // x position of east-wall risers
   const RZ = -d2 + 0.12;  // z position (north wall interior)
 
+  const SF = 'Fontanería';  // sistema label shortcut
+
   // Main cold riser — NE corner, vertical full height
-  lg.fontaneria.add(cyl(0.015, H, pipeC, RX, H/2, RZ));
+  lg.fontaneria.add(cyl(0.015, H, pipeC, RX, H/2, RZ, 0, 0,
+    {nombre:'Riser agua fría principal', sistema:SF, material:'PVC Ø15mm'}));
   // Main hot riser — NE corner, slightly inset
-  lg.fontaneria.add(cyl(0.013, H*0.72, pipeH, RX-0.07, H*0.36, RZ));
+  lg.fontaneria.add(cyl(0.013, H*0.72, pipeH, RX-0.07, H*0.36, RZ, 0, 0,
+    {nombre:'Riser agua caliente', sistema:SF, material:'CPVC Ø13mm'}));
 
   // Cold horizontal — along north wall, from riser westward to sink
-  const coldNorthLen = RX - (sinkX - 0.14);  // riser to sink cold drop
-  lg.fontaneria.add(cyl(PR, coldNorthLen, pipeC, (RX + sinkX-0.14)/2, H*0.26, RZ, 0, Math.PI/2));
-  // Cold drop at sink (along north wall)
-  lg.fontaneria.add(cyl(PR, H*0.26, pipeC, sinkX-0.14, H*0.13, RZ));
+  const coldNorthLen = RX - (sinkX - 0.14);
+  lg.fontaneria.add(cyl(PR, coldNorthLen, pipeC, (RX + sinkX-0.14)/2, H*0.26, RZ, 0, Math.PI/2,
+    {nombre:'Ramal frío pared norte → lavabo', sistema:SF, material:'PVC Ø10mm'}));
+  // Cold drop at sink
+  lg.fontaneria.add(cyl(PR, H*0.26, pipeC, sinkX-0.14, H*0.13, RZ, 0, 0,
+    {nombre:'Bajante frío lavabo', sistema:SF, material:'PVC Ø10mm'}));
 
   // Hot horizontal — along north wall, from riser westward to sink
   const hotNorthLen = (RX-0.07) - (sinkX + 0.14);
-  lg.fontaneria.add(cyl(PR, hotNorthLen, pipeH, ((RX-0.07)+sinkX+0.14)/2, H*0.32, RZ+0.02, 0, Math.PI/2));
-  // Hot drop at sink (along north wall)
-  lg.fontaneria.add(cyl(PR, H*0.32, pipeH, sinkX+0.14, H*0.16, RZ+0.02));
+  lg.fontaneria.add(cyl(PR, hotNorthLen, pipeH, ((RX-0.07)+sinkX+0.14)/2, H*0.32, RZ+0.02, 0, Math.PI/2,
+    {nombre:'Ramal caliente pared norte → lavabo', sistema:SF, material:'CPVC Ø10mm'}));
+  // Hot drop at sink
+  lg.fontaneria.add(cyl(PR, H*0.32, pipeH, sinkX+0.14, H*0.16, RZ+0.02, 0, 0,
+    {nombre:'Bajante caliente lavabo', sistema:SF, material:'CPVC Ø10mm'}));
 
   // Cold vertical run — east wall, going south from riser to shower level
   const eastColdLen = showerZ - RZ;
-  lg.fontaneria.add(cyl(PR, eastColdLen, pipeC, RX, H*0.26, (RZ+showerZ)/2, Math.PI/2));
+  lg.fontaneria.add(cyl(PR, eastColdLen, pipeC, RX, H*0.26, (RZ+showerZ)/2, Math.PI/2, 0,
+    {nombre:'Bajante frío pared este → ducha', sistema:SF, material:'PVC Ø10mm'}));
   // Hot vertical run — east wall, going south from riser to shower level
-  lg.fontaneria.add(cyl(PR, eastColdLen, pipeH, RX-0.07, H*0.32, (RZ+showerZ)/2, Math.PI/2));
+  lg.fontaneria.add(cyl(PR, eastColdLen, pipeH, RX-0.07, H*0.32, (RZ+showerZ)/2, Math.PI/2, 0,
+    {nombre:'Bajante caliente pared este → ducha', sistema:SF, material:'CPVC Ø10mm'}));
 
-  // Supply branch from east wall → toilet along SOUTH WALL (stays against south wall)
+  // Supply branch from east wall → toilet along SOUTH WALL
   const sWallZ = d2 - 0.13;
   const toiletBranchLen = RX - toiletX;
-  lg.fontaneria.add(cyl(PR, toiletBranchLen, pipeC, (RX+toiletX)/2, H*0.26, sWallZ, 0, Math.PI/2));
-  // Cold connector from east wall south run down to south wall branch
+  lg.fontaneria.add(cyl(PR, toiletBranchLen, pipeC, (RX+toiletX)/2, H*0.26, sWallZ, 0, Math.PI/2,
+    {nombre:'Ramal frío pared sur → WC', sistema:SF, material:'PVC Ø10mm'}));
+  // Cold connector from east wall south run to south wall branch
   const connLen = sWallZ - showerZ;
-  lg.fontaneria.add(cyl(PR, connLen, pipeC, RX, H*0.26, (showerZ+sWallZ)/2, Math.PI/2));
+  lg.fontaneria.add(cyl(PR, connLen, pipeC, RX, H*0.26, (showerZ+sWallZ)/2, Math.PI/2, 0,
+    {nombre:'Conector pared este → pared sur', sistema:SF, material:'PVC Ø10mm'}));
   // Drop from south wall to toilet valve
-  lg.fontaneria.add(cyl(PR, H*0.26, pipeC, toiletX-0.10, H*0.13, sWallZ));
+  lg.fontaneria.add(cyl(PR, H*0.26, pipeC, toiletX-0.10, H*0.13, sWallZ, 0, 0,
+    {nombre:'Bajante frío WC', sistema:SF, material:'PVC Ø10mm'}));
 
-  // ── DRAIN pipes — all below floor level or along walls ──
-  // South-wall drain collector (at floor level, against south wall)
+  // ── DRAIN pipes ──
   const drainZ = d2 - 0.14;
   const collectorLen = showerX - toiletX;
-  lg.fontaneria.add(cyl(0.027, collectorLen, pipeD, (showerX+toiletX)/2, -0.03, drainZ, 0, Math.PI/2));
+  lg.fontaneria.add(cyl(0.027, collectorLen, pipeD, (showerX+toiletX)/2, -0.03, drainZ, 0, Math.PI/2,
+    {nombre:'Colector desagüe pared sur', sistema:SF, material:'PVC desagüe Ø27mm'}));
 
-  // Toilet → south-wall drain (short horizontal)
   const toiletDrainLen = drainZ - (toiletZ + 0.15);
   if (toiletDrainLen > 0.05)
-    lg.fontaneria.add(cyl(0.022, toiletDrainLen, pipeD, toiletX, -0.03, (toiletZ+0.15+drainZ)/2, Math.PI/2));
+    lg.fontaneria.add(cyl(0.022, toiletDrainLen, pipeD, toiletX, -0.03, (toiletZ+0.15+drainZ)/2, Math.PI/2, 0,
+      {nombre:'Desagüe WC → colector', sistema:SF, material:'PVC desagüe Ø22mm'}));
 
-  // Shower → east wall drain (goes east to east wall, stays low)
   const shDrainEast = (w2-0.14) - showerX;
-  lg.fontaneria.add(cyl(0.022, shDrainEast, pipeD, (showerX+(w2-0.14))/2, -0.03, showerZ, 0, Math.PI/2));
-  // East wall drain down to south-wall collector
+  lg.fontaneria.add(cyl(0.022, shDrainEast, pipeD, (showerX+(w2-0.14))/2, -0.03, showerZ, 0, Math.PI/2,
+    {nombre:'Desagüe ducha → pared este', sistema:SF, material:'PVC desagüe Ø22mm'}));
   const eastDrainLen = drainZ - showerZ;
-  lg.fontaneria.add(cyl(0.022, eastDrainLen, pipeD, w2-0.14, -0.03, (showerZ+drainZ)/2, Math.PI/2));
+  lg.fontaneria.add(cyl(0.022, eastDrainLen, pipeD, w2-0.14, -0.03, (showerZ+drainZ)/2, Math.PI/2, 0,
+    {nombre:'Desagüe pared este → colector', sistema:SF, material:'PVC desagüe Ø22mm'}));
 
-  // Sink drain — short drop along north wall and exits through floor
-  lg.fontaneria.add(cyl(0.016, 0.28, pipeD, sinkX, 0.14, RZ+0.02));
+  // Sink drain
+  lg.fontaneria.add(cyl(0.016, 0.28, pipeD, sinkX, 0.14, RZ+0.02, 0, 0,
+    {nombre:'Desagüe lavabo', sistema:SF, material:'PVC desagüe Ø16mm'}));
 
   // Pipe joints (spheres at key connections)
   [[RX, H*0.26, RZ],[RX-0.07, H*0.32, RZ],[sinkX-0.14, H*0.26, RZ],[sinkX+0.14, H*0.32, RZ+0.02],
@@ -735,41 +873,51 @@ function buildModel() {
     j.position.set(px, py, pz); return j;
   }
 
+  const SE = 'Eléctrico';
+  const EMT = 'Conduit EMT Ø7mm';
+
   // ── ENTRY STUB: panel stub drops from ceiling into NE corner ──
   const entryH = H - y_c;
-  lg.electrico.add(cyl(CR, entryH, condM, CE_X, y_c + entryH / 2, CN_Z));
+  lg.electrico.add(cyl(CR, entryH, condM, CE_X, y_c + entryH / 2, CN_Z, 0, 0,
+    {nombre:'Acometida panel eléctrico', sistema:SE, material:EMT}));
   lg.electrico.add(jbox(CE_X, y_c, CN_Z));
 
   // ── RUN A: North wall ceiling conduit, east → west ──
-  lg.electrico.add(cyl(CR, CE_X - CW_X, condM, 0, y_c, CN_Z, 0, Math.PI / 2));
-  lg.electrico.add(jbox(CW_X, y_c, CN_Z));  // NW corner
+  lg.electrico.add(cyl(CR, CE_X - CW_X, condM, 0, y_c, CN_Z, 0, Math.PI / 2,
+    {nombre:'Run A — pared norte (E→O)', sistema:SE, material:EMT}));
+  lg.electrico.add(jbox(CW_X, y_c, CN_Z));
 
   // ── RUN B: East wall ceiling conduit, north → south ──
-  lg.electrico.add(cyl(CR, CS_Z - CN_Z, condM, CE_X, y_c, 0, Math.PI / 2));
-  lg.electrico.add(jbox(CE_X, y_c, CS_Z));  // SE corner
+  lg.electrico.add(cyl(CR, CS_Z - CN_Z, condM, CE_X, y_c, 0, Math.PI / 2, 0,
+    {nombre:'Run B — pared este (N→S)', sistema:SE, material:EMT}));
+  lg.electrico.add(jbox(CE_X, y_c, CS_Z));
 
   // ── RUN C: West wall ceiling conduit, north → south ──
-  lg.electrico.add(cyl(CR, CS_Z - CN_Z, condM, CW_X, y_c, 0, Math.PI / 2));
-  lg.electrico.add(jbox(CW_X, y_c, CS_Z));  // SW corner
+  lg.electrico.add(cyl(CR, CS_Z - CN_Z, condM, CW_X, y_c, 0, Math.PI / 2, 0,
+    {nombre:'Run C — pared oeste (N→S)', sistema:SE, material:EMT}));
+  lg.electrico.add(jbox(CW_X, y_c, CS_Z));
 
-  // ── RUN D: Ceiling cross N→S from Run A midpoint to above center light ──
-  lg.electrico.add(jbox(0, y_c, CN_Z));                                          // Run A ∩ Run D (north end)
-  lg.electrico.add(cyl(CR, -CN_Z, condM, 0, y_c, CN_Z / 2, Math.PI / 2));       // Run D
-  lg.electrico.add(jbox(0, y_c, 0));                                              // Run D south end / center J-box
+  // ── RUN D: Ceiling cross N→S ──
+  lg.electrico.add(jbox(0, y_c, CN_Z));
+  lg.electrico.add(cyl(CR, -CN_Z, condM, 0, y_c, CN_Z / 2, Math.PI / 2, 0,
+    {nombre:'Run D — cruce techo (N→S)', sistema:SE, material:EMT}));
+  lg.electrico.add(jbox(0, y_c, 0));
 
-  // ── FIXTURE 1: Main ceiling light (center) ──
+  // ── FIXTURE 1: Main ceiling light ──
   const ceilUpLen = H - 0.005 - y_c;
-  lg.electrico.add(cyl(CR, ceilUpLen, condM, 0, y_c + ceilUpLen / 2, 0));
+  lg.electrico.add(cyl(CR, ceilUpLen, condM, 0, y_c + ceilUpLen / 2, 0, 0, 0,
+    {nombre:'Bajante → lámpara techo centro', sistema:SE, material:EMT}));
   const ceilLight = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.015, 24), lightEM);
   ceilLight.position.set(0, H - 0.008, 0); lg.electrico.add(ceilLight);
 
   // ── FIXTURE 2: Exhaust fan + integrated light above shower ──
-  // J-box on Run B at z=showerZ → horizontal spur west to showerX → up to ceiling
   lg.electrico.add(jbox(CE_X, y_c, showerZ));
-  lg.electrico.add(cyl(CR, CE_X - showerX, condM, (CE_X + showerX) / 2, y_c, showerZ, 0, Math.PI / 2));
+  lg.electrico.add(cyl(CR, CE_X - showerX, condM, (CE_X + showerX) / 2, y_c, showerZ, 0, Math.PI / 2,
+    {nombre:'Ramal → extractor/lámpara ducha', sistema:SE, material:EMT}));
   lg.electrico.add(jbox(showerX, y_c, showerZ));
   const fanUpLen = H - 0.005 - y_c;
-  lg.electrico.add(cyl(CR, fanUpLen, condM, showerX, y_c + fanUpLen / 2, showerZ));
+  lg.electrico.add(cyl(CR, fanUpLen, condM, showerX, y_c + fanUpLen / 2, showerZ, 0, 0,
+    {nombre:'Bajante → extractor ducha', sistema:SE, material:EMT}));
   const fan = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.03, 0.22), mat(0xE5E7EB, 0.92));
   fan.position.set(showerX, H - 0.016, showerZ); lg.electrico.add(fan);
   const fanGrill = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.01, 16), mat(0xD1D5DB, 1));
@@ -778,35 +926,41 @@ function buildModel() {
   dlDisc.position.set(showerX, H - 0.006, showerZ); lg.electrico.add(dlDisc);
 
   // ── FIXTURE 3: Vanity / mirror light above sink ──
-  // From Run A at (sinkX, y_c, CN_Z) → vertical drop to H*0.80
   lg.electrico.add(jbox(sinkX, y_c, CN_Z));
   const vanDropLen = y_c - H * 0.80;
-  lg.electrico.add(cyl(CR, vanDropLen, condM, sinkX, H * 0.80 + vanDropLen / 2, CN_Z));
+  lg.electrico.add(cyl(CR, vanDropLen, condM, sinkX, H * 0.80 + vanDropLen / 2, CN_Z, 0, 0,
+    {nombre:'Bajante → luz espejo lavabo', sistema:SE, material:EMT}));
   const mirLight = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.022, 0.04), lightEM);
   mirLight.position.set(sinkX, H * 0.80, CN_Z + 0.015); lg.electrico.add(mirLight);
 
-  // ── FIXTURE 4: GFCI outlet on north wall near sink ──
+  // ── FIXTURE 4: GFCI outlet on north wall ──
   const gfciX = sinkX + 0.40, gfciY = H * 0.46;
   lg.electrico.add(jbox(gfciX, y_c, CN_Z));
   const gfciDropLen = y_c - gfciY;
-  lg.electrico.add(cyl(CR, gfciDropLen, condM, gfciX, gfciY + gfciDropLen / 2, CN_Z));
-  lg.electrico.add(cyl(CR, 0.07, condM, gfciX, gfciY, CN_Z + 0.035, Math.PI / 2));  // stub to wall face
+  lg.electrico.add(cyl(CR, gfciDropLen, condM, gfciX, gfciY + gfciDropLen / 2, CN_Z, 0, 0,
+    {nombre:'Bajante → toma GFCI lavabo', sistema:SE, material:EMT}));
+  lg.electrico.add(cyl(CR, 0.07, condM, gfciX, gfciY, CN_Z + 0.035, Math.PI / 2, 0,
+    {nombre:'Ramal horizontal → toma GFCI', sistema:SE, material:EMT}));
   lg.electrico.add(box(0.065, 0.045, 0.016, outM, gfciX, gfciY, -d2 + WT + 0.01));
 
   // ── FIXTURE 5: Light switch south of door, west wall ──
   const swZ = doorZ2 + 0.14, swY = H * 0.43;
   lg.electrico.add(jbox(CW_X, y_c, swZ));
   const swDropLen = y_c - swY;
-  lg.electrico.add(cyl(CR, swDropLen, condM, CW_X, swY + swDropLen / 2, swZ));
-  lg.electrico.add(cyl(CR, 0.07, condM, CW_X + 0.035, swY, swZ, 0, Math.PI / 2));  // stub to wall face
+  lg.electrico.add(cyl(CR, swDropLen, condM, CW_X, swY + swDropLen / 2, swZ, 0, 0,
+    {nombre:'Bajante → interruptor puerta', sistema:SE, material:EMT}));
+  lg.electrico.add(cyl(CR, 0.07, condM, CW_X + 0.035, swY, swZ, 0, Math.PI / 2,
+    {nombre:'Ramal horizontal → interruptor', sistema:SE, material:EMT}));
   lg.electrico.add(box(0.045, 0.065, 0.016, outM, -w2 + WT + 0.01, swY, swZ));
 
   // ── FIXTURE 6: Outlet near toilet, west wall ──
   const toZ = toiletZ - 0.28, toY = H * 0.18;
   lg.electrico.add(jbox(CW_X, y_c, toZ));
   const toDropLen = y_c - toY;
-  lg.electrico.add(cyl(CR, toDropLen, condM, CW_X, toY + toDropLen / 2, toZ));
-  lg.electrico.add(cyl(CR, 0.07, condM, CW_X + 0.035, toY, toZ, 0, Math.PI / 2));  // stub to wall face
+  lg.electrico.add(cyl(CR, toDropLen, condM, CW_X, toY + toDropLen / 2, toZ, 0, 0,
+    {nombre:'Bajante → toma corriente WC', sistema:SE, material:EMT}));
+  lg.electrico.add(cyl(CR, 0.07, condM, CW_X + 0.035, toY, toZ, 0, Math.PI / 2,
+    {nombre:'Ramal horizontal → toma WC', sistema:SE, material:EMT}));
   lg.electrico.add(box(0.065, 0.045, 0.016, outM, -w2 + WT + 0.01, toY, toZ));
 
   // ─── ACABADOS ───
@@ -996,6 +1150,142 @@ window.addEventListener('resize', () => {
 // HINT AUTO-HIDE
 // ════════════════════════════════════════════════
 setTimeout(() => document.getElementById('hint').classList.add('hidden'), 4000);
+setTimeout(() => document.getElementById('click-hint').classList.add('hidden'), 6000);
+
+// ════════════════════════════════════════════════
+// RAYCASTING — click to inspect pipes & conduits
+// ════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse2D   = new THREE.Vector2();
+let   selMesh   = null;
+let   selOrigMat = null;
+
+const hlMat = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, emissive: new THREE.Color(0xFFEE55),
+  emissiveIntensity: 0.6, transparent: true, opacity: 0.88,
+});
+
+renderer.domElement.addEventListener('click', e => {
+  // Ignore if click was on panel/UI
+  if (e.target !== renderer.domElement) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse2D.x =  ((e.clientX - rect.left)  / rect.width)  * 2 - 1;
+  mouse2D.y = -((e.clientY - rect.top)   / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse2D, camera);
+
+  // Collect all tagged meshes from active layers
+  const targets = [];
+  ['fontaneria', 'electrico'].forEach(name => {
+    if (layerState[name])
+      layerGroups[name].traverse(o => { if (o.isMesh && o.userData._hasSpecs) targets.push(o); });
+  });
+
+  const hits = raycaster.intersectObjects(targets, false);
+
+  if (hits.length > 0) {
+    const hit = hits[0].object;
+    if (hit !== selMesh) {
+      clearSel();
+      selMesh     = hit;
+      selOrigMat  = hit.material;
+      const hm = hlMat.clone();
+      hm.color.copy(selOrigMat.color);
+      hit.material = hm;
+    }
+    showTooltip(hit.userData, e.clientX, e.clientY);
+  } else {
+    clearSel();
+    closeTooltip();
+  }
+});
+
+function clearSel() {
+  if (selMesh && selOrigMat) selMesh.material = selOrigMat;
+  selMesh = null; selOrigMat = null;
+}
+
+function showTooltip(s, cx, cy) {
+  const sysColors = { 'Fontanería': '#60a5fa', 'Eléctrico': '#fbbf24' };
+  const col = sysColors[s.sistema] || '#9ca3af';
+  document.getElementById('tt-sistema').textContent  = s.sistema || '';
+  document.getElementById('tt-sistema').style.color  = col;
+  document.getElementById('tt-nombre').textContent   = s.nombre  || '—';
+  document.getElementById('tt-long').textContent     = s.longitud ? s.longitud.toFixed(3) + ' m' : '—';
+  document.getElementById('tt-diam').textContent     = s.diametro ? s.diametro + ' mm ⌀' : '—';
+  document.getElementById('tt-mat').textContent      = s.material || '—';
+  const notasRow = document.getElementById('tt-notas-row');
+  if (s.notas) {
+    document.getElementById('tt-notas').textContent = s.notas;
+    notasRow.style.display = '';
+  } else { notasRow.style.display = 'none'; }
+
+  const tt = document.getElementById('spec-tooltip');
+  const tw = 230, th = 155, mg = 14;
+  let tx = cx + mg, ty = cy + mg;
+  if (tx + tw > window.innerWidth - 230) tx = cx - tw - mg;
+  if (ty + th > window.innerHeight)      ty = cy - th - mg;
+  tt.style.left = tx + 'px';
+  tt.style.top  = ty + 'px';
+  tt.classList.add('show');
+}
+
+function closeTooltip() {
+  document.getElementById('spec-tooltip').classList.remove('show');
+  clearSel();
+}
+
+// ════════════════════════════════════════════════
+// SUMMARY TABLE MODAL
+// ════════════════════════════════════════════════
+function openSummary() {
+  const items = [];
+  scene.traverse(o => { if (o.isMesh && o.userData._hasSpecs) items.push(o.userData); });
+
+  // Group by sistema
+  const groups = {};
+  items.forEach(s => {
+    const g = s.sistema || 'Otro';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+
+  const sysIcons = { 'Fontanería': '💧', 'Eléctrico': '⚡' };
+  let html = '';
+
+  for (const [grupo, list] of Object.entries(groups)) {
+    const totalLen = list.reduce((sum, s) => sum + (s.longitud || 0), 0);
+    const icon = sysIcons[grupo] || '🔧';
+    html += `<div class="sum-group">
+      <div class="sum-group-title">${icon} ${grupo}</div>
+      <table class="sum-table">
+        <thead><tr>
+          <th>Tramo / Nombre</th>
+          <th style="text-align:right">Long.</th>
+          <th style="text-align:right">Ø</th>
+          <th>Material</th>
+        </tr></thead><tbody>`;
+    list.forEach(s => {
+      html += `<tr>
+        <td>${s.nombre || '—'}</td>
+        <td class="num">${s.longitud ? s.longitud.toFixed(3) + ' m' : '—'}</td>
+        <td class="diam">${s.diametro ? s.diametro + ' mm' : '—'}</td>
+        <td>${s.material || '—'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>
+      <div class="sum-total">Total ${grupo}: <strong>${totalLen.toFixed(3)} m</strong> lineales</div>
+    </div>`;
+  }
+
+  document.getElementById('summary-content').innerHTML = html;
+  document.getElementById('summary-overlay').classList.add('show');
+}
+
+function closeSummary() {
+  document.getElementById('summary-overlay').classList.remove('show');
+}
 
 // ════════════════════════════════════════════════
 // RENDER LOOP
