@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR — Kitchen AR</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      min-height:100vh;
+      background:linear-gradient(135deg,#0a0a1a 0%,#0d1b2a 40%,#1b2838 100%);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:32px 20px;color:#fff;
+    }
+    .card{
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:24px;padding:36px 32px;
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      box-shadow:0 8px 40px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);
+      display:flex;flex-direction:column;align-items:center;gap:20px;
+      max-width:400px;width:100%;
+    }
+    .icon{font-size:48px;filter:drop-shadow(0 0 20px rgba(99,102,241,.4))}
+    h1{font-size:20px;font-weight:900;text-align:center;letter-spacing:-.3px}
+    .sub{font-size:12px;color:rgba(255,255,255,.4);text-align:center;line-height:1.5}
+    #qrcode{
+      background:#fff;border-radius:16px;padding:16px;
+      box-shadow:0 4px 24px rgba(0,0,0,.2);
+    }
+    #qrcode img,#qrcode canvas{border-radius:8px;display:block}
+    .url-box{
+      width:100%;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.1);border-radius:12px;
+      padding:12px 16px;font-size:12px;color:rgba(255,255,255,.7);
+      word-break:break-all;text-align:center;font-family:monospace;
+      user-select:all;cursor:text;
+    }
+    .tip{
+      font-size:11px;color:rgba(255,255,255,.3);text-align:center;line-height:1.6;
+      border-top:1px solid rgba(255,255,255,.06);padding-top:16px;width:100%;
+    }
+    .tip strong{color:rgba(255,255,255,.5)}
+    a.back{
+      margin-top:16px;font-size:12px;color:rgba(255,255,255,.35);
+      text-decoration:none;transition:color .2s;
+    }
+    a.back:hover{color:rgba(255,255,255,.7)}
+    .pages{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}
+    .page-btn{
+      padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;
+    }
+    .page-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+    .page-btn.active{
+      background:rgba(99,102,241,.2);border-color:rgba(99,102,241,.4);color:#fff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="icon">📱</div>
+  <h1>Escanea para abrir en tu celular</h1>
+  <div class="sub">Escanea el codigo con la camara de tu celular para abrir la app</div>
+
+  <div class="pages">
+    <button class="page-btn active" onclick="setPage('kitchen-ar.html')">Kitchen AR</button>
+    <button class="page-btn" onclick="setPage('kitchen.html')">Kitchen 3D</button>
+    <button class="page-btn" onclick="setPage('index.html')">Inicio</button>
+  </div>
+
+  <div id="qrcode"></div>
+  <div class="url-box" id="url-display"></div>
+
+  <div class="tip">
+    Apunta a <strong>https://prototipo-vr.vercel.app</strong>
+  </div>
+</div>
+
+<a href="/" class="back">← Volver al menu</a>
+
+<script>
+const BASE = 'https://prototipo-vr.vercel.app';
+
+function setPage(page) {
+  const url = BASE + '/' + page;
+  document.getElementById('url-display').textContent = url;
+
+  document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+
+  const container = document.getElementById('qrcode');
+  container.innerHTML = '';
+  new QRCode(container, {
+    text: url,
+    width: 220,
+    height: 220,
+    colorDark: '#0d1b2a',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+}
+
+setPage('kitchen-ar.html');
+</script>
+</body>
+</html>
