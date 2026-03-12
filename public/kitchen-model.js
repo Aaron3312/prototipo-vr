@@ -132,11 +132,13 @@ function buildModel() {
   // Floor
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
   floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; floor.receiveShadow = true;
+  floor.name = 'Suelo';
   lg.estructura.add(floor);
 
   // Ceiling
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), ceilM);
   ceil.rotation.x = Math.PI / 2; ceil.position.y = H - 0.001;
+  ceil.name = 'Techo';
   lg.estructura.add(ceil);
 
   // North wall — broken by window above sink
@@ -165,6 +167,7 @@ function buildModel() {
   // Window glass
   const winGlass = new THREE.Mesh(
     new THREE.PlaneGeometry(WIN_X2 - WIN_X1, WIN_Y2 - WIN_Y1), glassM);
+  winGlass.name = 'Ventana';
   winGlass.position.set((WIN_X1+WIN_X2)/2, (WIN_Y1+WIN_Y2)/2, NWI + WT/2 + 0.001);
   lg.estructura.add(winGlass);
 
@@ -328,7 +331,7 @@ function buildModel() {
     {nombre:'Encimera Este', sistema:'Muebles', material:'Granito', notas:`${(EW_CABW+0.04).toFixed(2)} × ${CT.toFixed(2)} × ${(EW_CD+0.02).toFixed(2)} m`}));
 
   // ── REFRIGERATOR ──
-  const fridgeG = new THREE.Group();
+  const fridgeG = new THREE.Group(); fridgeG.name = 'Nevera';
   // Main body
   fridgeG.add(box(FRW, FRH, FRD, stainM, 0, FRH/2, 0,
     {nombre:'Nevera', sistema:'Muebles', material:'Acero inoxidable', notas:`${FRW.toFixed(2)} × ${FRH.toFixed(2)} × ${FRD.toFixed(2)} m`}));
@@ -352,7 +355,7 @@ function buildModel() {
   lg.muebles.add(fridgeG);
 
   // ── STOVE / RANGE ──
-  const stoveG = new THREE.Group();
+  const stoveG = new THREE.Group(); stoveG.name = 'Fogón';
   // Main body
   stoveG.add(box(STW, CH, STD, mat(0xC8CACA, 1), 0, CH/2, 0,
     {nombre:'Fogón / Horno', sistema:'Muebles', material:'Acero esmaltado', notas:`${STW.toFixed(2)} × ${CH.toFixed(2)} × ${STD.toFixed(2)} m`}));
@@ -384,7 +387,7 @@ function buildModel() {
   lg.muebles.add(stoveG);
 
   // ── RANGE HOOD ──
-  const hoodG = new THREE.Group();
+  const hoodG = new THREE.Group(); hoodG.name = 'Campana Extractora';
   const hoodW = STW + 0.12;
   const hoodFlangeY = H * 0.635;
   const hoodTopY = H * 0.730;
@@ -410,7 +413,7 @@ function buildModel() {
   lg.muebles.add(hoodG);
 
   // ── KITCHEN SINK ──
-  const sinkG = new THREE.Group();
+  const sinkG = new THREE.Group(); sinkG.name = 'Fregadero';
   // Basin housing (counter level)
   sinkG.add(box(SKW - 0.04, 0.012, CD - 0.06, graniteM, 0, 0, 0,
     {nombre:'Fregadero Doble', sistema:'Muebles', material:'Granito / Inox', notas:`${(SKW-0.04).toFixed(2)} × 0.012 × ${(CD-0.06).toFixed(2)} m`}));
@@ -440,7 +443,7 @@ function buildModel() {
   lg.muebles.add(sinkG);
 
   // ── DISHWASHER ──
-  const dwG = new THREE.Group();
+  const dwG = new THREE.Group(); dwG.name = 'Lavavajillas';
   const dwBodyH = CH;
   // Body
   dwG.add(box(DWW, dwBodyH, STD, mat(0xF0EEE8, 1), 0, dwBodyH/2, 0,
@@ -458,7 +461,7 @@ function buildModel() {
   lg.muebles.add(dwG);
 
   // ── ISLAND ──
-  const islG = new THREE.Group();
+  const islG = new THREE.Group(); islG.name = 'Isla';
   // Cabinet body
   islG.add(box(ISL_W, CH - CT, ISL_D, cabM, 0, (CH-CT)/2, 0,
     {nombre:'Isla — Cuerpo', sistema:'Muebles', material:'MDF Lacado', notas:`${ISL_W.toFixed(2)} × ${(CH-CT).toFixed(2)} × ${ISL_D.toFixed(2)} m`}));
@@ -496,7 +499,7 @@ function buildModel() {
   lg.muebles.add(islG);
 
   // ── DOOR (south wall) ──
-  const doorG = new THREE.Group();
+  const doorG = new THREE.Group(); doorG.name = 'Puerta';
   const doorW = DOOR_X2 - DOOR_X1;
   doorG.add(box(doorW - 0.04, DOOR_H - 0.04, 0.042, woodDoorM, 0, DOOR_H/2, 0));
   // Door panel insets

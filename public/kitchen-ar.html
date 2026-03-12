@@ -312,6 +312,24 @@
       display:none;text-align:center;
     }
     #corner-ui.show{display:block}
+    .mode-row{display:flex;gap:7px;margin-bottom:12px}
+    .mode-btn{
+      flex:1;padding:7px 0;border-radius:10px;
+      border:1px solid rgba(255,255,255,.15);
+      background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);
+      font-size:10px;font-weight:700;cursor:pointer;pointer-events:all;
+      transition:all .2s;line-height:1.3;
+    }
+    .mode-btn.active{background:rgba(99,102,241,.35);border-color:rgba(99,102,241,.7);color:#fff}
+    #manual-height-row{
+      display:none;margin-bottom:10px;
+      background:rgba(255,255,255,.05);border-radius:10px;padding:10px;
+    }
+    #manual-height-row .mh-header{display:flex;justify-content:space-between;margin-bottom:6px}
+    #manual-height-row .mh-label{font-size:11px;color:rgba(255,255,255,.6)}
+    #manual-h-val{font-size:12px;font-weight:800;color:#60a5fa}
+    #manual-h-slider{width:100%;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.2);outline:none}
+    #manual-h-slider::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:#60a5fa;cursor:pointer}
     #corner-step{font-size:15px;font-weight:800;color:#fff;margin-bottom:4px}
     #corner-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px}
     .corner-row-label{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
@@ -736,6 +754,24 @@
   </div>
 
   <div id="corner-ui">
+    <!-- Modo de altura -->
+    <div class="mode-row">
+      <button id="mode-ceil-btn" class="mode-btn active" onclick="setHeightMode('ceiling')">
+        📍 Punto<br>en techo
+      </button>
+      <button id="mode-manual-btn" class="mode-btn" onclick="setHeightMode('manual')">
+        📏 Altura<br>manual
+      </button>
+    </div>
+    <!-- Slider altura manual -->
+    <div id="manual-height-row">
+      <div class="mh-header">
+        <span class="mh-label">Altura del techo</span>
+        <span id="manual-h-val">2.60 m</span>
+      </div>
+      <input type="range" id="manual-h-slider" min="1.5" max="4.0" step="0.05" value="2.60"
+             oninput="updateManualH(this.value)">
+    </div>
     <div id="corner-step">Esquina 1 de 4 — Piso</div>
     <div id="corner-sub">Apunta a una esquina del piso y toca</div>
     <div class="corner-row-label">Piso</div>
@@ -745,8 +781,8 @@
       <div class="corner-dot" id="cdot-2"></div>
       <div class="corner-dot" id="cdot-3"></div>
     </div>
-    <div class="corner-row-label">Techo</div>
-    <div class="corner-dots">
+    <div class="corner-row-label" id="ceil-row-label">Techo</div>
+    <div class="corner-dots" id="ceil-dots-row">
       <div class="corner-dot" id="cdot-4"></div>
     </div>
     <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
@@ -796,58 +832,6 @@
   </div>
 
   <button id="exit-btn" onclick="exitAR()">✕ Salir</button>
-
-  <!-- Tools toggle button -->
-  <button id="tools-toggle" onclick="toggleToolsDrawer()">🛠️</button>
-
-  <!-- Tools drawer -->
-  <div id="ar-tools-drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-title">Herramientas de campo</div>
-    <div class="drawer-sub">Panel de obra — Cocina AR</div>
-    <div class="tools-grid">
-      <div class="tool-card disabled" onclick="showToast('Subir planos — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">📐</span>
-        <span class="tool-label">Subir planos</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Medir perimetro — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">📏</span>
-        <span class="tool-label">Medir perimetro</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Consulta de materiales — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">🧱</span>
-        <span class="tool-label">Consulta de materiales</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Guia de voz — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">🎙️</span>
-        <span class="tool-label">Guia de voz</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Reporte de errores — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">⚠️</span>
-        <span class="tool-label">Reporte de errores</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Registro de errores — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">📋</span>
-        <span class="tool-label">Registro de errores</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Solicitud de supervision — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">👷</span>
-        <span class="tool-label">Solicitud de supervision</span>
-      </div>
-      <div class="tool-card disabled" onclick="showToast('Finalizacion de proyecto — Proximamente')">
-        <span class="tool-lock">🔒</span>
-        <span class="tool-icon">✅</span>
-        <span class="tool-label">Finalizacion de proyecto</span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script src="/kitchen-model.js"></script>
@@ -887,7 +871,26 @@ reticle.add(new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x60A5FA
 const allPoints = [];
 const cornerMarkers = [];
 let calibrated = false;
-const TOTAL_POINTS = 5; // 4 floor corners + 1 ceiling point
+// Height mode
+let heightMode = 'ceiling';
+let manualH = 2.60;
+
+function getTotalPoints() { return heightMode === 'manual' ? 4 : 5; }
+
+function setHeightMode(mode) {
+  heightMode = mode;
+  document.getElementById('mode-ceil-btn').classList.toggle('active', mode === 'ceiling');
+  document.getElementById('mode-manual-btn').classList.toggle('active', mode === 'manual');
+  document.getElementById('manual-height-row').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('ceil-row-label').style.display = mode === 'manual' ? 'none' : '';
+  document.getElementById('ceil-dots-row').style.display = mode === 'manual' ? 'none' : '';
+  if (allPoints.length > 0) resetCorners();
+}
+
+function updateManualH(val) {
+  manualH = parseFloat(val);
+  document.getElementById('manual-h-val').textContent = manualH.toFixed(2) + ' m';
+}
 
 // Kitchen dimensions (set by calibration, small placeholder defaults)
 let W = 2.0;
@@ -1110,7 +1113,7 @@ async function startCalibration() {
 
     document.getElementById('loading').classList.remove('show');
     document.getElementById('overlay').classList.add('active');
-    ['top-bar','exit-btn','layers','tools-toggle'].forEach(id =>
+    ['top-bar','exit-btn','layers'].forEach(id =>
       document.getElementById(id).style.display = ''
     );
     document.getElementById('corner-ui').classList.add('show');
@@ -1201,13 +1204,13 @@ function onArHandResults(results) {
 
   if (hit) {
     // Nuevo elemento bajo el dedo → iniciar dwell
-    if (arDwellMesh !== hit.object) {
+    if (arDwellMesh !== hit.mesh) {
       clearArDwell();
-      arDwellMesh = hit.object;
+      arDwellMesh = hit.mesh;
       // Pulso en el cursor para indicar que hay algo
       cursor.classList.add('hit');
       arDwellTimer = setTimeout(() => {
-        showSpecPanel(hit.object.userData);
+        showSpecPanel(hit.userData);
       }, 800);
     }
   } else {
@@ -1326,14 +1329,14 @@ function onTap() {
     }
 
     updateCornerUI();
-    if (allPoints.length === TOTAL_POINTS) setTimeout(() => calibrateFromPoints(), 600);
+    if (allPoints.length === getTotalPoints()) setTimeout(() => calibrateFromPoints(), 600);
     return;
   }
 
   // Post-calibration: raycast desde el centro (crosshair) — toca donde sea para inspeccionar
   const hit = raycastModel(new THREE.Vector2(0, 0));
   if (hit) {
-    showSpecPanel(hit.object.userData);
+    showSpecPanel(hit.userData);
   } else {
     hideSpecPanel();
   }
@@ -1354,7 +1357,7 @@ function updateCornerUI() {
   if (n < 4) {
     document.getElementById('corner-step').textContent = `Esquina ${n + 1} de 4 — Piso`;
     document.getElementById('corner-sub').textContent = 'Apunta a una esquina del piso y toca';
-  } else if (n === 4) {
+  } else if (n === 4 && heightMode === 'ceiling') {
     document.getElementById('corner-step').textContent = 'Punto de techo';
     document.getElementById('corner-sub').textContent = 'Apunta al techo y toca para medir la altura';
     document.getElementById('hint-badge').textContent = 'Apunta al techo → toca 1 punto';
@@ -1362,7 +1365,7 @@ function updateCornerUI() {
     document.getElementById('corner-step').textContent = 'Calibrando...';
     document.getElementById('corner-sub').textContent = 'Ajustando cocina al espacio';
   }
-  for (let i = 0; i < TOTAL_POINTS; i++) {
+  for (let i = 0; i < getTotalPoints(); i++) {
     const dot = document.getElementById('cdot-' + i);
     if (dot) {
       dot.classList.toggle('done', i < n);
@@ -1382,11 +1385,14 @@ function calibrateFromPoints() {
   });
   floorY /= 4;
 
-  const ceilY = allPoints[4].y;
-
   W = Math.max(maxX - minX, 0.5);
   D = Math.max(maxZ - minZ, 0.5);
-  H = Math.max(Math.abs(ceilY - floorY), 0.5);
+  if (heightMode === 'manual') {
+    H = manualH;
+  } else {
+    const ceilY = allPoints[4].y;
+    H = Math.max(Math.abs(ceilY - floorY), 0.5);
+  }
 
   Object.values(layerGroups).forEach(g => {
     while (g.children.length > 0) g.remove(g.children[0]);
@@ -1446,10 +1452,9 @@ function resetCorners() {
   document.getElementById('ar-crosshair').classList.remove('show', 'hit');
   document.getElementById('tap-hint').classList.remove('show');
   hideSpecPanel();
-  for (let i = 0; i < TOTAL_POINTS; i++) {
+  for (let i = 0; i < 5; i++) {
     const dot = document.getElementById('cdot-' + i);
-    dot.classList.remove('done');
-    dot.classList.toggle('active', i === 0);
+    if (dot) { dot.classList.remove('done'); dot.classList.toggle('active', i === 0); }
   }
 }
 
@@ -1475,11 +1480,7 @@ function onSessionEnd() {
   document.getElementById('tap-hint').classList.remove('show');
   hideSpecPanel();
   stopArHandTracking();
-  document.getElementById('ar-tools-drawer').classList.remove('open');
-  document.getElementById('tools-toggle').classList.remove('active');
-  document.getElementById('tools-toggle').textContent = '🛠️';
   document.getElementById('layers').style.display = 'flex';
-  drawerOpen = false;
   document.getElementById('pre-ar').style.display = 'flex';
   renderer.setAnimationLoop(null);
 }
@@ -1503,8 +1504,15 @@ function render(timestamp, frame) {
       } else { reticle.visible = false; }
     }
   }
-  if (calibrated) updateCrosshair();
   renderer.render(scene, camera);
+  // Sync XR projection matrix so raycasting is accurate
+  if (renderer.xr.isPresenting) {
+    const _xc = renderer.xr.getCamera(camera);
+    const _c0 = (_xc.cameras && _xc.cameras.length > 0) ? _xc.cameras[0] : _xc;
+    camera.projectionMatrix.copy(_c0.projectionMatrix);
+    camera.projectionMatrixInverse.copy(_c0.projectionMatrix).invert();
+  }
+  if (calibrated) updateCrosshair();
 }
 
 // ── SPEC PANEL: inspección con dedo ──
@@ -1519,18 +1527,44 @@ document.addEventListener('touchstart', (e) => {
   lastTouchNDC.y = -(t.clientY / window.innerHeight) * 2 + 1;
 }, { passive: true });
 
-function getActiveCamera() {
-  if (renderer.xr.isPresenting) {
-    const xrCam = renderer.xr.getCamera(camera);
-    return (xrCam.cameras && xrCam.cameras.length > 0) ? xrCam.cameras[0] : xrCam;
+const _LAYER_NAMES = { estructura:'Estructura', fontaneria:'Fontanería', electrico:'Eléctrico', acabados:'Acabados', muebles:'Muebles' };
+function getLayerName(mesh) {
+  // Walk up looking for a named intermediate group (e.g. 'Nevera', 'Suelo')
+  let obj = mesh;
+  while (obj && obj.parent && obj.parent !== model) {
+    if (obj.name) return obj.name;
+    obj = obj.parent;
   }
-  return camera;
+  // Fell through to the layer group — return layer name
+  return _LAYER_NAMES[obj && obj.name] || 'Elemento';
 }
 
 function raycastModel(ndc) {
-  _raycaster.setFromCamera(ndc, getActiveCamera());
+  _raycaster.setFromCamera(ndc, camera);
   const hits = _raycaster.intersectObjects(model.children, true);
-  return hits.find(h => h.object.userData._hasSpecs) || null;
+  if (!hits.length) return null;
+
+  // Prefer mesh with explicit specs
+  const specHit = hits.find(h => h.object.userData._hasSpecs);
+  if (specHit) return { mesh: specHit.object, userData: specHit.object.userData };
+
+  // Fallback: any visible mesh → compute bounding box dimensions
+  const anyHit = hits[0];
+  const mesh = anyHit.object;
+  const geo = mesh.geometry;
+  if (!geo.boundingBox) geo.computeBoundingBox();
+  const size = new THREE.Vector3();
+  geo.boundingBox.getSize(size);
+  return {
+    mesh,
+    userData: {
+      _hasSpecs: true,
+      nombre: getLayerName(mesh),
+      ancho: Math.round(size.x * 1000) + ' mm',
+      alto: Math.round(size.y * 1000) + ' mm',
+      profundo: Math.round(size.z * 1000) + ' mm',
+    }
+  };
 }
 
 const SPEC_LABELS = {
@@ -1579,15 +1613,6 @@ function showToast(msg) {
 }
 
 // ── TOOLS DRAWER ──
-let drawerOpen = false;
-function toggleToolsDrawer() {
-  drawerOpen = !drawerOpen;
-  document.getElementById('ar-tools-drawer').classList.toggle('open', drawerOpen);
-  document.getElementById('tools-toggle').classList.toggle('active', drawerOpen);
-  document.getElementById('tools-toggle').textContent = drawerOpen ? '✕' : '🛠️';
-  // hide layers bar when drawer is open so they don't overlap
-  document.getElementById('layers').style.display = drawerOpen ? 'none' : 'flex';
-}
 
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);

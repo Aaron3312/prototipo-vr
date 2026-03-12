@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(findstr:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(node -e \"\nconst fs = require\\('fs'\\);\nfor \\(const f of ['/Users/aaron_3312g/Desktop/VisualProyects/PrototipoVr/prototipo-vr/public/room.html', '/Users/aaron_3312g/Desktop/VisualProyects/PrototipoVr/prototipo-vr/public/kitchen-ar.html']\\) {\n  const src = fs.readFileSync\\(f, 'utf8'\\);\n  let count = 0;\n  for \\(const ch of src\\) { if \\(ch === '{'\\) count++; else if \\(ch === '}'\\) count--; }\n  console.log\\(f.split\\('/'\\).pop\\(\\), '→ brace balance:', count\\);\n}\n\")"
     ]
   }
 }

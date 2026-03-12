@@ -61,6 +61,7 @@ function addToilet(group, px, pz, rotY) {
   const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.025, 8), chrome);
   valve.position.set(-0.16, 0.28, -0.30); g.add(valve);
 
+  g.name = 'WC';
   g.position.set(px, 0, pz);
   g.rotation.y = rotY || 0;
   group.add(g);
@@ -98,6 +99,7 @@ function addSink(group, px, pz, rotY) {
   g.add(cyl(0.014, 0.30, mat(0x6B7280, 0.8), 0, 0.15, 0.02));
   g.add(cyl(0.014, 0.08, mat(0x6B7280, 0.8), 0, 0.04, 0.06, Math.PI / 2));
 
+  g.name = 'Lavabo';
   g.position.set(px, 0, pz);
   g.rotation.y = rotY || 0;
   group.add(g);
@@ -136,6 +138,7 @@ function addShower(group, px, pz, sw, sd, rotY) {
   g.add(cyl(0.008, H * 0.45, mat(0xEF4444, 0.9), 0.05, H * 0.23, sd / 2 - 0.01));
   g.add(cyl(0.02, 0.10, mat(0x6B7280, 0.8), 0, -0.03, 0));
 
+  g.name = 'Ducha';
   g.position.set(px, 0, pz);
   g.rotation.y = rotY || 0;
   group.add(g);
@@ -159,11 +162,13 @@ function buildModel() {
   // Floor
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
   floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; floor.receiveShadow = true;
+  floor.name = 'Suelo';
   lg.estructura.add(floor);
 
   // Ceiling
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), ceilM);
   ceil.rotation.x = Math.PI / 2; ceil.position.y = H - 0.001;
+  ceil.name = 'Techo';
   lg.estructura.add(ceil);
 
   // North wall (solid, z = -d2)
@@ -195,6 +200,7 @@ function buildModel() {
   lg.estructura.add(box(0.05, 0.035, winW+0.10, frameM, w2-0.025, winY2+0.018, winZc));
   // Window glass
   const winGlass = new THREE.Mesh(new THREE.PlaneGeometry(winW, winHt), mat(0x87CEEB, 0.22));
+  winGlass.name = 'Ventana';
   winGlass.position.set(w2-WT/2, (winY1+winY2)/2, winZc);
   winGlass.rotation.y = Math.PI/2; lg.estructura.add(winGlass);
   // Window vertical frame bars
@@ -219,6 +225,7 @@ function buildModel() {
   lg.estructura.add(box(0.06, 0.04, doorW+0.035, frameM, -w2+0.03, doorH, (doorZ1+doorZ2)/2));
   // Door panel (slightly open)
   const doorPanel = new THREE.Mesh(new THREE.PlaneGeometry(doorW, doorH), mat(0xB0987A, 0.70));
+  doorPanel.name = 'Puerta';
   doorPanel.position.set(-w2+WT/2+0.01, doorH/2, (doorZ1+doorZ2)/2);
   doorPanel.rotation.y = Math.PI/2; lg.estructura.add(doorPanel);
   // Door handle
@@ -330,17 +337,21 @@ function buildModel() {
 
   // Towel bar — south wall, runs east-west (rz=Math.PI/2 → X axis)
   const towelM = mat(0xC0C0C0, 1);
-  lg.muebles.add(cyl(0.010, 0.65, towelM, toiletX+0.10, H*0.50, d2-WT-0.04, 0, Math.PI/2));
+  const towelBar = cyl(0.010, 0.65, towelM, toiletX+0.10, H*0.50, d2-WT-0.04, 0, Math.PI/2);
+  towelBar.name = 'Toallero';
+  lg.muebles.add(towelBar);
   [[-0.32, 0],[0.32, 0]].forEach(([dx]) => {
     const b = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.04,10), towelM);
     b.position.set(toiletX+0.10+dx, H*0.50, d2-WT-0.02); lg.muebles.add(b);
   });
   // Towel ring near sink — against north wall
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.065,0.010,8,20), towelM);
+  ring.name = 'Anillo Toallero';
   ring.position.set(sinkX+0.40, H*0.44, -d2+WT+0.04); ring.rotation.y = Math.PI/2;
   lg.muebles.add(ring);
   // Toilet paper holder — west wall, bar sticks out in X direction (rz=Math.PI/2)
   const tph = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.13,14), mat(0xD8D8D8,1));
+  tph.name = 'Portarrollos';
   tph.rotation.x = Math.PI/2; tph.position.set(-w2+WT+0.12, H*0.30, toiletZ-0.22);
   lg.muebles.add(tph);
   const tphBar = cyl(0.008, 0.16, towelM, -w2+WT+0.10, H*0.30, toiletZ-0.22, 0, Math.PI/2);
