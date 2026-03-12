@@ -312,6 +312,9 @@
       display:none;text-align:center;
     }
     #corner-ui.show{display:block}
+    /* portrait: cu-left/right stacked */
+    .cu-left{margin-bottom:8px}
+    .cu-right{}
     .mode-row{display:flex;gap:7px;margin-bottom:12px}
     .mode-btn{
       flex:1;padding:7px 0;border-radius:10px;
@@ -412,18 +415,28 @@
       #tools-toggle{bottom:10px;left:10px;width:40px;height:40px;font-size:18px;border-radius:12px}
       #ar-tools-drawer.open{max-height:75vh;padding:12px 12px 14px}
 
-      /* Corner-UI: esquina inferior izquierda, compacto */
+      /* Corner-UI: dos columnas en landscape */
       #corner-ui{
         bottom:10px;left:60px;right:70px;
-        padding:10px 14px;border-radius:12px;
+        padding:8px 12px;border-radius:12px;
         display:none;
       }
-      #corner-ui.show{display:block}
-      #corner-step{font-size:12px;margin-bottom:2px}
-      #corner-sub{font-size:10px;margin-bottom:6px}
-      .corner-row-label{font-size:8px;margin-bottom:3px}
-      .corner-dots{gap:5px;margin-bottom:5px}
-      .corner-dot{width:11px;height:11px}
+      #corner-ui.show{display:flex;flex-direction:row;align-items:flex-start;gap:10px}
+      .cu-left{flex:0 0 auto;min-width:110px;margin-bottom:0;text-align:left}
+      .cu-right{flex:1 1 auto;text-align:center}
+      .mode-row{flex-direction:column;gap:4px;margin-bottom:6px}
+      .mode-btn{padding:5px 8px;font-size:9px;line-height:1.2}
+      #manual-height-row{padding:6px;margin-bottom:0}
+      #manual-height-row .mh-label{font-size:9px}
+      #manual-h-val{font-size:10px}
+      #corner-step{font-size:11px;margin-bottom:2px}
+      #corner-sub{font-size:9px;margin-bottom:4px}
+      .corner-row-label{font-size:8px;margin-bottom:2px}
+      .corner-dots{gap:5px;margin-bottom:4px}
+      .corner-dot{width:10px;height:10px}
+
+      /* Spec panel en landscape: más compacto */
+      #spec-panel{bottom:10px;left:60px;right:70px}
 
       /* Info card: izquierda media altura */
       #info-card{
@@ -754,38 +767,44 @@
   </div>
 
   <div id="corner-ui">
-    <!-- Modo de altura -->
-    <div class="mode-row">
-      <button id="mode-ceil-btn" class="mode-btn active" onclick="setHeightMode('ceiling')">
-        📍 Punto<br>en techo
-      </button>
-      <button id="mode-manual-btn" class="mode-btn" onclick="setHeightMode('manual')">
-        📏 Altura<br>manual
-      </button>
-    </div>
-    <!-- Slider altura manual -->
-    <div id="manual-height-row">
-      <div class="mh-header">
-        <span class="mh-label">Altura del techo</span>
-        <span id="manual-h-val">2.60 m</span>
+    <!-- columna izquierda (landscape) / arriba (portrait) -->
+    <div class="cu-left">
+      <!-- Modo de altura -->
+      <div class="mode-row">
+        <button id="mode-ceil-btn" class="mode-btn active" onclick="setHeightMode('ceiling')">
+          📍 Punto<br>en techo
+        </button>
+        <button id="mode-manual-btn" class="mode-btn" onclick="setHeightMode('manual')">
+          📏 Altura<br>manual
+        </button>
       </div>
-      <input type="range" id="manual-h-slider" min="1.5" max="4.0" step="0.05" value="2.60"
-             oninput="updateManualH(this.value)">
+      <!-- Slider altura manual -->
+      <div id="manual-height-row">
+        <div class="mh-header">
+          <span class="mh-label">Altura del techo</span>
+          <span id="manual-h-val">2.60 m</span>
+        </div>
+        <input type="range" id="manual-h-slider" min="1.5" max="4.0" step="0.05" value="2.60"
+               oninput="updateManualH(this.value)">
+      </div>
     </div>
-    <div id="corner-step">Esquina 1 de 4 — Piso</div>
-    <div id="corner-sub">Apunta a una esquina del piso y toca</div>
-    <div class="corner-row-label">Piso</div>
-    <div class="corner-dots">
-      <div class="corner-dot active" id="cdot-0"></div>
-      <div class="corner-dot" id="cdot-1"></div>
-      <div class="corner-dot" id="cdot-2"></div>
-      <div class="corner-dot" id="cdot-3"></div>
+    <!-- columna derecha (landscape) / abajo (portrait) -->
+    <div class="cu-right">
+      <div id="corner-step">Esquina 1 de 4 — Piso</div>
+      <div id="corner-sub">Apunta a una esquina del piso y toca</div>
+      <div class="corner-row-label">Piso</div>
+      <div class="corner-dots">
+        <div class="corner-dot active" id="cdot-0"></div>
+        <div class="corner-dot" id="cdot-1"></div>
+        <div class="corner-dot" id="cdot-2"></div>
+        <div class="corner-dot" id="cdot-3"></div>
+      </div>
+      <div class="corner-row-label" id="ceil-row-label">Techo</div>
+      <div class="corner-dots" id="ceil-dots-row">
+        <div class="corner-dot" id="cdot-4"></div>
+      </div>
+      <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
     </div>
-    <div class="corner-row-label" id="ceil-row-label">Techo</div>
-    <div class="corner-dots" id="ceil-dots-row">
-      <div class="corner-dot" id="cdot-4"></div>
-    </div>
-    <button id="reset-corners-btn" onclick="resetCorners()" style="pointer-events:all">↺ Reiniciar esquinas</button>
   </div>
 
   <div id="info-card">
